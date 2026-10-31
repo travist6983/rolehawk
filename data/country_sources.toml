@@ -1,0 +1,38 @@
+# Per-country defaults: recommended feeds, currency, and salary period for each market.
+# Keys are ISO 3166-1 alpha-2 codes. "*" applies when a country has no entry.
+# Feed IDs refer to built-in portals; endpoints are verified in Chunk 6 (docs/SPEC.md "Job sources").
+
+["*"]
+feeds = ["remoteok", "weworkremotely"]
+currency = "USD"
+salary_period = "year"
+
+[US]
+feeds = ["remoteok", "weworkremotely", "adzuna", "usajobs"]
+currency = "USD"
+salary_period = "year"
+
+[GB]
+feeds = ["remoteok", "weworkremotely", "adzuna"]
+currency = "GBP"
+salary_period = "year"
+
+[CA]
+feeds = ["remoteok", "weworkremotely", "adzuna"]
+currency = "CAD"
+salary_period = "year"
+
+[AU]
+feeds = ["remoteok", "weworkremotely", "adzuna"]
+currency = "AUD"
+salary_period = "year"
+
+[DE]
+feeds = ["remoteok", "weworkremotely", "adzuna"]
+currency = "EUR"
+salary_period = "year"
+
+[IN]
+feeds = ["remoteok", "weworkremotely", "adzuna"]
+currency = "INR"
+salary_period = "year"
