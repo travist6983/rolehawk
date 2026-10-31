@@ -2205,6 +2205,12 @@ export interface components {
              * @enum {string}
              */
             source: "check" | "review";
+            /**
+             * Kind
+             * @default unsupported
+             * @enum {string}
+             */
+            kind: "unsupported" | "stretch" | "unaddressed" | "style" | "ats";
         };
         /** FormField */
         FormField: {

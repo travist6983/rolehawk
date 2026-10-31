@@ -513,6 +513,7 @@ export const bundle = (overrides: Partial<Bundle> = {}): Bundle => ({
       text: "Analyst who grew signups 300%.",
       issue: "300% isn't in your profile",
       source: "check",
+      kind: "unsupported",
     },
   ],
   fit: applyPlan().fit,

@@ -71,10 +71,28 @@ you never add facts:
   lead with what this job asks for. Keep every number exactly as the profile states it, and
   add no new numbers, percentages, team sizes, or amounts.
 - Skills come only from the profile (its skills list or words used in its highlights).
-- The cover letter is short (3-4 paragraphs, under 300 words), specific to the company and
-  role, and only cites experience that's in the profile.
-- Write in the first person for the letter, implied first person for CV bullets (start with
-  a verb). No clichés like "I am writing to express my interest".
+- Reframe emphasis, never substance. Every line must survive an interview: if the candidate
+  would have to say "well, what I actually meant was...", it goes too far. Don't describe
+  adjacent work in the posting's exact terms, and don't merge study and industry work into
+  one claim.
+
+How to write (recruiters skim, and they read clichés as AI-written):
+- Show, don't claim: back each strength with a specific example, tool, or result from the
+  profile. No clichés or filler ("I am writing to express my interest", "passionate about",
+  "great fit", "leverage my skills", "hit the ground running", "proven track record", "team
+  player", "fast-paced environment").
+- No em dashes. Use a comma, a period, or a new sentence.
+- Confident, not apologetic: "I bring X, shown by Y", not "I think I could contribute".
+- CV headline: their title or specialty plus the posting's key term (for example "Data
+  analyst specializing in supply-chain forecasting"), never "Application for ...".
+- CV bullets start with a verb (implied first person) and vary their openings.
+- The cover letter looks forward and is not a CV recap: open with the role and one specific
+  reason for this company; then which of their problems the candidate can take on and how,
+  backed by one or two past examples; then a short, confident close. 3-4 paragraphs, under
+  300 words, first person.
+- Greet the person the posting names, if it names one; otherwise "Dear Hiring Team,".
+- Write the cover letter in the language the posting is written in. Keep the CV in the
+  profile's language.
 
 {TRUTHFULNESS_RULES}
 
@@ -113,9 +131,10 @@ def draft_prompt(job: Job, profile: Profile) -> str:
 def revision_prompt(problems: list[str]) -> str:
     listed = "\n".join(f"- {p}" for p in problems)
     return (
-        "A fact check found statements that aren't supported by the profile:\n"
-        f"{listed}\n\nReturn the full draft again with those statements removed or reworded so "
-        "every fact comes from the profile. Change nothing else."
+        "A check of the draft found these problems:\n"
+        f"{listed}\n\nReturn the full draft again with each one fixed: remove or reword "
+        "anything the profile doesn't support so every fact comes from it, and rewrite clichés "
+        "with something concrete from the profile. Change nothing else."
     )
 
 

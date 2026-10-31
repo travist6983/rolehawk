@@ -6181,6 +6181,18 @@
               "review"
             ],
             "title": "Source"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unsupported",
+              "stretch",
+              "unaddressed",
+              "style",
+              "ats"
+            ],
+            "title": "Kind",
+            "default": "unsupported"
           }
         },
         "type": "object",
@@ -6189,7 +6201,8 @@
           "location",
           "text",
           "issue",
-          "source"
+          "source",
+          "kind"
         ],
         "title": "Flag"
       },

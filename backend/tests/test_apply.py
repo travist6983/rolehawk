@@ -330,6 +330,31 @@ async def test_unsupported_details_get_one_revision_round(
     assert result.flags == []
 
 
+async def test_cliches_get_the_revision_round_and_em_dashes_are_replaced(
+    runtime: Runtime, fake: FakeProvider
+) -> None:
+    cliched = clean_draft()
+    cliched.cover_letter.paragraphs[0] = "I am passionate about accessible checkout flows."
+    dashed = clean_draft()
+    dashed.cover_letter.paragraphs[1] = (
+        "At Northwind I lifted conversion 12% \N{EM DASH} by redesigning."
+    )
+    script = Scripted(drafts=[cliched, dashed])
+    job_id = ready(runtime, fake, script)
+
+    result = await runtime.applications.apply(ApplyParams(job_id=job_id), noop_progress)
+
+    assert len(script.prompts["draft"]) == 2
+    assert '"passionate about" is a cliché' in script.prompts["draft"][1]
+    assert result.application_id is not None
+    bundle = runtime.applications.load_bundle(result.application_id)
+    assert bundle is not None
+    assert (
+        bundle.cover_letter.paragraphs[1] == "At Northwind I lifted conversion 12%, by redesigning."
+    )
+    assert result.flags == []
+
+
 async def test_review_flags_are_kept_for_the_user(runtime: Runtime, fake: FakeProvider) -> None:
     review = ReviewResult(
         flags=[

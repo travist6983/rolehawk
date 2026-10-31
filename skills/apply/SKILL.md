@@ -34,7 +34,8 @@ copied from the profile; a fact check flags any number or skill the profile does
    ```
 
    The result has `status` (`ready` or `needs_review`), `flags` (each with the line, its
-   location, and what isn't supported), and the file paths.
+   location, its `kind`, and the issue), and the file paths. Em dashes in your text are
+   replaced with commas; clichés come back as `style` flags.
 4. Review your own draft against `review_rules`. If there are flags or unsupported claims,
    fix them with `application-documents` (below) rather than arguing with the check.
 

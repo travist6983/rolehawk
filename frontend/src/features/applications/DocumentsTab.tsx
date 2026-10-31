@@ -26,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import {
   commaTextToList,
+  FLAG_KINDS,
   flagsAt,
   linesToList,
   listToCommaText,
@@ -69,18 +70,25 @@ function FlagList({ flags }: { flags: Flag[] }) {
   if (flags.length === 0) return null;
   return (
     <ul className="space-y-1" aria-label="Needs your review">
-      {flags.map((f) => (
-        <li
-          key={`${f.document}:${f.location}:${f.text}`}
-          className="flex gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive"
-        >
-          <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span>
-            <span className="font-medium">&ldquo;{quote(f.text)}&rdquo;</span>: {f.issue}
-            {f.source === "review" && <span className="text-destructive/80"> (AI review)</span>}
-          </span>
-        </li>
-      ))}
+      {flags.map((f) => {
+        const kind = FLAG_KINDS[f.kind];
+        return (
+          <li
+            key={`${f.document}:${f.location}:${f.text}:${f.issue}`}
+            className={cn(
+              "flex gap-1.5 rounded-md px-2 py-1 text-xs",
+              kind.serious ? "bg-destructive/10 text-destructive" : "bg-muted text-caution",
+            )}
+          >
+            <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <span>
+              <span className="font-medium">{kind.label}:</span>{" "}
+              <span className="font-medium">&ldquo;{quote(f.text)}&rdquo;</span> {f.issue}
+              {f.source === "review" && <span className="opacity-80"> (AI review)</span>}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

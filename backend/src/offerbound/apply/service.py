@@ -30,6 +30,7 @@ from offerbound.apply.drafts import (
     section_prompt,
 )
 from offerbound.apply.review import REVIEW_RULES, ReviewResult, review_prompt
+from offerbound.apply.style import check_style, polish
 from offerbound.apply.truth import Flag, check_cv, check_letter
 from offerbound.config import Settings
 from offerbound.db.models import (
@@ -335,8 +336,12 @@ class ApplyService:
         )
         draft = result.value
         cv, letter = build_cv(profile, draft.cv), build_letter(profile, job, draft.cover_letter)
-        problems = check_cv(cv, profile) + check_letter(letter, profile, job.description)
-        if problems:  # one revision round with the fact check's findings
+        problems = (
+            check_cv(cv, profile)
+            + check_letter(letter, profile, job.description)
+            + check_style(cv, letter)
+        )
+        if problems:  # one revision round with the fact and style checks' findings
             await progress(0.5, "Fixing details your profile doesn't support")
             messages += [
                 Message(role="assistant", text=draft.model_dump_json()),
@@ -356,6 +361,7 @@ class ApplyService:
             draft = revised.value
             cv = build_cv(profile, draft.cv)
             letter = build_letter(profile, job, draft.cover_letter)
+        cv, letter = polish(cv, letter)
         return cv, letter, result.model
 
     async def _review(
@@ -366,7 +372,11 @@ class ApplyService:
         letter: CoverLetter,
         task_id: str | None,
     ) -> list[Flag]:
-        flags = check_cv(cv, profile) + check_letter(letter, profile, job.description)
+        flags = (
+            check_cv(cv, profile)
+            + check_letter(letter, profile, job.description)
+            + check_style(cv, letter)
+        )
         review = await self._llm.structured(
             command="apply",
             task=Task.REVIEW,
@@ -558,7 +568,11 @@ class ApplyService:
         job = await asyncio.to_thread(self.job, bundle.job_id)
         cv = edits.cv or bundle.cv
         letter = edits.cover_letter or bundle.cover_letter
-        flags = check_cv(cv, profile) + check_letter(letter, profile, job.description)
+        flags = (
+            check_cv(cv, profile)
+            + check_letter(letter, profile, job.description)
+            + check_style(cv, letter)
+        )
         text = json.dumps([cv.model_dump(), letter.model_dump()])
         checked = {(f.document, f.location) for f in flags}
         flags += [
@@ -621,6 +635,7 @@ class ApplyService:
             if section == "cover_letter"
             else bundle.cover_letter
         )
+        cv, letter = polish(cv, letter, section)
         await progress(0.6, "Fact-checking against your profile")
         flags = await self._review(job, profile, cv, letter, task_id)
         await progress(0.85, "Creating Word and PDF files")

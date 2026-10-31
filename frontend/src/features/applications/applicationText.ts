@@ -14,6 +14,15 @@ export const STAGE_LABELS: Record<Stage, string> = {
   ghosted: "Ghosted",
 };
 
+/** How each kind of review flag is labeled; serious ones are shown in the destructive color. */
+export const FLAG_KINDS: Record<Flag["kind"], { label: string; serious: boolean }> = {
+  unsupported: { label: "Not in your profile", serious: true },
+  stretch: { label: "Stretch", serious: false },
+  unaddressed: { label: "Requirement skipped", serious: false },
+  style: { label: "Cliché", serious: false },
+  ats: { label: "ATS", serious: true },
+};
+
 /** Flags for one document whose location is `prefix` or inside it ("experience.0" covers
  * "experience.0.bullets.2"). */
 export function flagsAt(flags: Flag[], document: Flag["document"], prefix: string): Flag[] {
