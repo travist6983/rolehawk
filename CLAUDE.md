@@ -39,6 +39,8 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), SOURCES.md
     fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
+    apply/               /apply: drafts (facts by profile index), truth.py (fact check),
+                         review.py (AI review pass), ApplyService, autofill (+ tag_fields.js)
     geo.py               countries from free-text job locations (unknown never filters)
     rendering/           CV + cover letter data (model.py), shared block layout, Jinja2 HTML
                          templates/<id>/ (manifest.json + template.html.j2), python-docx
@@ -119,7 +121,8 @@ Run `npm run check` from the root before you call a chunk done.
 
 - **Services hold logic.** API routes, chat tools, and the CLI are thin: parse input, call one service function, return its result. If a route or tool has a branch that isn't input validation, move it into a service.
 - **No secrets in files.** API keys, the Gmail app password, and the Notion token go in the OS keychain via `keyring`. `config.toml`, logs, fixtures, and test data never contain secrets; logs redact them.
-- **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. The /apply reviewer pass enforces this; don't weaken it.
+- **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. Three layers enforce it; don't weaken any: drafts pick roles/projects/certifications by profile index and `build_cv` copies their facts (the model never writes them), `apply/truth.py` flags numbers and skills the profile lacks (one automatic revision round), and the AI review pass flags the rest for the user.
+- **Autofill never submits.** It fills fields and attaches files, then stops; there is no click, press, or submit in `apply/autofill.py` (a test greps for them). Auto-submit is v2.0 and out of scope.
 - **Nothing changes memory silently.** Fact extraction produces proposed diffs the user accepts or rejects.
 - **profile.md and preferences.md are canonical.** Code reads them through `ProfileService` (parse) and writes through it (render + reindex `profile_items` + sync `search_targets`), or through accepted proposals. The user's own edits are saved verbatim; unknown sections are preserved. Never write those files any other way.
 - **Setup is review-first.** Imported or extracted data becomes a draft the user reviews before it is applied; applying merges (existing facts win) so re-running never duplicates. The gap interview is deterministic (no AI), so setup works without an API key.

@@ -29,6 +29,7 @@ const FALLBACK: NavItem = { to: "/", label: "Offerbound", icon: SquareKanbanIcon
 // Screens outside the sidebar that still need a name (e.g. for the chat context chip).
 const OTHER_SCREENS: NavItem[] = [
   { to: "/onboarding", label: "Profile setup", icon: UserRoundIcon, description: "" },
+  { to: "/applications", label: "Application", icon: SquareKanbanIcon, description: "" },
 ];
 
 export function navItemFor(pathname: string): NavItem {

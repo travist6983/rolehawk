@@ -21,6 +21,7 @@ import {
   type JobFilters,
 } from "@/api/queries";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { ApplyDialog } from "@/features/applications/ApplyDialog";
 import { TableSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -319,6 +320,7 @@ export default function DiscoverPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [openId, setOpenId] = useState<number | null>(null);
   const [rank, setRank] = useState<{ jobIds?: number[] } | null>(null);
+  const [applyId, setApplyId] = useState<number | null>(null);
   const running = useRankProgress();
 
   const rows = useMemo(() => jobs.data?.pages.flatMap((p) => p.items) ?? [], [jobs.data]);
@@ -479,6 +481,16 @@ export default function DiscoverPage() {
         }}
         onRank={(id) => {
           setRank({ jobIds: [id] });
+        }}
+        onApply={(id) => {
+          setOpenId(null);
+          setApplyId(id);
+        }}
+      />
+      <ApplyDialog
+        jobId={applyId}
+        onClose={() => {
+          setApplyId(null);
         }}
       />
       <RankDialog

@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 
 from offerbound import __version__
 from offerbound.api.routes import (
+    applications,
     chat,
     commands,
     documents,
@@ -89,6 +90,7 @@ def create_app(
         portals.router,
         jobs.router,
         documents.router,
+        applications.router,
     ):
         app.include_router(router)
     mount_web(app, web_dir or find_web_dir())

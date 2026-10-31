@@ -1,4 +1,7 @@
 import type {
+  ApplicationDetail,
+  ApplyPlan,
+  Bundle,
   CommandInfo,
   CompanyView,
   DocumentSettings,
@@ -418,6 +421,122 @@ export const documentSettings = (overrides: Partial<DocumentSettings> = {}): Doc
       kind: "cover_letter",
       description: "Sans-serif.",
       selected: false,
+    },
+  ],
+  ...overrides,
+});
+
+// --- applications -------------------------------------------------------------------------
+
+export const applyPlan = (overrides: Partial<ApplyPlan> = {}): ApplyPlan => ({
+  job_id: 1,
+  fit: {
+    score: 86,
+    reasons: ["Your SQL and Looker work matches their stack"],
+    must_have_gaps: ["dbt"],
+    threshold: 60,
+    passes: true,
+  },
+  threshold: 60,
+  application_id: null,
+  has_documents: false,
+  has_profile: true,
+  configured: true,
+  estimated_cost_usd: 0.14,
+  ...overrides,
+});
+
+const contact = {
+  name: "Ada Example",
+  email: "ada@example.com",
+  phone: null,
+  location: "Austin, TX",
+  links: [],
+};
+
+export const bundle = (overrides: Partial<Bundle> = {}): Bundle => ({
+  version: 1,
+  job_id: 1,
+  cv: {
+    contact,
+    headline: "Senior Data Analyst",
+    summary: "Analyst who grew signups 300%.",
+    experience: [
+      {
+        title: "Data Analyst",
+        organization: "Northwind",
+        location: null,
+        start: "2021-03",
+        end: null,
+        current: true,
+        bullets: ["Built the revenue dashboard", "Cut reporting time in half"],
+      },
+    ],
+    education: [],
+    skills: ["SQL", "Looker"],
+    projects: [],
+    certifications: [],
+    achievements: [],
+    languages: [],
+    section_order: [
+      "summary",
+      "experience",
+      "education",
+      "skills",
+      "projects",
+      "certifications",
+      "achievements",
+      "languages",
+    ],
+  },
+  cover_letter: {
+    contact,
+    date: "31 October 2026",
+    recipient: { company: "Globex", name: null, address_lines: [] },
+    greeting: "Dear Globex team,",
+    paragraphs: ["First paragraph.", "Second paragraph."],
+    closing: "Sincerely,",
+    signature: null,
+  },
+  cv_template: "classic",
+  cover_template: "classic-letter",
+  flags: [
+    {
+      document: "cv",
+      location: "summary",
+      text: "Analyst who grew signups 300%.",
+      issue: "300% isn't in your profile",
+      source: "check",
+    },
+  ],
+  fit: applyPlan().fit,
+  model: "claude-opus-5-5",
+  files: {
+    cv: { pdf: "/data/7/ada-example-cv.pdf", docx: "/data/7/ada-example-cv.docx" },
+    cover_letter: { pdf: "/data/7/ada-example-cover-letter.pdf" },
+  },
+  pdf_unavailable: false,
+  updated_at: "2026-10-31T12:00:00Z",
+  ...overrides,
+});
+
+export const applicationDetail = (
+  overrides: Partial<ApplicationDetail> = {},
+): ApplicationDetail => ({
+  id: 7,
+  stage: "applying",
+  method: null,
+  applied_at: null,
+  stage_changed_at: "2026-10-31T12:00:00Z",
+  notes: null,
+  job: { ...jobDetail(), application_id: 7, stage: "applying" },
+  documents: bundle(),
+  history: [
+    {
+      from_stage: null,
+      to_stage: "applying",
+      source: "user",
+      created_at: "2026-10-31T12:00:00Z",
     },
   ],
   ...overrides,
