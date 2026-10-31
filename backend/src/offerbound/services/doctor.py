@@ -37,6 +37,24 @@ def _fts5_available() -> bool:
     return True
 
 
+def _chromium() -> Check:
+    """PDF export needs Playwright's Chromium; start it once to be sure."""
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import sync_playwright
+
+    from offerbound.rendering.pdf import INSTALL_HINT
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            version = browser.version
+            browser.close()
+    except PlaywrightError as exc:
+        first = str(exc).strip().splitlines()[0][:120]
+        return Check("chromium", False, f"{first}. Fix: {INSTALL_HINT}")
+    return Check("chromium", True, f"Chromium {version} (PDF export)")
+
+
 def run_checks(paths: DataPaths) -> list[Check]:
     checks = [
         Check("offerbound", True, __version__),
@@ -68,6 +86,8 @@ def run_checks(paths: DataPaths) -> list[Check]:
         checks.append(Check("keychain", usable, type(backend).__name__))
     except keyring.errors.KeyringError as exc:
         checks.append(Check("keychain", False, str(exc)))
+
+    checks.append(_chromium())
 
     if paths.root.exists():
         free_gb = shutil.disk_usage(paths.root).free / 1e9

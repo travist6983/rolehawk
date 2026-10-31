@@ -30,6 +30,19 @@ jobs:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
       - run: uv sync --locked
+      # Headless Chromium for PDF rendering tests (system libraries too on Linux).
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+            ~\AppData\Local\ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/uv.lock') }}
+      - if: runner.os == 'Linux'
+        run: uv run playwright install --only-shell --with-deps chromium
+      - if: runner.os != 'Linux'
+        run: uv run playwright install --only-shell chromium
       - run: uv run poe lint
       - run: uv run poe format-check
       - run: uv run poe typecheck

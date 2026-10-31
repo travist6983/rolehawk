@@ -10,7 +10,7 @@ One Python service layer owns all logic. Three thin callers sit on top of it, so
 2. **Chat drawer** (in the dashboard) calls chat tools, which call services.
 3. **Claude Code skills** (`skills/<command>/SKILL.md`) call `offerbound run <command> --json`, which calls services.
 
-Backends behind the service layer: SQLite (`offerbound.db`, WAL, FTS5) plus markdown memory files in the user's data folder, the LLM layer (one `LLMProvider` interface; the in-app provider uses the user's Anthropic API key), job sources (portal plugins), and Playwright for PDF rendering and autofill.
+Backends behind the service layer: SQLite (`offerbound.db`, WAL, FTS5) plus markdown memory files in the user's data folder, the LLM layer (one `LLMProvider` interface; the in-app provider uses the user's Anthropic API key), job sources (portal plugins), and Playwright for PDF rendering and autofill. PDF tests need Chromium locally: `uv run playwright install --only-shell chromium` (CI installs it).
 
 **Claude access decision (2026-10-31):** Anthropic doesn't allow third-party apps to offer claude.ai login, including through the Agent SDK, so the app has no Claude Code login provider. Claude Code users get the same features through `skills/`: Claude Code does the reasoning in their own session and calls `offerbound run` for data and actions.
 
@@ -40,6 +40,9 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          PortalStore (source settings, company watchlist), SOURCES.md
     fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
     geo.py               countries from free-text job locations (unknown never filters)
+    rendering/           CV + cover letter data (model.py), shared block layout, Jinja2 HTML
+                         templates/<id>/ (manifest.json + template.html.j2), python-docx
+                         builder, Playwright PDF engine, DocumentService
     jobs/                JobStore: Discover listing (latest score per job), save, dismiss
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here
@@ -136,6 +139,7 @@ Run `npm run check` from the root before you call a chunk done.
 - **Chat history is append-only text across turns;** within one turn the system prompt and tools stay fixed and assistant content (thinking blocks included) is replayed verbatim. Changing this breaks the API's preserved-thinking check and the prompt cache.
 - **New commands** register a `CommandSpec` (params model, `read_only`, `background`) so the API, chat, and CLI all get them. Mark anything that writes data `read_only=False`; chat then shows a confirmation card instead of running it. Set `untrusted_output=True` when the result carries third-party text (job titles, postings); chat wraps it as untrusted.
 - **Third-party links** (job URLs) must be http(s): the scraper drops anything else and the UI only links through `safeUrl()`.
+- **Documents:** DOCX and PDF both render from `rendering/layout.py` blocks, never from the data directly, so their content can't drift (the parity tests compare extracted text for every template). Keep templates ATS-friendly: one column, real text, standard headings, no tables/images/text boxes, no ligatures, contact details in the body. PDF rendering is offline (JS off, network refused); template style values are pattern-validated because they land in CSS.
 - **Frontend data access:** call the API only through `api` (openapi-fetch, typed from the generated schema) and TanStack Query hooks in `src/api/queries.ts`; use `unwrap()` for data-or-ApiError. Never hand-write request/response types the schema already has. The session token lives in memory only, never in storage.
 - **Frontend structure:** screens are lazy routes with a matching skeleton; long-running work shows progress from `useEventStream()`; chat cards register through `registerCard()`. Pure helpers live in `.ts` files so component files only export components (Fast Refresh).
 - **React 18 + shadcn:** current shadcn templates target React 19 (`ref` as a prop). Components that receive refs (Button, Input, Textarea, and anything used with Radix `asChild`) must use `forwardRef`.

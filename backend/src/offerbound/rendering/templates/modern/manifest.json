@@ -1,0 +1,19 @@
+{
+  "id": "modern",
+  "name": "Modern",
+  "kind": "cv",
+  "description": "Clean sans-serif with an indigo accent on your name and section headings.",
+  "style": {
+    "font": "Arial",
+    "font_stack": "Inter, Helvetica Neue, Arial, Liberation Sans, sans-serif",
+    "body_pt": 10,
+    "name_pt": 22,
+    "heading_pt": 11.5,
+    "accent": "#4338CA",
+    "heading_case": "title",
+    "name_align": "left",
+    "heading_rule": true,
+    "margin_in": 0.7,
+    "line_height": 1.35
+  }
+}

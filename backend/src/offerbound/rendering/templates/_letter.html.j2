@@ -1,0 +1,28 @@
+{% extends "_base.html.j2" %}
+{% block body %}
+<header class="masthead">
+  <h1>{{ doc.name }}</h1>
+  {% if doc.contact %}<p class="contact">
+    {%- for item in doc.contact %}{% if not loop.first %}{{ separator }}{% endif %}<span class="item">{{ item }}</span>{% endfor -%}
+  </p>{% endif %}
+</header>
+{% if doc.date %}<p class="date">{{ doc.date }}</p>{% endif %}
+{% if doc.recipient %}
+<div class="recipient">{% for line in doc.recipient %}<p>{{ line }}</p>{% endfor %}</div>
+{% endif %}
+<p class="greeting">{{ doc.greeting }}</p>
+{% for paragraph in doc.paragraphs %}<p class="body">{{ paragraph }}</p>{% endfor %}
+<p class="closing">{{ doc.closing }}</p>
+<p class="signature">{{ doc.signature }}</p>
+{% endblock %}
+{% block css %}
+.masthead { margin-bottom: 18pt; {% if style.heading_rule %}padding-bottom: 6pt; border-bottom: 0.75pt solid {{ style.accent }};{% endif %} }
+.contact { margin-top: 3pt; color: #374151; }
+.date { margin-bottom: 12pt; }
+.recipient { margin-bottom: 12pt; }
+.greeting { margin-bottom: 10pt; }
+.body { margin-bottom: 10pt; }
+.closing { margin-top: 6pt; }
+.signature { margin-top: 24pt; font-weight: 700; }
+{% block template_css %}{% endblock %}
+{% endblock %}

@@ -818,6 +818,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/documents/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Document Settings
+         * @description Templates, the chosen CV and cover letter templates, and the paper size.
+         */
+        get: operations["document_settings_api_documents_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Document Settings */
+        patch: operations["update_document_settings_api_documents_settings_patch"];
+        trace?: never;
+    };
+    "/api/templates/{template_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Template
+         * @description The template filled with your profile (or a sample person while it's empty).
+         */
+        get: operations["preview_template_api_templates__template_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1093,6 +1134,39 @@ export interface components {
              * @default true
              */
             dismissed: boolean;
+        };
+        /**
+         * DocumentKind
+         * @enum {string}
+         */
+        DocumentKind: "cv" | "cover_letter";
+        /** DocumentSettingsIn */
+        DocumentSettingsIn: {
+            /** Cv Template */
+            cv_template?: string | null;
+            /** Cover Template */
+            cover_template?: string | null;
+            /** Paper */
+            paper?: ("letter" | "a4" | "auto") | null;
+        };
+        /** DocumentSettingsView */
+        DocumentSettingsView: {
+            /** Cv Template */
+            cv_template: string;
+            /** Cover Template */
+            cover_template: string;
+            /**
+             * Paper
+             * @enum {string}
+             */
+            paper: "letter" | "a4";
+            /**
+             * Paper Auto
+             * @description Paper size follows the search country
+             */
+            paper_auto: boolean;
+            /** Templates */
+            templates: components["schemas"]["TemplateView"][];
         };
         /** DocumentView */
         DocumentView: {
@@ -1998,6 +2072,18 @@ export interface components {
             started_at: string | null;
             /** Finished At */
             finished_at: string | null;
+        };
+        /** TemplateView */
+        TemplateView: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            kind: components["schemas"]["DocumentKind"];
+            /** Description */
+            description: string;
+            /** Selected */
+            selected: boolean;
         };
         /** TextIn */
         TextIn: {
@@ -3539,6 +3625,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskRef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_settings_api_documents_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSettingsView"];
+                };
+            };
+        };
+    };
+    update_document_settings_api_documents_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSettingsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_template_api_templates__template_id__preview_get: {
+        parameters: {
+            query?: {
+                format?: "pdf" | "docx";
+            };
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": unknown;
                 };
             };
             /** @description Validation Error */

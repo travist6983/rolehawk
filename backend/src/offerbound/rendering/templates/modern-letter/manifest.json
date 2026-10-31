@@ -1,0 +1,19 @@
+{
+  "id": "modern-letter",
+  "name": "Modern letter",
+  "kind": "cover_letter",
+  "description": "Sans-serif with an indigo name line. Pairs with the Modern and Compact CVs.",
+  "style": {
+    "font": "Arial",
+    "font_stack": "Inter, Helvetica Neue, Arial, Liberation Sans, sans-serif",
+    "body_pt": 10.5,
+    "name_pt": 20,
+    "heading_pt": 11,
+    "accent": "#4338CA",
+    "heading_case": "title",
+    "name_align": "left",
+    "heading_rule": false,
+    "margin_in": 0.9,
+    "line_height": 1.45
+  }
+}

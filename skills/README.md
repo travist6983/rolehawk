@@ -28,6 +28,7 @@ Built-in commands available today:
 | `rank-candidates`, `rank-save` | Score jobs in Claude Code: next batch + rubric, then save the scores (see `rank/SKILL.md`) |
 | `rank-plan`, `rank` | Score jobs in the app with the user's API key: estimate first, then run (background) |
 | `jobs`, `job`, `jobs-save`, `jobs-dismiss` | Browse jobs with scores, read one posting, save to the pipeline, dismiss |
+| `templates`, `document-preview` | CV/cover letter templates in use; render a preview to DOCX + PDF under documents/generated/previews |
 
 Feature commands register as they ship (see the release table).
 

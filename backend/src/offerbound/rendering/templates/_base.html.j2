@@ -1,0 +1,48 @@
+{#- Shared page setup. Values come from validated manifests; text is autoescaped. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}</title>
+<style>
+@page { size: {{ paper }}; margin: {{ style.margin_in }}in; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: {{ style.font_stack }};
+  font-size: {{ style.body_pt }}pt;
+  line-height: {{ style.line_height }};
+  color: #111827;
+  /* No ligatures: parsers read "ﬂ" as one odd character, breaking words like "flows". */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+h1 {
+  margin: 0;
+  font-size: {{ style.name_pt }}pt;
+  line-height: 1.15;
+  font-weight: 700;
+  text-align: {{ style.name_align }};
+  color: {{ style.accent }};
+}
+h2 {
+  margin: 0 0 4pt;
+  font-size: {{ style.heading_pt }}pt;
+  font-weight: 700;
+  color: {{ style.accent }};
+  {% if style.heading_rule %}padding-bottom: 2pt; border-bottom: 0.75pt solid {{ style.accent }};{% endif %}
+}
+p { margin: 0; }
+/* Contact items (emails, URLs) never split across lines; parsers would misread them. */
+.contact .item { white-space: nowrap; }
+ul { margin: 2pt 0 0; padding-left: 14pt; }
+li { margin: 0 0 1.5pt; }
+{% block css %}{% endblock %}
+</style>
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

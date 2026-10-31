@@ -9,7 +9,7 @@ from __future__ import annotations
 import tomllib
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import tomlkit
 from pydantic import BaseModel, ConfigDict, Field
@@ -46,6 +46,12 @@ class ChatSettings(_Section):
     retention_days: int = Field(default=30, ge=1)
 
 
+class DocumentSettings(_Section):
+    cv_template: str = Field(default="classic", pattern=r"^[a-z0-9-]{1,40}$")
+    cover_template: str = Field(default="classic-letter", pattern=r"^[a-z0-9-]{1,40}$")
+    paper: Literal["letter", "a4"] | None = None  # None: from the search country
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="OFFERBOUND_", env_nested_delimiter="__", extra="forbid"
@@ -55,6 +61,7 @@ class Settings(BaseSettings):
     search: SearchSettings = Field(default_factory=SearchSettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
     chat: ChatSettings = Field(default_factory=ChatSettings)
+    documents: DocumentSettings = Field(default_factory=DocumentSettings)
 
     @classmethod
     def settings_customise_sources(
@@ -88,6 +95,11 @@ port = 8765
 
 [chat]
 retention_days = 30
+
+[documents]
+cv_template = "classic"
+cover_template = "classic-letter"
+# paper = "a4"                 # unset: Letter in the US, Canada, Mexico...; A4 elsewhere
 """
 
 

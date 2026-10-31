@@ -1,0 +1,19 @@
+{
+  "id": "compact",
+  "name": "Compact",
+  "kind": "cv",
+  "description": "Smaller type and tighter spacing to fit a long history on fewer pages.",
+  "style": {
+    "font": "Arial",
+    "font_stack": "Helvetica Neue, Arial, Liberation Sans, sans-serif",
+    "body_pt": 9.5,
+    "name_pt": 17,
+    "heading_pt": 10,
+    "accent": "#111827",
+    "heading_case": "upper",
+    "name_align": "left",
+    "heading_rule": false,
+    "margin_in": 0.55,
+    "line_height": 1.22
+  }
+}
