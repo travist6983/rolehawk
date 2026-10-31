@@ -18,6 +18,7 @@ from offerbound.llm.types import (
     Message,
     StreamDone,
     StreamEvent,
+    Structured,
     SystemBlock,
     Task,
     ToolDef,
@@ -133,10 +134,32 @@ class LLMService:
         schema: type[T],
         task_id: str | None = None,
     ) -> T:
+        result = await self.structured_result(
+            command=command,
+            task=task,
+            system=system,
+            messages=messages,
+            schema=schema,
+            task_id=task_id,
+        )
+        return result.value
+
+    async def structured_result[T: BaseModel](
+        self,
+        *,
+        command: str,
+        task: Task,
+        system: Sequence[SystemBlock],
+        messages: Sequence[Message],
+        schema: type[T],
+        task_id: str | None = None,
+    ) -> Structured[T]:
+        """Like `structured`, plus the model that actually answered (it can differ from the
+        requested one when the API falls back) and the usage."""
         provider = await self._preflight()
         result = await provider.structured(self._request(task, system, messages), schema)
         await self._record(command, provider, result.model, result.usage, task_id)
-        return result.value
+        return result
 
     def estimate(
         self, task: Task, *, input_tokens: int, output_tokens: int, calls: int = 1

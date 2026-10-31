@@ -75,10 +75,16 @@ def register_scrape(registry: CommandRegistry) -> None:
             "List job sources with status, readiness (what each still needs), jobs found, and "
             "the last search's per-source results.",
             _sources,
+            untrusted_output=True,  # error text and names from job sites
         )
     )
     registry.register(
-        CommandSpec("watchlist", "List the companies whose job boards are searched.", _watchlist)
+        CommandSpec(
+            "watchlist",
+            "List the companies whose job boards are searched.",
+            _watchlist,
+            untrusted_output=True,
+        )
     )
     registry.register(
         CommandSpec(

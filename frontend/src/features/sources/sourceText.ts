@@ -1,5 +1,7 @@
 /** Pure helpers for the Sources screen: pasted watchlist parsing and display text. */
 
+export { plural, timeAgo } from "@/lib/format";
+
 export type AtsId = "greenhouse" | "lever" | "ashby" | "workable";
 
 export const ATS_NAMES: Record<AtsId, string> = {
@@ -101,23 +103,6 @@ export function displayName(slug: string): string {
     .join(" ");
 }
 
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["day", 86_400],
-  ["hour", 3_600],
-  ["minute", 60],
-];
-
-/** "just now", "5 minutes ago", "yesterday". */
-export function timeAgo(iso: string, now: Date = new Date()): string {
-  const seconds = Math.round((now.getTime() - new Date(iso).getTime()) / 1000);
-  if (seconds < 45) return "just now";
-  const format = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  for (const [unit, size] of UNITS) {
-    if (seconds >= size) return format.format(-Math.round(seconds / size), unit);
-  }
-  return format.format(-1, "minute");
-}
-
 /** "US only", "19 countries", or null for worldwide sources. */
 export function coverage(countries: string[]): string | null {
   if (countries.includes("*")) return null;
@@ -134,8 +119,4 @@ export const FIELD_LABELS: Record<string, string> = {
 
 export function fieldLabel(field: string): string {
   return FIELD_LABELS[field] ?? field.replace(/_/g, " ");
-}
-
-export function plural(count: number, one: string, many = `${one}s`): string {
-  return `${count.toLocaleString("en")} ${count === 1 ? one : many}`;
 }

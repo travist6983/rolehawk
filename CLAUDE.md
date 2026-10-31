@@ -38,6 +38,8 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          Workable) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), SOURCES.md
+    fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
+    jobs/                JobStore: Discover listing (latest score per job), save, dismiss
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here
       runtime.py         opens data folder, migrates, wires every service together
@@ -54,7 +56,7 @@ frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui +
   src/app/               shell, routes (lazy screens with matching skeletons), nav, session gate
   src/features/          one folder per feature: chat (drawer, slash menu, card registry),
                          events (SSE provider, progress tray), memory, settings, profile,
-                         sources, ...
+                         sources, discover (virtualized table, detail sheet, rank dialog), ...
   src/components/ui/     shadcn/ui components (add with `npx shadcn@latest add <name>`)
   src/components/        shared app components (empty states, skeletons, layout, ScoreBadge)
   src/lib/               theme, hotkeys, small pure helpers
@@ -127,10 +129,12 @@ Run `npm run check` from the root before you call a chunk done.
 - **Datetimes are timezone-aware UTC** (`offerbound.db.types.utcnow()`); naive datetimes are rejected at write time.
 - **Naming:** `jobs` are job postings; background runs are `tasks`. Long-running commands go through `TaskRunner.submit()` and report with `ctx.progress()`, which streams to the UI as `task.updated` SSE events.
 - **API auth:** every `/api/*` route except `/api/health` needs the per-launch session token. The frontend sends it as `X-Offerbound-Token`; the cookie set by the launch URL only works for GET/HEAD (for EventSource). Host and Origin headers are allowlisted. Never loosen these for convenience.
-- **Calling Claude:** go through `LLMService` with a `Task` (rank, extract, write, review, chat). Routing picks the model and effort; the meter logs every call to `llm_calls` and enforces the monthly cap. Never construct an SDK client elsewhere. Use `structured()` with a pydantic schema for anything parsed.
+- **Calling Claude:** go through `LLMService` with a `Task` (rank, extract, write, review, chat). Routing picks the model and effort; the meter logs every call to `llm_calls` and enforces the monthly cap. Never construct an SDK client elsewhere. Use `structured()` with a pydantic schema for anything parsed (`structured_result()` when you need the model that answered). Keep numeric constraints out of those schemas (structured outputs don't enforce them); clamp after parsing.
+- **Fit scores** come only from `fit/rubric.py` (`FIT_RUBRIC`, `JobFit`). /rank, /apply's fit check, and the Claude Code skill all use it so scores mean the same thing. Batch commands show an estimate (`LLMService.estimate`) before running.
 - **Model facts live in `llm/models.py`** (pricing, server-side fallback support). Check Anthropic's docs before adding a model; don't guess IDs.
 - **Chat history is append-only text across turns;** within one turn the system prompt and tools stay fixed and assistant content (thinking blocks included) is replayed verbatim. Changing this breaks the API's preserved-thinking check and the prompt cache.
-- **New commands** register a `CommandSpec` (params model, `read_only`, `background`) so the API, chat, and CLI all get them. Mark anything that writes data `read_only=False`; chat then shows a confirmation card instead of running it.
+- **New commands** register a `CommandSpec` (params model, `read_only`, `background`) so the API, chat, and CLI all get them. Mark anything that writes data `read_only=False`; chat then shows a confirmation card instead of running it. Set `untrusted_output=True` when the result carries third-party text (job titles, postings); chat wraps it as untrusted.
+- **Third-party links** (job URLs) must be http(s): the scraper drops anything else and the UI only links through `safeUrl()`.
 - **Frontend data access:** call the API only through `api` (openapi-fetch, typed from the generated schema) and TanStack Query hooks in `src/api/queries.ts`; use `unwrap()` for data-or-ApiError. Never hand-write request/response types the schema already has. The session token lives in memory only, never in storage.
 - **Frontend structure:** screens are lazy routes with a matching skeleton; long-running work shows progress from `useEventStream()`; chat cards register through `registerCard()`. Pure helpers live in `.ts` files so component files only export components (Fast Refresh).
 - **React 18 + shadcn:** current shadcn templates target React 19 (`ref` as a prop). Components that receive refs (Button, Input, Textarea, and anything used with Radix `asChild`) must use `forwardRef`.

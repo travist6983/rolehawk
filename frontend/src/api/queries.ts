@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { api, ApiError, unwrap, type Schemas } from "./client";
+import type { paths } from "./schema";
 
 export type LLMStatus = Schemas["LLMStatus"];
 export type TaskView = Schemas["TaskView"];
@@ -441,6 +442,110 @@ export function useRemoveCompany() {
       });
       if (!response.ok) throw new ApiError(response.status, "Couldn't remove the company");
     },
+    onSuccess: invalidate,
+  });
+}
+
+// --- jobs & ranking -------------------------------------------------------------------
+
+export type JobRow = Schemas["JobRow"];
+export type JobDetail = Schemas["JobDetail"];
+export type JobPage = Schemas["JobPage"];
+export type JobStats = Schemas["JobStats"];
+export type RankPlan = Schemas["RankPlan"];
+export type RankParams = Schemas["RankParams"];
+export type FilterCounts = Schemas["FilterCounts"];
+
+/** Discover's filters: the /api/jobs query without paging. Empty values are left out. */
+export type JobFilters = Omit<
+  NonNullable<paths["/api/jobs"]["get"]["parameters"]["query"]>,
+  "limit" | "offset"
+>;
+
+export const JOB_PAGE_SIZE = 200;
+
+export const jobKeys = {
+  all: ["jobs"] as const,
+  list: (filters: JobFilters) => ["jobs", "list", filters] as const,
+  detail: (id: number) => ["jobs", "detail", id] as const,
+  plan: (params: RankParams) => ["jobs", "rank-plan", params] as const,
+};
+
+function compact(filters: JobFilters): JobFilters {
+  // Empty values are omitted (openapi-fetch drops undefined) rather than sent as "null".
+  return {
+    ...filters,
+    q: filters.q || undefined,
+    portal_id: filters.portal_id || undefined,
+    min_score: filters.min_score ?? undefined,
+  };
+}
+
+/** Pages of jobs, loaded as the table scrolls. */
+export function useJobs(filters: JobFilters) {
+  return useInfiniteQuery({
+    queryKey: jobKeys.list(filters),
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        api.GET("/api/jobs", {
+          params: { query: { ...compact(filters), limit: JOB_PAGE_SIZE, offset: pageParam } },
+        }),
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((sum, page) => sum + page.items.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+  });
+}
+
+export function useJob(id: number | null) {
+  return useQuery({
+    queryKey: jobKeys.detail(id ?? -1),
+    queryFn: () =>
+      unwrap(api.GET("/api/jobs/{job_id}", { params: { path: { job_id: id ?? -1 } } })),
+    enabled: id !== null,
+  });
+}
+
+/** Fresh every time the dialog opens: counts and spend change between runs. */
+export function useRankPlan(params: RankParams, enabled: boolean) {
+  return useQuery({
+    queryKey: jobKeys.plan(params),
+    queryFn: () => unwrap(api.POST("/api/rank/plan", { body: params })),
+    enabled,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useInvalidateJobs() {
+  const client = useQueryClient();
+  return useCallback(() => {
+    void client.invalidateQueries({ queryKey: jobKeys.all });
+  }, [client]);
+}
+
+export function useStartRank() {
+  return useMutation({
+    mutationFn: (params: RankParams) => unwrap(api.POST("/api/rank", { body: params })),
+  });
+}
+
+export function useSaveJobs() {
+  const invalidate = useInvalidateJobs();
+  return useMutation({
+    mutationFn: ({ ids, saved = true }: { ids: number[]; saved?: boolean }) =>
+      unwrap(api.POST("/api/jobs/save", { body: { job_ids: ids, saved } })),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDismissJobs() {
+  const invalidate = useInvalidateJobs();
+  return useMutation({
+    mutationFn: ({ ids, dismissed = true }: { ids: number[]; dismissed?: boolean }) =>
+      unwrap(api.POST("/api/jobs/dismiss", { body: { job_ids: ids, dismissed } })),
     onSuccess: invalidate,
   });
 }

@@ -5,6 +5,7 @@ import {
   commands,
   company,
   interviewState,
+  jobPage,
   llmStatus,
   memory,
   portals,
@@ -55,6 +56,7 @@ export const handlers = [
     ]),
   ),
   http.get("/api/scrape/last", () => HttpResponse.json(null)),
+  http.get("/api/jobs", () => HttpResponse.json(jobPage([]))),
 ];
 
 export const server = setupServer(...handlers);

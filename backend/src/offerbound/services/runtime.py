@@ -11,12 +11,15 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.commands.builtin import register_builtin
+from offerbound.commands.rank import register_rank
 from offerbound.commands.registry import CommandRegistry
 from offerbound.commands.scrape import register_scrape
 from offerbound.commands.setup import register_setup
 from offerbound.config import Settings, load_settings, write_default_config
 from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
+from offerbound.fit.ranker import Ranker
+from offerbound.jobs.store import JobStore
 from offerbound.llm.errors import LLMError
 from offerbound.llm.holder import ProviderHolder
 from offerbound.llm.meter import SpendMeter
@@ -58,6 +61,8 @@ class Runtime:
     setup: SetupService
     portals: PortalStore
     scraper: Scraper
+    jobs: JobStore
+    ranker: Ranker
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -115,6 +120,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_builtin(commands)
     register_setup(commands)
     register_scrape(commands)
+    register_rank(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
@@ -123,6 +129,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     portals = PortalStore(sessions)
     portals.sync_builtin()
     portals.seed_watchlist()
+    memory = MemoryService(files, sessions, on_change=profiles.on_memory_changed)
     runtime = Runtime(
         paths=paths,
         settings=settings,
@@ -132,7 +139,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         tasks=tasks,
         providers=holder,
         llm=llm,
-        memory=MemoryService(files, sessions, on_change=profiles.on_memory_changed),
+        memory=memory,
         session_maintenance=SessionMaintenance(llm, files, sessions),
         commands=commands,
         state=state,
@@ -140,6 +147,8 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         setup=SetupService(paths, sessions, profiles, state, llm),
         portals=portals,
         scraper=Scraper(sessions, lambda: runtime_ref[0].settings.search.country),
+        jobs=JobStore(sessions),
+        ranker=Ranker(sessions, llm, memory, profiles.load_preferences),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)
