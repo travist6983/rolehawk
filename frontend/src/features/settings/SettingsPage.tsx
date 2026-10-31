@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { ConnectionCard } from "./ConnectionCard";
+import { DocumentsCard } from "./DocumentsCard";
 
 const TASK_LABELS: Record<string, string> = {
   rank: "Ranking jobs",
@@ -212,11 +213,15 @@ export default function SettingsPage() {
   }
   return (
     <>
-      <PageHeader title="Settings" description="Claude connection, models, spend, and your data." />
+      <PageHeader
+        title="Settings"
+        description="Claude connection, models, spend, documents, and your data."
+      />
       <div className="mx-auto grid max-w-3xl gap-6 p-6">
         <ConnectionCard status={status.data} />
         <ModelCard status={status.data} />
         <SpendCard key={status.data.monthly_cap_usd ?? "none"} status={status.data} />
+        <DocumentsCard />
         <DataCard />
       </div>
     </>

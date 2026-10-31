@@ -21,6 +21,7 @@ from offerbound import __version__
 from offerbound.api.routes import (
     chat,
     commands,
+    documents,
     events,
     jobs,
     llm,
@@ -87,6 +88,7 @@ def create_app(
         setup.router,
         portals.router,
         jobs.router,
+        documents.router,
     ):
         app.include_router(router)
     mount_web(app, web_dir or find_web_dir())

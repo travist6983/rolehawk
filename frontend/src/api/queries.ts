@@ -549,3 +549,34 @@ export function useDismissJobs() {
     onSuccess: invalidate,
   });
 }
+
+// --- documents ------------------------------------------------------------------------
+
+export type DocumentSettings = Schemas["DocumentSettingsView"];
+export type DocumentTemplate = Schemas["TemplateView"];
+
+export const documentKeys = { settings: ["documents", "settings"] as const };
+
+export function useDocumentSettings() {
+  return useQuery({
+    queryKey: documentKeys.settings,
+    queryFn: () => unwrap(api.GET("/api/documents/settings")),
+  });
+}
+
+export function useUpdateDocumentSettings() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Schemas["DocumentSettingsIn"]) =>
+      unwrap(api.PATCH("/api/documents/settings", { body })),
+    onSuccess: (view) => {
+      client.setQueryData(documentKeys.settings, view);
+    },
+  });
+}
+
+/** Same-origin GET: the session cookie authorizes it, so iframes and download links work. */
+export function templatePreviewUrl(id: string, format: "pdf" | "docx" = "pdf"): string {
+  const query = format === "pdf" ? "" : "?format=docx";
+  return `/api/templates/${encodeURIComponent(id)}/preview${query}`;
+}

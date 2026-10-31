@@ -4,6 +4,7 @@ import { setupServer } from "msw/node";
 import {
   commands,
   company,
+  documentSettings,
   interviewState,
   jobPage,
   llmStatus,
@@ -57,6 +58,7 @@ export const handlers = [
   ),
   http.get("/api/scrape/last", () => HttpResponse.json(null)),
   http.get("/api/jobs", () => HttpResponse.json(jobPage([]))),
+  http.get("/api/documents/settings", () => HttpResponse.json(documentSettings())),
 ];
 
 export const server = setupServer(...handlers);

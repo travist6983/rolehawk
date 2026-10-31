@@ -11,6 +11,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.commands.builtin import register_builtin
+from offerbound.commands.documents import register_documents
 from offerbound.commands.rank import register_rank
 from offerbound.commands.registry import CommandRegistry
 from offerbound.commands.scrape import register_scrape
@@ -33,6 +34,7 @@ from offerbound.portals.scrape import Scraper
 from offerbound.portals.state import PortalStore
 from offerbound.profile.service import ProfileService
 from offerbound.profile.setup import SetupService
+from offerbound.rendering.service import DocumentService
 from offerbound.services.app_state import AppStateStore
 from offerbound.services.events import EventBus
 from offerbound.services.tasks import TaskRunner
@@ -63,6 +65,7 @@ class Runtime:
     scraper: Scraper
     jobs: JobStore
     ranker: Ranker
+    documents: DocumentService
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -91,6 +94,7 @@ class Runtime:
 
     async def aclose(self) -> None:
         await self.tasks.shutdown()
+        await self.documents.aclose()
         self.engine.dispose()
 
 
@@ -121,6 +125,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_setup(commands)
     register_scrape(commands)
     register_rank(commands)
+    register_documents(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
@@ -149,6 +154,12 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         scraper=Scraper(sessions, lambda: runtime_ref[0].settings.search.country),
         jobs=JobStore(sessions),
         ranker=Ranker(sessions, llm, memory, profiles.load_preferences),
+        documents=DocumentService(
+            paths,
+            lambda: runtime_ref[0].settings,
+            lambda: runtime_ref[0].reload_settings(),
+            profiles.load_profile,
+        ),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)

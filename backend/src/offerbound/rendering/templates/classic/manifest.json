@@ -1,0 +1,19 @@
+{
+  "id": "classic",
+  "name": "Classic",
+  "kind": "cv",
+  "description": "Serif type, centered name, ruled section headings. Safe for any industry.",
+  "style": {
+    "font": "Georgia",
+    "font_stack": "Georgia, Times New Roman, Liberation Serif, serif",
+    "body_pt": 10.5,
+    "name_pt": 20,
+    "heading_pt": 11,
+    "accent": "#111827",
+    "heading_case": "upper",
+    "name_align": "center",
+    "heading_rule": true,
+    "margin_in": 0.75,
+    "line_height": 1.3
+  }
+}

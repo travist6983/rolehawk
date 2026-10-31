@@ -2152,6 +2152,121 @@
           }
         }
       }
+    },
+    "/api/documents/settings": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Document Settings",
+        "description": "Templates, the chosen CV and cover letter templates, and the paper size.",
+        "operationId": "document_settings_api_documents_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSettingsView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Update Document Settings",
+        "operationId": "update_document_settings_api_documents_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSettingsView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/{template_id}/preview": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Preview Template",
+        "description": "The template filled with your profile (or a sample person while it's empty).",
+        "operationId": "preview_template_api_templates__template_id__preview_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "type": "string",
+              "default": "pdf",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {},
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2989,6 +3104,99 @@
           "job_ids"
         ],
         "title": "DismissIn"
+      },
+      "DocumentKind": {
+        "type": "string",
+        "enum": [
+          "cv",
+          "cover_letter"
+        ],
+        "title": "DocumentKind"
+      },
+      "DocumentSettingsIn": {
+        "properties": {
+          "cv_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Template"
+          },
+          "cover_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Template"
+          },
+          "paper": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "letter",
+                  "a4",
+                  "auto"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paper"
+          }
+        },
+        "type": "object",
+        "title": "DocumentSettingsIn"
+      },
+      "DocumentSettingsView": {
+        "properties": {
+          "cv_template": {
+            "type": "string",
+            "title": "Cv Template"
+          },
+          "cover_template": {
+            "type": "string",
+            "title": "Cover Template"
+          },
+          "paper": {
+            "type": "string",
+            "enum": [
+              "letter",
+              "a4"
+            ],
+            "title": "Paper"
+          },
+          "paper_auto": {
+            "type": "boolean",
+            "title": "Paper Auto",
+            "description": "Paper size follows the search country"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateView"
+            },
+            "type": "array",
+            "title": "Templates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cv_template",
+          "cover_template",
+          "paper",
+          "paper_auto",
+          "templates"
+        ],
+        "title": "DocumentSettingsView"
       },
       "DocumentView": {
         "properties": {
@@ -5734,6 +5942,38 @@
           "finished_at"
         ],
         "title": "TaskView"
+      },
+      "TemplateView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "description",
+          "selected"
+        ],
+        "title": "TemplateView"
       },
       "TextIn": {
         "properties": {

@@ -1,6 +1,7 @@
 import type {
   CommandInfo,
   CompanyView,
+  DocumentSettings,
   JobDetail,
   JobPage,
   JobRow,
@@ -390,5 +391,34 @@ export const rankPlan = (overrides: Partial<RankPlan> = {}): RankPlan => ({
   cap_usd: 20,
   exceeds_cap: false,
   configured: true,
+  ...overrides,
+});
+
+// --- documents ----------------------------------------------------------------------------
+
+export const documentSettings = (overrides: Partial<DocumentSettings> = {}): DocumentSettings => ({
+  cv_template: "classic",
+  cover_template: "classic-letter",
+  paper: "letter",
+  paper_auto: true,
+  templates: [
+    { id: "classic", name: "Classic", kind: "cv", description: "Serif type.", selected: true },
+    { id: "modern", name: "Modern", kind: "cv", description: "Indigo accent.", selected: false },
+    { id: "compact", name: "Compact", kind: "cv", description: "Tighter.", selected: false },
+    {
+      id: "classic-letter",
+      name: "Classic letter",
+      kind: "cover_letter",
+      description: "Block letter.",
+      selected: true,
+    },
+    {
+      id: "modern-letter",
+      name: "Modern letter",
+      kind: "cover_letter",
+      description: "Sans-serif.",
+      selected: false,
+    },
+  ],
   ...overrides,
 });

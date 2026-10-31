@@ -1,0 +1,19 @@
+{
+  "id": "classic-letter",
+  "name": "Classic letter",
+  "kind": "cover_letter",
+  "description": "A traditional block letter in serif type. Pairs with the Classic CV.",
+  "style": {
+    "font": "Georgia",
+    "font_stack": "Georgia, Times New Roman, Liberation Serif, serif",
+    "body_pt": 11,
+    "name_pt": 18,
+    "heading_pt": 11,
+    "accent": "#111827",
+    "heading_case": "title",
+    "name_align": "left",
+    "heading_rule": true,
+    "margin_in": 1.0,
+    "line_height": 1.4
+  }
+}
