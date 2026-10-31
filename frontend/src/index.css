@@ -35,6 +35,9 @@
   --score-high: var(--color-green-700);
   --score-mid: var(--color-amber-700);
   --score-low: var(--color-zinc-600);
+  /* Charts: one series in the accent (validated: contrast >= 3:1 on the card surface). */
+  --chart-1: var(--color-indigo-600);
+  --chart-grid: var(--color-zinc-200);
 }
 
 .dark {
@@ -61,6 +64,8 @@
   --score-high: var(--color-green-400);
   --score-mid: var(--color-amber-400);
   --score-low: var(--color-zinc-400);
+  --chart-1: var(--color-indigo-500);
+  --chart-grid: var(--color-zinc-800);
 }
 
 @theme inline {

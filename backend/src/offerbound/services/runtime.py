@@ -15,6 +15,7 @@ from offerbound.apply.service import ApplyService
 from offerbound.commands.apply import register_apply
 from offerbound.commands.builtin import register_builtin
 from offerbound.commands.documents import register_documents
+from offerbound.commands.insights import register_insights
 from offerbound.commands.rank import register_rank
 from offerbound.commands.registry import CommandRegistry
 from offerbound.commands.scrape import register_scrape
@@ -23,6 +24,9 @@ from offerbound.config import Settings, load_settings, write_default_config
 from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
 from offerbound.fit.ranker import Ranker
+from offerbound.insights.board import BoardService
+from offerbound.insights.service import ReportService
+from offerbound.insights.stats import InsightsService
 from offerbound.jobs.store import JobStore
 from offerbound.llm.errors import LLMError
 from offerbound.llm.holder import ProviderHolder
@@ -40,6 +44,7 @@ from offerbound.profile.setup import SetupService
 from offerbound.rendering.service import DocumentService
 from offerbound.services.app_state import AppStateStore
 from offerbound.services.events import EventBus
+from offerbound.services.reset import ResetService
 from offerbound.services.tasks import TaskRunner
 
 if TYPE_CHECKING:
@@ -71,6 +76,10 @@ class Runtime:
     documents: DocumentService
     applications: ApplyService
     autofill: Autofiller
+    board: BoardService
+    insights: InsightsService
+    reports: ReportService
+    reset: ResetService
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -133,6 +142,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_rank(commands)
     register_documents(commands)
     register_apply(commands)
+    register_insights(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
@@ -144,6 +154,10 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     memory = MemoryService(files, sessions, on_change=profiles.on_memory_changed)
     jobs = JobStore(sessions)
     ranker = Ranker(sessions, llm, memory, profiles.load_preferences)
+    board = BoardService(
+        sessions, lambda app_id: paths.generated_documents / str(app_id) / "application.json"
+    )
+    insights = InsightsService(sessions, lambda: runtime_ref[0].settings.llm.monthly_cap_usd)
     documents = DocumentService(
         paths,
         lambda: runtime_ref[0].settings,
@@ -182,6 +196,10 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
             documents,
         ),
         autofill=Autofiller(headless=False),
+        board=board,
+        insights=insights,
+        reports=ReportService(paths, board, insights, lambda: profiles.load_profile().contact.name),
+        reset=ResetService(paths, sessions, files, portals),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)

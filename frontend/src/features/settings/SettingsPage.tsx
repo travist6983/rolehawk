@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 
 import { ConnectionCard } from "./ConnectionCard";
 import { DocumentsCard } from "./DocumentsCard";
+import { ResetCard } from "./ResetCard";
 
 const TASK_LABELS: Record<string, string> = {
   rank: "Ranking jobs",
@@ -223,6 +224,7 @@ export default function SettingsPage() {
         <SpendCard key={status.data.monthly_cap_usd ?? "none"} status={status.data} />
         <DocumentsCard />
         <DataCard />
+        <ResetCard />
       </div>
     </>
   );

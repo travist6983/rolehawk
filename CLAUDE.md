@@ -39,6 +39,8 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), SOURCES.md
     fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
+    insights/            Pipeline board (next actions), Insights stats, self-contained HTML
+                         report (inline SVG, CSP blocks all network)
     apply/               /apply: drafts (facts by profile index), truth.py (fact check),
                          review.py (AI review pass), ApplyService, autofill (+ tag_fields.js)
     geo.py               countries from free-text job locations (unknown never filters)
@@ -52,7 +54,7 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
       tasks.py           background task runner (persisted to `tasks`, events on the bus)
       events.py, stream.py  in-process event bus -> SSE
       llm_settings.py    API key (keychain), model settings (config.toml), status
-      backup.py, doctor.py
+      backup.py, doctor.py, reset.py (scoped /reset after a backup)
     api/                 FastAPI app factory, SessionGuard auth middleware, thin routes
     cli.py               `offerbound` command (start, doctor, db, backup, run, llm)
   tests/                 pytest (temp data folder, in-memory keyring, FakeProvider per test)
@@ -62,7 +64,9 @@ frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui +
   src/app/               shell, routes (lazy screens with matching skeletons), nav, session gate
   src/features/          one folder per feature: chat (drawer, slash menu, card registry),
                          events (SSE provider, progress tray), memory, settings, profile,
-                         sources, discover (virtualized table, detail sheet, rank dialog), ...
+                         sources, discover (virtualized table, detail sheet, rank dialog),
+                         applications, pipeline (dnd-kit kanban + keyboard moves), insights
+                         (Recharts), ...
   src/components/ui/     shadcn/ui components (add with `npx shadcn@latest add <name>`)
   src/components/        shared app components (empty states, skeletons, layout, ScoreBadge)
   src/lib/               theme, hotkeys, small pure helpers
@@ -148,3 +152,5 @@ Run `npm run check` from the root before you call a chunk done.
 - **React 18 + shadcn:** current shadcn templates target React 19 (`ref` as a prop). Components that receive refs (Button, Input, Textarea, and anything used with Radix `asChild`) must use `forwardRef`.
 - **Frontend tests** use Vitest, Testing Library, and MSW (`src/test/server.ts`); unhandled requests fail the test. Prefer `renderApp(route)` for anything touching routing, session, or the drawer.
 - **Design system** (per spec): shadcn/ui on Tailwind, zinc base, indigo-600 accent, light/dark from CSS variables following the OS, WCAG 2.1 AA, respect `prefers-reduced-motion`.
+- **Charts:** one series per chart in `--chart-1` (validated for both themes), hairline `--chart-grid`, bars <= 24px with a rounded data end, text in text tokens, a hover tooltip, and a "Show as a table" view. Never a second y-axis.
+- **Destructive actions** (/reset) back up first, need the scope typed, and are `chat_allowed=False`.
