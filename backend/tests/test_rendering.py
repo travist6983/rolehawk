@@ -180,7 +180,7 @@ def test_dates_and_periods() -> None:
     assert month_year("2021-03") == "Mar 2021"
     assert month_year("2021") == "2021"
     assert month_year("Spring 2020") == "Spring 2020"
-    assert period("2021-03", None, current=True) == "Mar 2021 \N{EN DASH} Present"
+    assert period("2021-03", None, current=True) == "Mar 2021 - Present"
     assert period("2020", "2020") == "2020"
     assert period(None, "2019-12") == "Dec 2019"
     assert period(None, None) is None
