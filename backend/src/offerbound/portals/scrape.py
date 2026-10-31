@@ -267,8 +267,8 @@ class Scraper:
                     except (KeyError, TypeError, ValueError) as exc:
                         run.errors.append(f"skipped a malformed job: {exc}")
                         continue
-                    if not job.title or not job.url:
-                        continue
+                    if not job.title or not job.url.startswith(("https://", "http://")):
+                        continue  # no title, or a link that isn't a web page
                     if title_matches(job.title, ctx.queries):
                         matched.append(job)
                         if len(matched) >= MAX_JOBS_PER_PORTAL:

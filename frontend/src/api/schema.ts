@@ -707,6 +707,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Jobs
+         * @description Scraped jobs with their latest fit score (best fit first by default).
+         */
+        get: operations["list_jobs_api_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Job */
+        get: operations["get_job_api_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Jobs */
+        post: operations["save_jobs_api_jobs_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss Jobs */
+        post: operations["dismiss_jobs_api_jobs_dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rank/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rank Plan
+         * @description What /rank would do and cost. Shown before the user starts it.
+         */
+        post: operations["rank_plan_api_rank_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rank": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rank
+         * @description Starts ranking in the background; follow progress over /api/events.
+         */
+        post: operations["rank_api_rank_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -773,6 +884,11 @@ export interface components {
             date: string | null;
             /** Url */
             url: string | null;
+        };
+        /** Changed */
+        Changed: {
+            /** Changed */
+            changed: number;
         };
         /** ChatMessageView */
         ChatMessageView: {
@@ -968,6 +1084,16 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** DismissIn */
+        DismissIn: {
+            /** Job Ids */
+            job_ids: number[];
+            /**
+             * Dismissed
+             * @default true
+             */
+            dismissed: boolean;
+        };
         /** DocumentView */
         DocumentView: {
             /** Id */
@@ -1122,6 +1248,42 @@ export interface components {
             profile?: components["schemas"]["Profile-Input"];
             preferences?: components["schemas"]["Preferences-Input"];
         };
+        /**
+         * FilterCounts
+         * @description Jobs skipped before scoring, by reason.
+         */
+        FilterCounts: {
+            /**
+             * Already Ranked
+             * @default 0
+             */
+            already_ranked: number;
+            /**
+             * Applied
+             * @default 0
+             */
+            applied: number;
+            /**
+             * Dismissed
+             * @default 0
+             */
+            dismissed: number;
+            /**
+             * Location
+             * @default 0
+             */
+            location: number;
+            /**
+             * Salary
+             * @default 0
+             */
+            salary: number;
+            /**
+             * Excluded
+             * @default 0
+             */
+            excluded: number;
+        };
         /** FormField */
         FormField: {
             /** Name */
@@ -1163,6 +1325,119 @@ export interface components {
             remaining: number;
             /** Complete */
             complete: boolean;
+        };
+        /** JobDetail */
+        JobDetail: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            /** Location */
+            location: string | null;
+            /** Remote */
+            remote: boolean | null;
+            /** Salary Text */
+            salary_text: string | null;
+            /** Portal Id */
+            portal_id: string;
+            /** Source */
+            source: string;
+            /** Url */
+            url: string;
+            /** Posted At */
+            posted_at: string | null;
+            /**
+             * Scraped At
+             * Format: date-time
+             */
+            scraped_at: string;
+            /** Score */
+            score: number | null;
+            /** Reasons */
+            reasons: string[];
+            /** Must Have Gaps */
+            must_have_gaps: string[];
+            /** Scored At */
+            scored_at: string | null;
+            /** Score Model */
+            score_model: string | null;
+            stage: components["schemas"]["Stage"] | null;
+            /** Dismissed */
+            dismissed: boolean;
+            /**
+             * Description
+             * @description Third-party text from the posting
+             */
+            description: string;
+            /** Application Id */
+            application_id: number | null;
+        };
+        /** JobPage */
+        JobPage: {
+            /** Items */
+            items: components["schemas"]["JobRow"][];
+            /** Total */
+            total: number;
+            stats: components["schemas"]["JobStats"];
+        };
+        /** JobRow */
+        JobRow: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            /** Location */
+            location: string | null;
+            /** Remote */
+            remote: boolean | null;
+            /** Salary Text */
+            salary_text: string | null;
+            /** Portal Id */
+            portal_id: string;
+            /** Source */
+            source: string;
+            /** Url */
+            url: string;
+            /** Posted At */
+            posted_at: string | null;
+            /**
+             * Scraped At
+             * Format: date-time
+             */
+            scraped_at: string;
+            /** Score */
+            score: number | null;
+            /** Reasons */
+            reasons: string[];
+            /** Must Have Gaps */
+            must_have_gaps: string[];
+            /** Scored At */
+            scored_at: string | null;
+            /** Score Model */
+            score_model: string | null;
+            stage: components["schemas"]["Stage"] | null;
+            /** Dismissed */
+            dismissed: boolean;
+        };
+        /**
+         * JobStats
+         * @description Counts over every job that isn't dismissed (dismissed counted separately).
+         */
+        JobStats: {
+            /** Jobs */
+            jobs: number;
+            /** Ranked */
+            ranked: number;
+            /** Unranked */
+            unranked: number;
+            /** Saved */
+            saved: number;
+            /** Dismissed */
+            dismissed: number;
         };
         /**
          * LLMSettingsIn
@@ -1506,6 +1781,48 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
+        /** RankParams */
+        RankParams: {
+            /**
+             * Job Ids
+             * @description Only these jobs (default: all)
+             */
+            job_ids?: number[] | null;
+            /**
+             * Rescore
+             * @description Score jobs again even if already ranked
+             * @default false
+             */
+            rescore: boolean;
+        };
+        /**
+         * RankPlan
+         * @description What a run would do, shown before it starts.
+         */
+        RankPlan: {
+            /** Candidates */
+            candidates: number;
+            /**
+             * Remaining
+             * @description Matching jobs beyond this run's limit
+             */
+            remaining: number;
+            filtered: components["schemas"]["FilterCounts"];
+            /** Batches */
+            batches: number;
+            /** Model */
+            model: string;
+            /** Estimated Cost Usd */
+            estimated_cost_usd: number;
+            /** Month To Date Usd */
+            month_to_date_usd: number;
+            /** Cap Usd */
+            cap_usd: number | null;
+            /** Exceeds Cap */
+            exceeds_cap: boolean;
+            /** Configured */
+            configured: boolean;
+        };
         /**
          * RemotePolicy
          * @enum {string}
@@ -1552,6 +1869,16 @@ export interface components {
          * @enum {string}
          */
         SalaryPeriod: "year" | "month" | "hour";
+        /** SaveIn */
+        SaveIn: {
+            /** Job Ids */
+            job_ids: number[];
+            /**
+             * Saved
+             * @default true
+             */
+            saved: boolean;
+        };
         /** ScrapeIn */
         ScrapeIn: {
             /** Portal Ids */
@@ -1617,6 +1944,11 @@ export interface components {
             /** Question Id */
             question_id: string;
         };
+        /**
+         * Stage
+         * @enum {string}
+         */
+        Stage: "saved" | "applying" | "applied" | "screen" | "interview" | "offer" | "rejected" | "withdrawn" | "ghosted";
         /**
          * Task
          * @description What a call is for; routing maps each task to a model and effort.
@@ -2997,6 +3329,211 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompanyCheck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_jobs_api_jobs_get: {
+        parameters: {
+            query?: {
+                /** @description Words in title/company/text */
+                q?: string | null;
+                status?: "all" | "ranked" | "unranked";
+                /** @description active hides dismissed jobs */
+                show?: "active" | "saved" | "dismissed";
+                min_score?: number | null;
+                portal_id?: string | null;
+                /** @description Only jobs marked remote */
+                remote?: boolean;
+                sort?: "score" | "newest";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_api_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_jobs_api_jobs_save_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Changed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_jobs_api_jobs_dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DismissIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Changed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rank_plan_api_rank_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RankParams"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RankPlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rank_api_rank_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RankParams"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRef"];
                 };
             };
             /** @description Validation Error */

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { setSessionToken } from "@/api/client";
 
@@ -36,11 +36,26 @@ polyfill(Element.prototype, "scrollIntoView", () => undefined);
 polyfill(Element.prototype, "hasPointerCapture", () => false);
 polyfill(Element.prototype, "releasePointerCapture", () => undefined);
 
+// React 18 only warns when a component that needs a ref isn't forwardRef; with Radix that
+// silently breaks focus and exit animations (a closed overlay keeps swallowing clicks).
+const REF_WARNING = "Function components cannot be given refs";
+const refWarnings: string[] = [];
+const consoleError = console.error.bind(console);
+
 beforeAll(() => {
   server.listen({ onUnhandledFrame: "error" });
+  vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    const text = args.map(String).join(" ");
+    if (text.includes(REF_WARNING)) refWarnings.push(text.slice(0, 300));
+    consoleError(...args);
+  });
 });
 
 afterEach(() => {
+  const warnings = refWarnings.splice(0);
+  if (warnings.length > 0) {
+    throw new Error(`A component needs React.forwardRef:\n${warnings.join("\n")}`);
+  }
   cleanup();
   server.resetHandlers();
   setSessionToken(null);

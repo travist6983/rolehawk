@@ -1,6 +1,11 @@
 import type {
   CommandInfo,
   CompanyView,
+  JobDetail,
+  JobPage,
+  JobRow,
+  JobStats,
+  RankPlan,
   InterviewState,
   LLMStatus,
   MemorySnapshot,
@@ -317,5 +322,65 @@ export const searchTarget = (overrides: Partial<SearchTargetView> = {}): SearchT
   country: "US",
   salary_min: null,
   active: true,
+  ...overrides,
+});
+
+// --- jobs ---------------------------------------------------------------------------------
+
+export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
+  id: 1,
+  title: "Senior Data Analyst",
+  company: "Northwind",
+  location: "Denver, CO",
+  remote: null,
+  salary_text: "$120K - $150K",
+  portal_id: "greenhouse",
+  source: "Greenhouse",
+  url: "https://boards.greenhouse.io/northwind/jobs/1",
+  posted_at: "2026-10-30T12:00:00Z",
+  scraped_at: "2026-10-31T09:00:00Z",
+  score: 86,
+  reasons: ["Your SQL and Looker work matches their stack", "Hybrid in Denver"],
+  must_have_gaps: ["dbt"],
+  scored_at: "2026-10-31T10:00:00Z",
+  score_model: "claude-haiku-5-5",
+  stage: null,
+  dismissed: false,
+  ...overrides,
+});
+
+export const jobDetail = (overrides: Partial<JobDetail> = {}): JobDetail => ({
+  ...jobRow(),
+  description: "About the role\n\nYou'll own reporting for our finance team.",
+  application_id: null,
+  ...overrides,
+});
+
+export const jobStats = (overrides: Partial<JobStats> = {}): JobStats => ({
+  jobs: 0,
+  ranked: 0,
+  unranked: 0,
+  saved: 0,
+  dismissed: 0,
+  ...overrides,
+});
+
+export const jobPage = (items: JobRow[], stats: Partial<JobStats> = {}): JobPage => ({
+  items,
+  total: items.length,
+  stats: jobStats({ jobs: items.length, ...stats }),
+});
+
+export const rankPlan = (overrides: Partial<RankPlan> = {}): RankPlan => ({
+  candidates: 42,
+  remaining: 0,
+  filtered: { already_ranked: 0, applied: 0, dismissed: 0, location: 8, salary: 3, excluded: 0 },
+  batches: 3,
+  model: "claude-haiku-5-5",
+  estimated_cost_usd: 0.21,
+  month_to_date_usd: 1.5,
+  cap_usd: 20,
+  exceeds_cap: false,
+  configured: true,
   ...overrides,
 });

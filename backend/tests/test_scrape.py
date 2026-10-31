@@ -569,3 +569,21 @@ def test_watchlist_add_is_a_write_command(api: tuple[TestClient, Runtime]) -> No
     assert runtime.commands.get("watchlist-add").read_only is False
     assert runtime.commands.get("sources").read_only is True
     assert runtime.commands.get("scrape").background is True
+
+
+async def test_jobs_without_a_web_link_are_dropped(
+    sessions: sessionmaker[Session], store: PortalStore, web: FakeWeb
+) -> None:
+    add_targets(sessions, "Data Analyst")
+    web.json(
+        "remoteok.com/api",
+        [
+            {"legal": "terms"},
+            {"id": 1, "position": "Data Analyst", "company": "A", "url": "javascript:alert(1)"},
+            {"id": 2, "position": "Data Analyst", "company": "B", "url": "https://remoteok.com/2"},
+        ],
+    )
+    summary = await make_scraper(sessions, web).run(Progress(), ["remoteok"])
+    assert (summary.portals[0].matched, summary.new) == (1, 1)
+    with sessions() as session:
+        assert list(session.scalars(select(Job.url))) == ["https://remoteok.com/2"]

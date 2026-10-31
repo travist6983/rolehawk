@@ -204,6 +204,8 @@ class Job(Base):
     posted_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     scraped_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     hash: Mapped[str] = mapped_column(String(64), unique=True)
+    # Hidden from Discover and never ranked again (the user said "not for me").
+    dismissed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
 
 class Task(Base):

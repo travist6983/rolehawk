@@ -1762,6 +1762,396 @@
           }
         }
       }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List Jobs",
+        "description": "Scraped jobs with their latest fit score (best fit first by default).",
+        "operationId": "list_jobs_api_jobs_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Words in title/company/text",
+              "title": "Q"
+            },
+            "description": "Words in title/company/text"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "ranked",
+                "unranked"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "show",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "saved",
+                "dismissed"
+              ],
+              "type": "string",
+              "description": "active hides dismissed jobs",
+              "default": "active",
+              "title": "Show"
+            },
+            "description": "active hides dismissed jobs"
+          },
+          {
+            "name": "min_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Score"
+            }
+          },
+          {
+            "name": "portal_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Portal Id"
+            }
+          },
+          {
+            "name": "remote",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only jobs marked remote",
+              "default": false,
+              "title": "Remote"
+            },
+            "description": "Only jobs marked remote"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "score",
+                "newest"
+              ],
+              "type": "string",
+              "default": "score",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/save": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Save Jobs",
+        "operationId": "save_jobs_api_jobs_save_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/dismiss": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Dismiss Jobs",
+        "operationId": "dismiss_jobs_api_jobs_dismiss_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rank/plan": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Rank Plan",
+        "description": "What /rank would do and cost. Shown before the user starts it.",
+        "operationId": "rank_plan_api_rank_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RankParams"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rank": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Rank",
+        "description": "Starts ranking in the background; follow progress over /api/events.",
+        "operationId": "rank_api_rank_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RankParams"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRef"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1975,6 +2365,19 @@
           "url"
         ],
         "title": "Certification"
+      },
+      "Changed": {
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "title": "Changed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changed"
+        ],
+        "title": "Changed"
       },
       "ChatMessageView": {
         "properties": {
@@ -2563,6 +2966,30 @@
         "type": "object",
         "title": "CredentialsIn"
       },
+      "DismissIn": {
+        "properties": {
+          "job_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Job Ids"
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_ids"
+        ],
+        "title": "DismissIn"
+      },
       "DocumentView": {
         "properties": {
           "id": {
@@ -3039,6 +3466,43 @@
         "type": "object",
         "title": "ExtractedSetup"
       },
+      "FilterCounts": {
+        "properties": {
+          "already_ranked": {
+            "type": "integer",
+            "title": "Already Ranked",
+            "default": 0
+          },
+          "applied": {
+            "type": "integer",
+            "title": "Applied",
+            "default": 0
+          },
+          "dismissed": {
+            "type": "integer",
+            "title": "Dismissed",
+            "default": 0
+          },
+          "location": {
+            "type": "integer",
+            "title": "Location",
+            "default": 0
+          },
+          "salary": {
+            "type": "integer",
+            "title": "Salary",
+            "default": 0
+          },
+          "excluded": {
+            "type": "integer",
+            "title": "Excluded",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "FilterCounts",
+        "description": "Jobs skipped before scoring, by reason."
+      },
       "FormField": {
         "properties": {
           "name": {
@@ -3149,6 +3613,407 @@
           "complete"
         ],
         "title": "InterviewState"
+      },
+      "JobDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "portal_id": {
+            "type": "string",
+            "title": "Portal Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "scraped_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scraped At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "must_have_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Have Gaps"
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          },
+          "score_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Model"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Third-party text from the posting"
+          },
+          "application_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "salary_text",
+          "portal_id",
+          "source",
+          "url",
+          "posted_at",
+          "scraped_at",
+          "score",
+          "reasons",
+          "must_have_gaps",
+          "scored_at",
+          "score_model",
+          "stage",
+          "dismissed",
+          "description",
+          "application_id"
+        ],
+        "title": "JobDetail"
+      },
+      "JobPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JobRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/JobStats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "stats"
+        ],
+        "title": "JobPage"
+      },
+      "JobRow": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "portal_id": {
+            "type": "string",
+            "title": "Portal Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "scraped_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scraped At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "must_have_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Have Gaps"
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          },
+          "score_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Model"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "salary_text",
+          "portal_id",
+          "source",
+          "url",
+          "posted_at",
+          "scraped_at",
+          "score",
+          "reasons",
+          "must_have_gaps",
+          "scored_at",
+          "score_model",
+          "stage",
+          "dismissed"
+        ],
+        "title": "JobRow"
+      },
+      "JobStats": {
+        "properties": {
+          "jobs": {
+            "type": "integer",
+            "title": "Jobs"
+          },
+          "ranked": {
+            "type": "integer",
+            "title": "Ranked"
+          },
+          "unranked": {
+            "type": "integer",
+            "title": "Unranked"
+          },
+          "saved": {
+            "type": "integer",
+            "title": "Saved"
+          },
+          "dismissed": {
+            "type": "integer",
+            "title": "Dismissed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobs",
+          "ranked",
+          "unranked",
+          "saved",
+          "dismissed"
+        ],
+        "title": "JobStats",
+        "description": "Counts over every job that isn't dismissed (dismissed counted separately)."
       },
       "LLMSettingsIn": {
         "properties": {
@@ -4280,6 +5145,100 @@
         ],
         "title": "Question"
       },
+      "RankParams": {
+        "properties": {
+          "job_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Ids",
+            "description": "Only these jobs (default: all)"
+          },
+          "rescore": {
+            "type": "boolean",
+            "title": "Rescore",
+            "description": "Score jobs again even if already ranked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "RankParams"
+      },
+      "RankPlan": {
+        "properties": {
+          "candidates": {
+            "type": "integer",
+            "title": "Candidates"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining",
+            "description": "Matching jobs beyond this run's limit"
+          },
+          "filtered": {
+            "$ref": "#/components/schemas/FilterCounts"
+          },
+          "batches": {
+            "type": "integer",
+            "title": "Batches"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "estimated_cost_usd": {
+            "type": "number",
+            "title": "Estimated Cost Usd"
+          },
+          "month_to_date_usd": {
+            "type": "number",
+            "title": "Month To Date Usd"
+          },
+          "cap_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Usd"
+          },
+          "exceeds_cap": {
+            "type": "boolean",
+            "title": "Exceeds Cap"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidates",
+          "remaining",
+          "filtered",
+          "batches",
+          "model",
+          "estimated_cost_usd",
+          "month_to_date_usd",
+          "cap_usd",
+          "exceeds_cap",
+          "configured"
+        ],
+        "title": "RankPlan",
+        "description": "What a run would do, shown before it starts."
+      },
       "RemotePolicy": {
         "type": "string",
         "enum": [
@@ -4406,6 +5365,30 @@
           "hour"
         ],
         "title": "SalaryPeriod"
+      },
+      "SaveIn": {
+        "properties": {
+          "job_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Job Ids"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_ids"
+        ],
+        "title": "SaveIn"
       },
       "ScrapeIn": {
         "properties": {
@@ -4595,6 +5578,21 @@
           "question_id"
         ],
         "title": "SkipIn"
+      },
+      "Stage": {
+        "type": "string",
+        "enum": [
+          "saved",
+          "applying",
+          "applied",
+          "screen",
+          "interview",
+          "offer",
+          "rejected",
+          "withdrawn",
+          "ghosted"
+        ],
+        "title": "Stage"
       },
       "Task": {
         "type": "string",
