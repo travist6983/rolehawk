@@ -102,12 +102,18 @@ class Scraper:
         default_country: Callable[[], str],
         http_factory: Callable[[], PoliteClient] = PoliteClient,
         portals: Sequence[PortalImpl] = BUILTIN,
+        extra: Callable[[], Sequence[PortalImpl]] = lambda: (),
     ) -> None:
         self._sessions = sessions
         self._default_country = default_country
         self.http_factory = http_factory  # swapped in tests for a recorded transport
-        self._portals = list(portals)
+        self._builtin = list(portals)
+        self._extra = extra  # custom sources added with /add-portal
         self._write_lock = asyncio.Lock()
+
+    @property
+    def _portals(self) -> list[PortalImpl]:
+        return [*self._builtin, *self._extra()]
 
     async def run(
         self, progress: Progress, portal_ids: Sequence[str] | None = None
@@ -123,7 +129,8 @@ class Scraper:
             raise NoSearchTargetsError("no active search targets")
 
         countries = {q.country for q in queries}
-        selected = [p for p in self._portals if portal_ids is None or p.id in portal_ids]
+        portals = self._portals
+        selected = [p for p in portals if portal_ids is None or p.id in portal_ids]
         runs: list[PortalRun] = []
         jobs_to_run: list[tuple[PortalImpl, PortalContext]] = []
         http = self.http_factory()
@@ -192,7 +199,7 @@ class Scraper:
         finally:
             await http.aclose()
 
-        order = {p.id: i for i, p in enumerate(self._portals)}
+        order = {p.id: i for i, p in enumerate(portals)}
         runs.sort(key=lambda r: order.get(r.portal_id, 99))
         return ScrapeSummary(
             started_at=started,

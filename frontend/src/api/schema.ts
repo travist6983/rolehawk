@@ -707,6 +707,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portals/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inspect Portal
+         * @description Finds how to read a careers URL: known ATS, RSS, JSON-LD, or a JSON list.
+         */
+        post: operations["inspect_portal_api_portals_inspect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portals/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Portal
+         * @description Claude proposes a definition when detection found nothing (uses the API key).
+         */
+        post: operations["draft_portal_api_portals_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portals/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Portal
+         * @description Runs the definition in the sandbox. ok needs at least 3 jobs.
+         */
+        post: operations["test_portal_api_portals_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portals/custom": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Custom Portal */
+        post: operations["add_custom_portal_api_portals_custom_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portals/custom/{definition_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Custom Portal */
+        delete: operations["remove_custom_portal_api_portals_custom__definition_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs": {
         parameters: {
             query?: never;
@@ -1269,6 +1363,24 @@ export interface components {
             /** Cancelled */
             cancelled: boolean;
         };
+        /** Candidate */
+        Candidate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "watchlist" | "rss" | "jsonld" | "json_api" | "html";
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
+            /** Definition */
+            definition?: (components["schemas"]["RssDefinition"] | components["schemas"]["JsonLdDefinition"] | components["schemas"]["JsonApiDefinition"] | components["schemas"]["HtmlDefinition"]) | null;
+            /** Ats */
+            ats?: string | null;
+            /** Slug */
+            slug?: string | null;
+        };
         /** Card */
         Card: {
             /** Application Id */
@@ -1786,6 +1898,11 @@ export interface components {
          * @enum {string}
          */
         CvSection: "summary" | "experience" | "education" | "skills" | "projects" | "certifications" | "achievements" | "languages";
+        /** DefinitionIn */
+        DefinitionIn: {
+            /** Definition */
+            definition: components["schemas"]["RssDefinition"] | components["schemas"]["JsonLdDefinition"] | components["schemas"]["JsonApiDefinition"] | components["schemas"]["HtmlDefinition"];
+        };
         /** DismissIn */
         DismissIn: {
             /** Job Ids */
@@ -1999,6 +2116,23 @@ export interface components {
             profile?: components["schemas"]["Profile-Input"];
             preferences?: components["schemas"]["Preferences-Input"];
         };
+        /** FieldMap */
+        FieldMap: {
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Id */
+            id?: string | null;
+            /** Company */
+            company?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Posted At */
+            posted_at?: string | null;
+        };
         /**
          * FilterCounts
          * @description Jobs skipped before scoring, by reason.
@@ -2114,6 +2248,56 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** HtmlDefinition */
+        HtmlDefinition: {
+            /**
+             * Id
+             * @description lowercase-with-dashes
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Source Url
+             * @description The page the user pasted
+             */
+            source_url: string;
+            /**
+             * Company
+             * @description When every job is at one company
+             */
+            company?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "html";
+            /** List Url */
+            list_url: string;
+            /**
+             * Item Selector
+             * @description CSS selector for one job
+             */
+            item_selector: string;
+            fields: components["schemas"]["HtmlFields"];
+        };
+        /** HtmlFields */
+        HtmlFields: {
+            /**
+             * Title
+             * @description CSS selector inside the item
+             */
+            title: string;
+            /**
+             * Link
+             * @description CSS selector; default: the title's link
+             */
+            link?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Company */
+            company?: string | null;
+        };
         /** Insights */
         Insights: {
             /**
@@ -2129,6 +2313,26 @@ export interface components {
             /** Weekly */
             weekly: components["schemas"]["WeekCount"][];
             spend: components["schemas"]["Spend"];
+        };
+        /** InspectIn */
+        InspectIn: {
+            /** Url */
+            url: string;
+            /** Name */
+            name?: string | null;
+        };
+        /** Inspection */
+        Inspection: {
+            /** Url */
+            url: string;
+            /** Final Url */
+            final_url: string | null;
+            /** Page Title */
+            page_title: string | null;
+            /** Candidates */
+            candidates: components["schemas"]["Candidate"][];
+            /** Error */
+            error?: string | null;
         };
         /** InterviewState */
         InterviewState: {
@@ -2253,6 +2457,93 @@ export interface components {
             /** Dismissed */
             dismissed: number;
         };
+        /** JsonApiDefinition */
+        JsonApiDefinition: {
+            /**
+             * Id
+             * @description lowercase-with-dashes
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Source Url
+             * @description The page the user pasted
+             */
+            source_url: string;
+            /**
+             * Company
+             * @description When every job is at one company
+             */
+            company?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "json_api";
+            /**
+             * Api Url
+             * @description May contain {page}; GET only
+             */
+            api_url: string;
+            /**
+             * Items Path
+             * @description Dot path to the list
+             * @default
+             */
+            items_path: string;
+            fields: components["schemas"]["FieldMap"];
+            /**
+             * Url Prefix
+             * @description For relative job links
+             */
+            url_prefix?: string | null;
+            /**
+             * Pages
+             * @default 1
+             */
+            pages: number;
+        };
+        /**
+         * JsonLdDefinition
+         * @description JobPosting structured data, on the page itself or on job pages it links to.
+         */
+        JsonLdDefinition: {
+            /**
+             * Id
+             * @description lowercase-with-dashes
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Source Url
+             * @description The page the user pasted
+             */
+            source_url: string;
+            /**
+             * Company
+             * @description When every job is at one company
+             */
+            company?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "jsonld";
+            /** List Url */
+            list_url: string;
+            /**
+             * Link Pattern
+             * @description Regex that job page links match (e.g. /jobs/\d+); unset: data on the page
+             */
+            link_pattern?: string | null;
+            /**
+             * Max Pages
+             * @default 40
+             */
+            max_pages: number;
+        };
         /**
          * LLMSettingsIn
          * @description Partial update; send null for monthly_cap_usd to remove the cap.
@@ -2330,6 +2621,30 @@ export interface components {
             extra?: {
                 [key: string]: unknown;
             };
+        };
+        /** NormalizedJob */
+        NormalizedJob: {
+            /** External Id */
+            external_id: string;
+            /** Url */
+            url: string;
+            /** Company */
+            company: string;
+            /** Title */
+            title: string;
+            /** Location */
+            location?: string | null;
+            /** Remote */
+            remote?: boolean | null;
+            /** Salary Text */
+            salary_text?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Posted At */
+            posted_at?: string | null;
         };
         /** PlanIn */
         PlanIn: {
@@ -2418,6 +2733,11 @@ export interface components {
             companies: number | null;
             /** Docs Url */
             docs_url: string;
+            /**
+             * Custom
+             * @description Added with /add-portal
+             */
+            custom: boolean;
         };
         /** Preferences */
         "Preferences-Input": {
@@ -2732,6 +3052,38 @@ export interface components {
             /** Effort */
             effort: ("low" | "medium" | "high" | "xhigh" | "max") | null;
         };
+        /** RssDefinition */
+        RssDefinition: {
+            /**
+             * Id
+             * @description lowercase-with-dashes
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Source Url
+             * @description The page the user pasted
+             */
+            source_url: string;
+            /**
+             * Company
+             * @description When every job is at one company
+             */
+            company?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "rss";
+            /** Feed Url */
+            feed_url: string;
+            /**
+             * Company In Title
+             * @description Titles carry the company: "Acme: Analyst" (prefix_colon), "Analyst, Acme" (suffix_comma), "Analyst at Acme" (suffix_at), or not at all (none). Unset means the test run guesses it from the feed.
+             */
+            company_in_title?: ("none" | "prefix_colon" | "suffix_comma" | "suffix_at") | null;
+        };
         /** SalaryFloor */
         "SalaryFloor-Input": {
             /** Amount */
@@ -2950,6 +3302,31 @@ export interface components {
             description: string;
             /** Selected */
             selected: boolean;
+        };
+        /** TestResult */
+        TestResult: {
+            /**
+             * Ok
+             * @description At least 3 jobs came back
+             */
+            ok: boolean;
+            /** Count */
+            count: number;
+            /** Samples */
+            samples: components["schemas"]["NormalizedJob"][];
+            /** Errors */
+            errors: string[];
+            /** Error */
+            error: string | null;
+            /** Plugin Source */
+            plugin_source: string;
+            /** Definition Json */
+            definition_json: string;
+            /**
+             * Definition
+             * @description What was tested, with anything the run settled (how titles carry the company) filled in. Add this one.
+             */
+            definition: components["schemas"]["RssDefinition"] | components["schemas"]["JsonLdDefinition"] | components["schemas"]["JsonApiDefinition"] | components["schemas"]["HtmlDefinition"];
         };
         /** TextIn */
         TextIn: {
@@ -4315,6 +4692,167 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CompanyCheck"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_portal_api_portals_inspect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Inspection"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_portal_api_portals_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Candidate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_portal_api_portals_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_custom_portal_api_portals_custom_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_custom_portal_api_portals_custom__definition_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                definition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -1763,6 +1763,208 @@
         }
       }
     },
+    "/api/portals/inspect": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Inspect Portal",
+        "description": "Finds how to read a careers URL: known ATS, RSS, JSON-LD, or a JSON list.",
+        "operationId": "inspect_portal_api_portals_inspect_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inspection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/draft": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Draft Portal",
+        "description": "Claude proposes a definition when detection found nothing (uses the API key).",
+        "operationId": "draft_portal_api_portals_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Candidate"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/test": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Test Portal",
+        "description": "Runs the definition in the sandbox. ok needs at least 3 jobs.",
+        "operationId": "test_portal_api_portals_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinitionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/custom": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Add Custom Portal",
+        "operationId": "add_custom_portal_api_portals_custom_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinitionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/custom/{definition_id}": {
+      "delete": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Remove Custom Portal",
+        "operationId": "remove_custom_portal_api_portals_custom__definition_id__delete",
+        "parameters": [
+          {
+            "name": "definition_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Definition Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "get": {
         "tags": [
@@ -3311,6 +3513,91 @@
           "cancelled"
         ],
         "title": "CancelOut"
+      },
+      "Candidate": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "watchlist",
+              "rss",
+              "jsonld",
+              "json_api",
+              "html"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/RssDefinition"
+                  },
+                  {
+                    "$ref": "#/components/schemas/JsonLdDefinition"
+                  },
+                  {
+                    "$ref": "#/components/schemas/JsonApiDefinition"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HtmlDefinition"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "html": "#/components/schemas/HtmlDefinition",
+                    "json_api": "#/components/schemas/JsonApiDefinition",
+                    "jsonld": "#/components/schemas/JsonLdDefinition",
+                    "rss": "#/components/schemas/RssDefinition"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "ats": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ats"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "title",
+          "detail"
+        ],
+        "title": "Candidate"
       },
       "Card": {
         "properties": {
@@ -5012,6 +5299,42 @@
         ],
         "title": "CvSection"
       },
+      "DefinitionIn": {
+        "properties": {
+          "definition": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RssDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/JsonLdDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/JsonApiDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/HtmlDefinition"
+              }
+            ],
+            "title": "Definition",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "html": "#/components/schemas/HtmlDefinition",
+                "json_api": "#/components/schemas/JsonApiDefinition",
+                "jsonld": "#/components/schemas/JsonLdDefinition",
+                "rss": "#/components/schemas/RssDefinition"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "definition"
+        ],
+        "title": "DefinitionIn"
+      },
       "DismissIn": {
         "properties": {
           "job_ids": {
@@ -5667,6 +5990,87 @@
         "type": "object",
         "title": "ExtractedSetup"
       },
+      "FieldMap": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$",
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$",
+            "title": "Url"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "url"
+        ],
+        "title": "FieldMap"
+      },
       "FilterCounts": {
         "properties": {
           "already_ranked": {
@@ -5900,6 +6304,123 @@
         ],
         "title": "HealthOut"
       },
+      "HtmlDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+            "title": "Id",
+            "description": "lowercase-with-dashes"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url",
+            "description": "The page the user pasted"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "When every job is at one company"
+          },
+          "kind": {
+            "type": "string",
+            "const": "html",
+            "title": "Kind",
+            "default": "html"
+          },
+          "list_url": {
+            "type": "string",
+            "title": "List Url"
+          },
+          "item_selector": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Item Selector",
+            "description": "CSS selector for one job"
+          },
+          "fields": {
+            "$ref": "#/components/schemas/HtmlFields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_url",
+          "list_url",
+          "item_selector",
+          "fields"
+        ],
+        "title": "HtmlDefinition"
+      },
+      "HtmlFields": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "description": "CSS selector inside the item"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link",
+            "description": "CSS selector; default: the title's link"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "HtmlFields"
+      },
       "Insights": {
         "properties": {
           "generated_at": {
@@ -5945,6 +6466,89 @@
           "spend"
         ],
         "title": "Insights"
+      },
+      "InspectIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Url"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "InspectIn"
+      },
+      "Inspection": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "final_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Url"
+          },
+          "page_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Title"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "final_url",
+          "page_title",
+          "candidates"
+        ],
+        "title": "Inspection"
       },
       "InterviewState": {
         "properties": {
@@ -6381,6 +6985,164 @@
         "title": "JobStats",
         "description": "Counts over every job that isn't dismissed (dismissed counted separately)."
       },
+      "JsonApiDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+            "title": "Id",
+            "description": "lowercase-with-dashes"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url",
+            "description": "The page the user pasted"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "When every job is at one company"
+          },
+          "kind": {
+            "type": "string",
+            "const": "json_api",
+            "title": "Kind",
+            "default": "json_api"
+          },
+          "api_url": {
+            "type": "string",
+            "title": "Api Url",
+            "description": "May contain {page}; GET only"
+          },
+          "items_path": {
+            "type": "string",
+            "pattern": "^(|[A-Za-z0-9_$@\\-]+(\\.[A-Za-z0-9_$@\\-]+)*)$",
+            "title": "Items Path",
+            "description": "Dot path to the list",
+            "default": ""
+          },
+          "fields": {
+            "$ref": "#/components/schemas/FieldMap"
+          },
+          "url_prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Prefix",
+            "description": "For relative job links"
+          },
+          "pages": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Pages",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_url",
+          "api_url",
+          "fields"
+        ],
+        "title": "JsonApiDefinition"
+      },
+      "JsonLdDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+            "title": "Id",
+            "description": "lowercase-with-dashes"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url",
+            "description": "The page the user pasted"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "When every job is at one company"
+          },
+          "kind": {
+            "type": "string",
+            "const": "jsonld",
+            "title": "Kind",
+            "default": "jsonld"
+          },
+          "list_url": {
+            "type": "string",
+            "title": "List Url"
+          },
+          "link_pattern": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Pattern",
+            "description": "Regex that job page links match (e.g. /jobs/\\d+); unset: data on the page"
+          },
+          "max_pages": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Pages",
+            "default": 40
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_url",
+          "list_url"
+        ],
+        "title": "JsonLdDefinition",
+        "description": "JobPosting structured data, on the page itself or on job pages it links to."
+      },
       "LLMSettingsIn": {
         "properties": {
           "model": {
@@ -6621,6 +7383,84 @@
         ],
         "title": "ModelChoice"
       },
+      "NormalizedJob": {
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "external_id",
+          "url",
+          "company",
+          "title"
+        ],
+        "title": "NormalizedJob"
+      },
       "PlanIn": {
         "properties": {
           "job_id": {
@@ -6836,6 +7676,11 @@
           "docs_url": {
             "type": "string",
             "title": "Docs Url"
+          },
+          "custom": {
+            "type": "boolean",
+            "title": "Custom",
+            "description": "Added with /add-portal"
           }
         },
         "type": "object",
@@ -6856,7 +7701,8 @@
           "last_error",
           "jobs_found",
           "companies",
-          "docs_url"
+          "docs_url",
+          "custom"
         ],
         "title": "PortalView"
       },
@@ -7873,6 +8719,77 @@
         ],
         "title": "RouteView"
       },
+      "RssDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+            "title": "Id",
+            "description": "lowercase-with-dashes"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url",
+            "description": "The page the user pasted"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "When every job is at one company"
+          },
+          "kind": {
+            "type": "string",
+            "const": "rss",
+            "title": "Kind",
+            "default": "rss"
+          },
+          "feed_url": {
+            "type": "string",
+            "title": "Feed Url"
+          },
+          "company_in_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "prefix_colon",
+                  "suffix_comma",
+                  "suffix_at"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company In Title",
+            "description": "Titles carry the company: \"Acme: Analyst\" (prefix_colon), \"Analyst, Acme\" (suffix_comma), \"Analyst at Acme\" (suffix_at), or not at all (none). Unset means the test run guesses it from the feed."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_url",
+          "feed_url"
+        ],
+        "title": "RssDefinition"
+      },
       "SalaryFloor-Input": {
         "properties": {
           "amount": {
@@ -8506,6 +9423,91 @@
           "selected"
         ],
         "title": "TemplateView"
+      },
+      "TestResult": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "description": "At least 3 jobs came back"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/NormalizedJob"
+            },
+            "type": "array",
+            "title": "Samples"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "plugin_source": {
+            "type": "string",
+            "title": "Plugin Source"
+          },
+          "definition_json": {
+            "type": "string",
+            "title": "Definition Json"
+          },
+          "definition": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RssDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/JsonLdDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/JsonApiDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/HtmlDefinition"
+              }
+            ],
+            "title": "Definition",
+            "description": "What was tested, with anything the run settled (how titles carry the company) filled in. Add this one.",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "html": "#/components/schemas/HtmlDefinition",
+                "json_api": "#/components/schemas/JsonApiDefinition",
+                "jsonld": "#/components/schemas/JsonLdDefinition",
+                "rss": "#/components/schemas/RssDefinition"
+              }
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "count",
+          "samples",
+          "errors",
+          "error",
+          "plugin_source",
+          "definition_json",
+          "definition"
+        ],
+        "title": "TestResult"
       },
       "TextIn": {
         "properties": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import logging
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from typing import Any
 
@@ -15,7 +16,7 @@ from offerbound import countries, keychain
 from offerbound.db.models import Company, Job, Portal, PortalKind, RiskLevel
 from offerbound.keychain import SecretName
 from offerbound.portals.base import Portal as PortalImpl
-from offerbound.portals.registry import ATS_IDS, BUILTIN, get_portal
+from offerbound.portals.registry import ATS_IDS, BUILTIN
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class PortalView(BaseModel):
     jobs_found: int
     companies: int | None
     docs_url: str
+    custom: bool = Field(description="Added with /add-portal")
 
 
 class CompanyView(BaseModel):
@@ -105,8 +107,19 @@ def missing_requirements(
 
 
 class PortalStore:
-    def __init__(self, sessions: sessionmaker[Session]) -> None:
+    def __init__(
+        self,
+        sessions: sessionmaker[Session],
+        extra: Callable[[], Sequence[PortalImpl]] = lambda: (),
+    ) -> None:
         self._sessions = sessions
+        self._extra = extra  # custom sources added with /add-portal
+
+    def all(self) -> list[PortalImpl]:
+        return [*BUILTIN, *self._extra()]
+
+    def known(self, portal_id: str) -> bool:
+        return any(p.id == portal_id for p in self.all())
 
     def sync_builtin(self) -> None:
         """Make sure every built-in source has a row. Never overrides the user's choices."""
@@ -170,7 +183,7 @@ class PortalStore:
                 ).all()
             )
         views: list[PortalView] = []
-        for impl in BUILTIN:
+        for impl in self.all():
             row = rows.get(impl.id)
             if row is None:
                 continue
@@ -198,6 +211,7 @@ class PortalStore:
                     jobs_found=int(job_counts.get(impl.id, 0)),
                     companies=companies,
                     docs_url=impl.docs_url,
+                    custom=impl.kind is PortalKind.PLUGIN,
                 )
             )
         return views
@@ -208,7 +222,8 @@ class PortalStore:
     # --- updates ----------------------------------------------------------------------
 
     def set_enabled(self, portal_id: str, enabled: bool) -> PortalView:
-        get_portal(portal_id)
+        if not self.known(portal_id):
+            raise KeyError(portal_id)
         with self._sessions.begin() as session:
             row = session.get(Portal, portal_id)
             if row is None:

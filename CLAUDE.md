@@ -38,6 +38,8 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          Workable) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), SOURCES.md
+      custom/            /add-portal: definitions (data, never code), detection, engine,
+                         sandbox subprocess runner, plugin files, Claude fallback
     fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
     insights/            Pipeline board (next actions), Insights stats, self-contained HTML
                          report (inline SVG, CSP blocks all network)
@@ -126,6 +128,7 @@ Run `npm run check` from the root before you call a chunk done.
 - **Services hold logic.** API routes, chat tools, and the CLI are thin: parse input, call one service function, return its result. If a route or tool has a branch that isn't input validation, move it into a service.
 - **No secrets in files.** API keys, the Gmail app password, and the Notion token go in the OS keychain via `keyring`. `config.toml`, logs, fixtures, and test data never contain secrets; logs redact them.
 - **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. Three layers enforce it; don't weaken any: drafts pick roles/projects/certifications by profile index and `build_cv` copies their facts (the model never writes them), `apply/truth.py` flags numbers and skills the profile lacks (one automatic revision round), and the AI review pass flags the rest for the user.
+- **Custom sources are data.** /add-portal stores a validated definition (rss, jsonld, json_api, html) in `<data>/portals/<id>.py`, read with `ast.literal_eval` and never imported. They run only through `portals/custom/sandbox.py` (`python -I` subprocess, clean env, timeout) and `engine.Fetcher` (same domain only, private/loopback addresses refused on every hop). Never add a path that executes model-written code.
 - **Autofill never submits.** It fills fields and attaches files, then stops; there is no click, press, or submit in `apply/autofill.py` (a test greps for them). Auto-submit is v2.0 and out of scope.
 - **Nothing changes memory silently.** Fact extraction produces proposed diffs the user accepts or rejects.
 - **profile.md and preferences.md are canonical.** Code reads them through `ProfileService` (parse) and writes through it (render + reindex `profile_items` + sync `search_targets`), or through accepted proposals. The user's own edits are saved verbatim; unknown sections are preserved. Never write those files any other way.
