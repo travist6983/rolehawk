@@ -117,6 +117,19 @@ class ChatRole(StrEnum):
     TOOL = "tool"
 
 
+class ProposalOp(StrEnum):
+    ADD = "add"
+    REPLACE = "replace"
+    REMOVE = "remove"
+
+
+class MemoryProposalStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    CONFLICT = "conflict"  # the file changed and the edit no longer applies
+
+
 class TaskStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
@@ -308,11 +321,47 @@ class LLMCall(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
 
 
+class ChatSession(TimestampMixin, Base):
+    __tablename__ = "chat_sessions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    title: Mapped[str | None] = mapped_column(String(255))
+    # Messages with id <= this are folded into memory/sessions/*.md and may be purged.
+    summarized_through_id: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"), index=True
+    )
     role: Mapped[ChatRole] = mapped_column(str_enum(ChatRole))
     content: Mapped[str] = mapped_column(Text)
+    # What the user was viewing when they sent it ("Viewing: Stripe, Senior Frontend").
+    context: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    # Rich cards rendered with an assistant message (proposals, command suggestions).
+    cards: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+
+
+class MemoryProposal(Base):
+    __tablename__ = "memory_proposals"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    target: Mapped[str] = mapped_column(String(32))
+    op: Mapped[ProposalOp] = mapped_column(str_enum(ProposalOp))
+    section: Mapped[str | None] = mapped_column(String(255))
+    text: Mapped[str | None] = mapped_column(Text)
+    old_text: Mapped[str | None] = mapped_column(Text)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    source: Mapped[str] = mapped_column(String(32))
+    session_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chat_sessions.id", ondelete="SET NULL")
+    )
+    status: Mapped[MemoryProposalStatus] = mapped_column(
+        str_enum(MemoryProposalStatus), default=MemoryProposalStatus.PENDING, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime)

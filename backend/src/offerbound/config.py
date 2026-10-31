@@ -9,14 +9,17 @@ from __future__ import annotations
 import tomllib
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
+import tomlkit
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 
 class ProviderKind(StrEnum):
+    # The in-app provider. Claude Code users run commands through skills/ instead: Anthropic
+    # doesn't allow third-party apps to offer claude.ai login (see docs/SPEC.md decision log).
     ANTHROPIC_API = "anthropic_api"
-    CLAUDE_CODE = "claude_code"
 
 
 class _Section(BaseModel):
@@ -24,8 +27,8 @@ class _Section(BaseModel):
 
 
 class LLMSettings(_Section):
-    provider: ProviderKind | None = None
-    model: str | None = None
+    provider: ProviderKind = ProviderKind.ANTHROPIC_API
+    model: str | None = None  # None means the catalog default (offerbound.llm.models)
     smart_routing: bool = True
     monthly_cap_usd: float | None = Field(default=None, ge=0)
 
@@ -71,8 +74,8 @@ DEFAULT_CONFIG = """\
 # they are stored in your operating system's keychain from the Settings screen.
 
 [llm]
-# provider = "anthropic_api"   # or "claude_code"
-# model = ""                   # set from Settings
+provider = "anthropic_api"
+# model = "claude-opus-5-5"    # set from Settings; unset uses the recommended default
 smart_routing = true
 # monthly_cap_usd = 20
 
@@ -91,6 +94,27 @@ retention_days = 30
 def load_settings(config_file: Path) -> Settings:
     data = tomllib.loads(config_file.read_text(encoding="utf-8")) if config_file.exists() else {}
     return Settings(**data)
+
+
+def update_settings(config_file: Path, section: str, values: dict[str, Any]) -> Settings:
+    """Merge `values` into one [section] of config.toml, keeping the user's comments and
+    formatting. A None value removes the key. Validates before writing."""
+    text = config_file.read_text(encoding="utf-8") if config_file.exists() else DEFAULT_CONFIG
+    document = tomlkit.parse(text)
+    table = document.get(section)
+    if table is None:
+        table = tomlkit.table()
+        document[section] = table
+    for key, value in values.items():
+        if value is None:
+            table.pop(key, None)
+        else:
+            table[key] = value
+    validated = Settings(**document.unwrap())
+    tmp = config_file.with_suffix(".toml.tmp")
+    tmp.write_text(tomlkit.dumps(document), encoding="utf-8")
+    tmp.replace(config_file)
+    return validated
 
 
 def write_default_config(config_file: Path) -> bool:

@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 import keyring
 import pytest
 from fastapi.testclient import TestClient
 from keyring.backend import KeyringBackend
+from pydantic import BaseModel
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.api.app import create_app
 from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
+from offerbound.llm.fake import FakeProvider
+from offerbound.llm.types import LLMRequest
 from offerbound.paths import DataPaths
+from offerbound.services.runtime import Runtime, open_runtime
 
 TEST_TOKEN = "test-session-token"  # noqa: S105
 BASE_URL = "http://127.0.0.1:8765"
@@ -76,15 +80,32 @@ def sessions(engine: Engine) -> sessionmaker[Session]:
 
 
 @pytest.fixture
-def client(paths: DataPaths) -> Iterator[TestClient]:
-    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=())
+def fake() -> FakeProvider:
+    """Scripted Claude. Fact extraction and summaries return nothing unless a test queues
+    structured replies."""
+    from offerbound.memory.extraction import ExtractedProposals
+    from offerbound.memory.sessions import SessionSummary
+
+    def default(_request: LLMRequest, schema: type[BaseModel]) -> BaseModel:
+        if schema is ExtractedProposals:
+            return ExtractedProposals(proposals=[])
+        if schema is SessionSummary:
+            return SessionSummary(bullets=["Talked about the job search."], open_threads=[])
+        raise AssertionError(f"no default structured reply for {schema}")
+
+    return FakeProvider(structured_handler=default)
+
+
+@pytest.fixture
+def client(paths: DataPaths, fake: FakeProvider) -> Iterator[TestClient]:
+    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=(), provider=fake)
     with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
         yield c
 
 
 @pytest.fixture
-def anon_client(paths: DataPaths) -> Iterator[TestClient]:
-    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=())
+def anon_client(paths: DataPaths, fake: FakeProvider) -> Iterator[TestClient]:
+    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=(), provider=fake)
     with TestClient(app, base_url=BASE_URL) as c:
         yield c
 
@@ -92,3 +113,10 @@ def anon_client(paths: DataPaths) -> Iterator[TestClient]:
 @pytest.fixture
 def anyio_backend() -> str:
     return "asyncio"
+
+
+@pytest.fixture
+async def runtime(paths: DataPaths, fake: FakeProvider) -> AsyncIterator[Runtime]:
+    rt = open_runtime(paths, provider=fake)
+    yield rt
+    await rt.aclose()

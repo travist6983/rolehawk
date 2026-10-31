@@ -1,11 +1,11 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.db.models import Task, TaskStatus
 from offerbound.services.events import EventBus
-from offerbound.services.selftest import make_selftest
 from offerbound.services.tasks import (
     INTERRUPTED,
     TASK_EVENT,
@@ -15,6 +15,16 @@ from offerbound.services.tasks import (
 )
 
 pytestmark = pytest.mark.anyio
+
+
+def make_selftest(steps: int, delay_s: float) -> Callable[[TaskContext], Awaitable[dict[str, int]]]:
+    async def run(ctx: TaskContext) -> dict[str, int]:
+        for step in range(1, steps + 1):
+            await asyncio.sleep(delay_s)
+            await ctx.progress(step / steps, f"Step {step} of {steps}")
+        return {"steps": steps}
+
+    return run
 
 
 async def test_success_records_progress_result_and_events(

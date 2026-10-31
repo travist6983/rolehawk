@@ -8,14 +8,14 @@ import sqlalchemy as sa
 
 from offerbound.db.types import UTCDateTime
 
-# Tables created by raw SQL in migrations, invisible to the ORM metadata.
-FTS_TABLE_PREFIX = "jobs_fts"
+# Tables and views created by raw SQL in migrations, invisible to the ORM metadata.
+RAW_SQL_PREFIXES = ("jobs_fts", "v_")
 
 
 def include_object(
     obj: Any, name: str | None, type_: str, reflected: bool, compare_to: Any
 ) -> bool:
-    return not (type_ == "table" and name is not None and name.startswith(FTS_TABLE_PREFIX))
+    return not (type_ == "table" and name is not None and name.startswith(RAW_SQL_PREFIXES))
 
 
 def render_item(type_: str, obj: Any, autogen_context: Any) -> str | Literal[False]:
