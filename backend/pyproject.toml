@@ -9,6 +9,7 @@ dependencies = [
     "anthropic>=2.3.0",
     "beautifulsoup4>=4.12",
     "fastapi>=0.115",
+    "httpx2>=2.16.0",
     "jinja2>=3.1",
     "keyring>=25.7.0",
     "pdfplumber>=0.11.10",
@@ -27,7 +28,6 @@ offerbound = "offerbound.cli:main"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.16.0",
     "mypy>=1.13",
     "poethepoet>=0.31",
     "pytest>=8.3",

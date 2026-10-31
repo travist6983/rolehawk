@@ -7,6 +7,8 @@ offerbound db upgrade      apply migrations (backs up first)
 offerbound db current      show the schema revision
 offerbound db revision -m  autogenerate a migration (developers)
 offerbound backup          zip the data folder into <data>/backups
+offerbound update          install the newest release (backs up, migrates, keeps the old one)
+offerbound install-browser install or repair Chromium (PDF export and autofill)
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import getpass
 import json
 import os
 import secrets
+import subprocess
 import sys
 import threading
 import time
@@ -26,6 +29,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from offerbound import __version__
+from offerbound.install.layout import configure_browsers
 from offerbound.paths import DataPaths
 
 DEV_FRONTEND_ORIGINS = ("http://127.0.0.1:5173", "http://localhost:5173")
@@ -129,6 +133,79 @@ def cmd_backup(_args: argparse.Namespace) -> int:
 
     print(backup.create_backup(DataPaths.default(), reason="manual"))
     return 0
+
+
+def _app_running() -> bool:
+    from offerbound.config import load_settings
+
+    port = load_settings(DataPaths.default().config_file).server.port
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+def cmd_update(args: argparse.Namespace) -> int:
+    import httpx2
+
+    from offerbound.install.layout import running_from
+    from offerbound.install.release import ReleaseError, release_url
+    from offerbound.install.update import UpdateError, Updater, find_uv
+    from offerbound.portals.http import USER_AGENT
+    from offerbound.services import backup
+
+    installed = running_from()
+    if installed is None:
+        print("This is a source checkout. Update it with `git pull`, then `npm run setup`.")
+        return 2
+    layout, running = installed
+    with httpx2.Client(
+        follow_redirects=True, timeout=60, headers={"User-Agent": USER_AGENT}
+    ) as client:
+        updater = Updater(
+            layout,
+            client,
+            release_url(),
+            uv=find_uv(),
+            backup=lambda: backup.create_backup(DataPaths.default(), reason="update"),
+            app_running=_app_running,
+            running_version=running,
+        )
+        try:
+            if args.check:
+                status, _info = updater.check()
+                note = "an update is available" if status.available else "up to date"
+                print(f"Installed {status.current}, latest {status.latest}: {note}.")
+                return 0
+            version = updater.update()
+        except (ReleaseError, UpdateError) as exc:
+            print(f"Update stopped: {exc}", file=sys.stderr)
+            return 1
+        except subprocess.CalledProcessError as exc:
+            print(
+                f"Update stopped: {exc.cmd[0]} failed (exit {exc.returncode}). "
+                "You're still on the previous version.",
+                file=sys.stderr,
+            )
+            return 1
+    if version is None:
+        print(f"Offerbound {layout.current_version()} is the newest release.")
+    else:
+        print(f"Updated to {version}. Start it with `offerbound`.")
+    return 0
+
+
+def cmd_install_browser(_args: argparse.Namespace) -> int:
+    """Chromium for PDF export (headless) and autofill (visible). Safe to run again."""
+    command = [sys.executable, "-m", "playwright", "install", "chromium"]
+    result = subprocess.run(command, check=False)  # noqa: S603 - fixed argv
+    if result.returncode == 0 and sys.platform.startswith("linux"):
+        print(
+            "If PDF export fails later, Chromium may need system libraries: "
+            f"sudo {sys.executable} -m playwright install-deps chromium"
+        )
+    return result.returncode
 
 
 def _parse_params(pairs: list[str], params_json: str | None) -> dict[str, Any]:
@@ -270,6 +347,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("backup", help="zip the data folder").set_defaults(func=cmd_backup)
 
+    update = sub.add_parser("update", help="install the newest release")
+    update.add_argument("--check", action="store_true", help="only check for a newer release")
+    update.set_defaults(func=cmd_update)
+
+    sub.add_parser(
+        "install-browser", help="install or repair Chromium (PDF export and autofill)"
+    ).set_defaults(func=cmd_install_browser)
+
     run = sub.add_parser("run", help="run a command against the data folder")
     run.add_argument("name", help="command name, e.g. context, memory, spend, selftest")
     run.add_argument(
@@ -294,6 +379,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    configure_browsers()
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command is None:

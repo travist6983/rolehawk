@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-INSTALL_HINT = "uv run playwright install --only-shell chromium"
-
 
 class PdfUnavailableError(RuntimeError):
     """Chromium isn't installed (or won't start). DOCX still works."""

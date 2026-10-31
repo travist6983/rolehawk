@@ -17,6 +17,7 @@ from offerbound import __version__
 from offerbound.config import load_settings
 from offerbound.db import migrate
 from offerbound.db.engine import make_engine
+from offerbound.install.layout import browser_hint, running_from
 from offerbound.paths import DataPaths
 
 
@@ -43,8 +44,6 @@ def _chromium() -> Check:
     from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import sync_playwright
 
-    from offerbound.rendering.pdf import INSTALL_HINT
-
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -53,20 +52,30 @@ def _chromium() -> Check:
             visible = Path(p.chromium.executable_path).exists()
     except PlaywrightError as exc:
         first = str(exc).strip().splitlines()[0][:120]
-        return Check("chromium", False, f"{first}. Fix: {INSTALL_HINT}")
+        fix = browser_hint()
+        if sys.platform.startswith("linux") and "Executable doesn't exist" not in first:
+            # Installed but won't start: usually system libraries only an admin can add.
+            deps = f"sudo {sys.executable} -m playwright install-deps chromium"
+            fix += f" (if it still fails: {deps})"
+        return Check("chromium", False, f"{first}. Fix: {fix}")
     if not visible:
         return Check(
             "chromium",
             True,
-            f"Chromium {version} for PDF export; autofill needs the full browser: "
-            "uv run playwright install chromium",
+            f"Chromium {version} for PDF export; autofill needs the full browser: {browser_hint()}",
         )
     return Check("chromium", True, f"Chromium {version} (PDF export and autofill)")
 
 
 def run_checks(paths: DataPaths) -> list[Check]:
+    installed = running_from()
     checks = [
         Check("offerbound", True, __version__),
+        Check(
+            "install",
+            True,
+            f"release {installed[1]} in {installed[0].home}" if installed else "source checkout",
+        ),
         Check("python", sys.version_info[:2] == (3, 12), platform.python_version()),
         Check("platform", True, f"{platform.system()} {platform.release()} {platform.machine()}"),
         Check("sqlite", True, sqlite3.sqlite_version),
