@@ -50,6 +50,9 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          templates/<id>/ (manifest.json + template.html.j2), python-docx
                          builder, Playwright PDF engine, DocumentService
     jobs/                JobStore: Discover listing (latest score per job), save, dismiss
+    install/             the installed app: layout (~/.offerbound/versions/<v> + `current`
+                         pointer, shared browsers), release download/verify/unpack,
+                         `offerbound update`, install-skills (Claude Code)
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here
       runtime.py         opens data folder, migrates, wires every service together
@@ -74,12 +77,14 @@ frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui +
   src/lib/               theme, hotkeys, small pure helpers
   src/test/              MSW server + handlers, fixtures, FakeEventSource, renderApp()
 skills/<command>/        SKILL.md per command (thin wrappers over the CLI)
-scripts/                 install.sh (Mac/Linux), install.ps1 (Windows)
+scripts/                 install.sh (Mac/Linux), install.ps1 (Windows), build_release.py (ZIP)
 data/
   companies/             ATS company watchlists, one CSV per ATS (verified live; see README)
   country_sources.toml   per-country feeds, currency, salary period
 docs/SPEC.md             product spec and build plan
 .github/workflows/ci.yml lint + typecheck + tests on ubuntu, macos, windows
+.github/workflows/release.yml  build the ZIP, smoke-test install + start + update on all three
+                         OSes (installer/release changes and v* tags), publish on tags
 ```
 
 ## Commands
@@ -95,6 +100,7 @@ Backend (from `backend/`):
 | Run the app as a user would | `uv run offerbound start` |
 | Diagnostics | `uv run offerbound doctor` |
 | Run a command (what skills call) | `uv run offerbound run context --json` |
+| Build the release ZIP (after `npm run build`) | `uv run --no-project --python 3.12 python ../scripts/build_release.py` |
 | Store an Anthropic API key in the keychain | `uv run offerbound llm set-key` |
 | Regenerate fixture resumes | `uv run python tests/fixtures/make_fixtures.py` |
 | New migration after editing models | `uv run offerbound db revision -m "add x"` |
@@ -156,4 +162,10 @@ Run `npm run check` from the root before you call a chunk done.
 - **Frontend tests** use Vitest, Testing Library, and MSW (`src/test/server.ts`); unhandled requests fail the test. Prefer `renderApp(route)` for anything touching routing, session, or the drawer.
 - **Design system** (per spec): shadcn/ui on Tailwind, zinc base, indigo-600 accent, light/dark from CSS variables following the OS, WCAG 2.1 AA, respect `prefers-reduced-motion`.
 - **Charts:** one series per chart in `--chart-1` (validated for both themes), hairline `--chart-grid`, bars <= 24px with a rounded data end, text in text tokens, a hover tooltip, and a "Show as a table" view. Never a second y-axis.
+- **Installs and updates:** the release ZIP keeps the repo layout (`backend/`, `frontend/dist`,
+  `data/`, `skills/`), built only from git-tracked files. Each version installs into its own
+  folder and the launcher reads the `current` pointer, so nothing overwrites a running version
+  (Windows locks it). `offerbound update` moves the pointer only after sync, browser, backup,
+  and migrations succeed. Unpacking refuses absolute paths, `..`, and links. Bump the version
+  in `pyproject.toml` and `offerbound/__init__.py` together, then tag `v<version>`.
 - **Destructive actions** (/reset) back up first, need the scope typed, and are `chat_allowed=False`.

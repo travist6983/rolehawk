@@ -22,8 +22,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
+from offerbound.install.layout import browser_hint
 from offerbound.profile.model import Contact, Experience, Profile
-from offerbound.rendering import pdf as pdf_module
 from offerbound.rendering.docx_builder import cv_docx, letter_docx
 from offerbound.rendering.layout import (
     Bullets,
@@ -329,7 +329,7 @@ async def test_missing_chromium_is_a_clear_error(monkeypatch: pytest.MonkeyPatch
     finally:
         await engine.aclose()
     assert "offerbound doctor" in info.value.user_message
-    assert pdf_module.INSTALL_HINT.startswith("uv run playwright install")
+    assert browser_hint().startswith("uv run playwright install")  # a source checkout
 
 
 # --- the service --------------------------------------------------------------------------

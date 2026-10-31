@@ -3,6 +3,10 @@
 One folder per command. Each `SKILL.md` lets Claude Code run the command from a terminal
 against the same data folder the dashboard uses.
 
+`offerbound install-skills` copies the released ones (those marked v1.0) into
+`~/.claude/skills/offerbound-<name>/` (or `$CLAUDE_CONFIG_DIR/skills`). Run it again after an
+update to refresh them.
+
 ## How skills work
 
 The backend exposes every command through one CLI:

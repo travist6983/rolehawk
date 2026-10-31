@@ -616,6 +616,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "beautifulsoup4" },
     { name = "fastapi" },
+    { name = "httpx2" },
     { name = "jinja2" },
     { name = "keyring" },
     { name = "pdfplumber" },
@@ -631,7 +632,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx2" },
     { name = "mypy" },
     { name = "poethepoet" },
     { name = "pytest" },
@@ -644,6 +644,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=2.3.0" },
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx2", specifier = ">=2.16.0" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "pdfplumber", specifier = ">=0.11.10" },
@@ -659,7 +660,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx2", specifier = ">=2.16.0" },
     { name = "mypy", specifier = ">=1.13" },
     { name = "poethepoet", specifier = ">=0.31" },
     { name = "pytest", specifier = ">=8.3" },
