@@ -1,7 +1,7 @@
 import { CheckIcon, RadioTowerIcon, TerminalIcon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { useLLMStatus, useProfileOverview } from "@/api/queries";
+import { useDocuments, useInterview, useLLMStatus, useProfileOverview } from "@/api/queries";
 import { FormSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -20,35 +20,56 @@ const STEPS = [
 
 type StepId = (typeof STEPS)[number]["id"];
 
+const WORK_STYLE: Record<string, string> = {
+  remote: "Remote only",
+  hybrid: "Hybrid",
+  onsite: "On-site",
+  any: "Open to any",
+};
+
 function isStep(value: string | null): value is StepId {
   return STEPS.some((s) => s.id === value);
 }
 
-function Stepper({ current }: { current: StepId }) {
+function Stepper({ current, done }: { current: StepId; done: ReadonlySet<StepId> }) {
   const index = STEPS.findIndex((s) => s.id === current);
   return (
     <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Setup steps">
-      {STEPS.map((step, i) => (
-        <li
-          key={step.id}
-          aria-current={i === index ? "step" : undefined}
-          className={cn(
-            "flex items-center gap-2",
-            i === index ? "font-medium text-foreground" : "text-muted-foreground",
-          )}
-        >
-          <span
+      {STEPS.map((step, i) => {
+        const state =
+          i === index ? "current" : done.has(step.id) ? "done" : i < index ? "skipped" : "todo";
+        return (
+          <li
+            key={step.id}
+            aria-current={state === "current" ? "step" : undefined}
             className={cn(
-              "grid size-6 place-items-center rounded-full border text-xs",
-              i < index && "border-primary bg-primary text-primary-foreground",
-              i === index && "border-primary text-primary",
+              "flex items-center gap-2",
+              state === "current" ? "font-medium text-foreground" : "text-muted-foreground",
             )}
           >
-            {i < index ? <CheckIcon className="size-3.5" aria-label="done" /> : i + 1}
-          </span>
-          {step.label}
-        </li>
-      ))}
+            <span
+              className={cn(
+                "grid size-6 place-items-center rounded-full border text-xs",
+                state === "done" && "border-primary bg-primary text-primary-foreground",
+                state === "current" && "border-primary text-primary-text",
+                state === "skipped" && "border-dashed",
+              )}
+            >
+              {state === "done" ? (
+                <CheckIcon className="size-3.5" aria-hidden />
+              ) : state === "skipped" ? (
+                "–"
+              ) : (
+                i + 1
+              )}
+            </span>
+            {step.label}
+            {(state === "done" || state === "skipped") && (
+              <span className="sr-only">({state})</span>
+            )}
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -74,7 +95,9 @@ function SourcesStep({ onFinish }: { onFinish: () => void }) {
               <span className="font-medium">{t.title}</span>
               <span className="text-muted-foreground">
                 {" · "}
-                {[t.remote_policy, ...t.locations, t.country].filter(Boolean).join(" · ")}
+                {[WORK_STYLE[t.remote_policy], ...t.locations, t.country]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </li>
           ))}
@@ -89,6 +112,8 @@ export default function OnboardingPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const status = useLLMStatus();
+  const documents = useDocuments();
+  const interview = useInterview();
   const requested = params.get("step");
 
   if (status.isPending) return <FormSkeleton label="Loading setup" />;
@@ -108,7 +133,16 @@ export default function OnboardingPage() {
         description="About 10 minutes. You can stop and come back any time."
       />
       <div className="mx-auto max-w-3xl space-y-8 p-6">
-        <Stepper current={step} />
+        <Stepper
+          current={step}
+          done={
+            new Set<StepId>([
+              ...(status.data?.configured ? (["connect"] as const) : []),
+              ...((documents.data?.length ?? 0) > 0 ? (["resume"] as const) : []),
+              ...(interview.data?.complete ? (["interview"] as const) : []),
+            ])
+          }
+        />
         {step === "connect" && (
           <div className="space-y-4">
             {status.data && <ConnectionCard status={status.data} />}

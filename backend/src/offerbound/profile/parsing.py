@@ -146,6 +146,11 @@ def split_list(text: str) -> list[str]:
     return dedupe([item for item in items if item])
 
 
+def split_places(text: str) -> list[str]:
+    """Places contain commas ("Austin, TX"), so only semicolons and newlines separate them."""
+    return dedupe([part.strip() for part in re.split(r"[;\n]", text) if part.strip()])
+
+
 def split_lines(text: str) -> list[str]:
     """One item per line (achievements often contain commas); bullets and numbering trimmed."""
     lines = [re.sub(r"^\s*(?:[-*•]|\d+[.)])\s*", "", line).strip() for line in text.splitlines()]

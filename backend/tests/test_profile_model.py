@@ -265,3 +265,18 @@ def test_merge_preferences_keeps_existing_values() -> None:
     assert merged.remote is RemotePreference.REMOTE
     assert merged.target_titles == ["Engineer", "Lead"]
     assert merged.country == "US"
+
+
+def test_places_and_titles_keep_their_commas() -> None:
+    from offerbound.profile.parsing import split_places
+
+    assert split_places("Denver, CO; Boulder, CO\nRemote (US)") == [
+        "Denver, CO",
+        "Boulder, CO",
+        "Remote (US)",
+    ]
+    prefs = parse_preferences(
+        "## Target titles\n- Engineer, Platform\n## Locations\n- Austin, TX\n- Remote"
+    )
+    assert prefs.target_titles == ["Engineer, Platform"]
+    assert prefs.locations == ["Austin, TX", "Remote"]

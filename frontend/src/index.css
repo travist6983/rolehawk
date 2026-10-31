@@ -24,6 +24,8 @@
   --ring: var(--color-indigo-600);
   --primary: var(--color-indigo-600);
   --primary-foreground: var(--color-white);
+  /* Accent used as text color (links, active nav, step labels): AA against every surface. */
+  --primary-text: var(--color-indigo-700);
   --secondary: var(--color-zinc-100);
   --secondary-foreground: var(--color-zinc-900);
   --accent: var(--color-zinc-100);
@@ -49,6 +51,7 @@
   --ring: var(--color-indigo-400);
   --primary: var(--color-indigo-500);
   --primary-foreground: var(--color-white);
+  --primary-text: var(--color-indigo-300);
   --secondary: var(--color-zinc-800);
   --secondary-foreground: var(--color-zinc-50);
   --accent: var(--color-zinc-800);
@@ -80,6 +83,7 @@
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);

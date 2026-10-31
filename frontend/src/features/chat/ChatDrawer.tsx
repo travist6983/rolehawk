@@ -105,7 +105,7 @@ export function ChatDrawer() {
       {/* Stays mounted while the drawer is open (just hidden) so focus can return to it. */}
       <Button
         className={cn(
-          "fixed right-4 bottom-4 z-40 h-11 rounded-full px-4 shadow-lg",
+          "fixed right-4 bottom-4 z-40 size-12 rounded-full shadow-lg sm:h-11 sm:w-auto sm:px-4",
           chat.open && "hidden",
         )}
         onClick={() => {
@@ -116,8 +116,8 @@ export function ChatDrawer() {
         aria-keyshortcuts="Meta+K Control+K"
       >
         <SparklesIcon />
-        Ask Claude
-        <kbd className="ml-1 rounded bg-primary-foreground/20 px-1.5 font-mono text-[11px]">
+        <span className="sr-only sm:not-sr-only">Ask Claude</span>
+        <kbd className="ml-1 hidden rounded bg-black/25 px-1.5 font-mono text-[11px] sm:inline">
           {modKeyLabel()}K
         </kbd>
       </Button>

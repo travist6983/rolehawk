@@ -30,7 +30,9 @@ export function EmptyState({ icon: Icon, title, description, steps, children }: 
         <ol className="mt-8 grid w-full gap-3 text-left sm:grid-cols-3">
           {steps.map((step, index) => (
             <li key={step.title} className="flex flex-col rounded-lg border bg-card p-4">
-              <span className="font-mono text-xs font-semibold text-primary">Step {index + 1}</span>
+              <span className="font-mono text-xs font-semibold text-primary-text">
+                Step {index + 1}
+              </span>
               <span className="mt-1 font-medium">{step.title}</span>
               <span className="mt-1 flex-1 text-sm text-muted-foreground">{step.description}</span>
               {"to" in step.action ? (

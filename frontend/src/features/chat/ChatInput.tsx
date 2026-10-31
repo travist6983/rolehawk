@@ -27,7 +27,14 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(functio
 
   const slashQuery = /^\/[\w-]*$/.test(value) ? value.slice(1) : null;
   const matches = useMemo(
-    () => (slashQuery === null ? [] : filterCommands(commands.data ?? [], slashQuery)),
+    () =>
+      slashQuery === null
+        ? []
+        : // CLI/skill-only commands (e.g. reading local files) stay out of the UI.
+          filterCommands(
+            (commands.data ?? []).filter((c) => c.chat_allowed),
+            slashQuery,
+          ),
     [commands.data, slashQuery],
   );
   const menuOpen = slashQuery !== null && !dismissed;

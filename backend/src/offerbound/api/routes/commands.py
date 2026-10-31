@@ -18,6 +18,7 @@ class CommandInfo(BaseModel):
     read_only: bool
     background: bool
     release: str
+    chat_allowed: bool
     params_schema: dict[str, Any]
 
 
@@ -39,6 +40,7 @@ def list_commands(runtime: RuntimeDep) -> list[CommandInfo]:
             read_only=c.read_only,
             background=c.background,
             release=c.release,
+            chat_allowed=c.chat_allowed,
             params_schema=c.params.model_json_schema(),
         )
         for c in runtime.commands.all()

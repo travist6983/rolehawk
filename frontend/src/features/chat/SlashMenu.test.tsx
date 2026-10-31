@@ -12,6 +12,7 @@ import { filterCommands, parseSlashCommand } from "./slash";
 describe("filterCommands", () => {
   it("puts name-prefix matches before other matches", () => {
     expect(filterCommands(commands, "s").map((c) => c.name)).toEqual([
+      "setup-import",
       "selftest",
       "spend",
       "memory",
@@ -54,15 +55,19 @@ describe("slash menu in ChatInput", () => {
     const listbox = await screen.findByRole("listbox", { name: "Commands" });
     expect(input).toHaveAttribute("aria-expanded", "true");
     expect(input).toHaveAttribute("aria-controls", listbox.id);
-    expect(await screen.findAllByRole("option")).toHaveLength(commands.length);
+    const options = await screen.findAllByRole("option");
+    expect(options).toHaveLength(commands.filter((c) => c.chat_allowed).length);
+    expect(options.map((o) => o.textContent)).not.toContainEqual(
+      expect.stringContaining("setup-import"),
+    );
 
     await user.type(input, "mem");
-    const options = screen.getAllByRole("option");
-    expect(options.map((o) => o.textContent)).toEqual([
+    const memOptions = screen.getAllByRole("option");
+    expect(memOptions.map((o) => o.textContent)).toEqual([
       expect.stringContaining("/memory"),
       expect.stringContaining("/propose"), // description mentions memory
     ]);
-    expect(input).toHaveAttribute("aria-activedescendant", options[0]?.id);
+    expect(input).toHaveAttribute("aria-activedescendant", memOptions[0]?.id);
   });
 
   it("navigates with arrow keys and selects with Enter without sending", async () => {

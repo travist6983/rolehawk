@@ -1656,6 +1656,10 @@
             "type": "string",
             "title": "Release"
           },
+          "chat_allowed": {
+            "type": "boolean",
+            "title": "Chat Allowed"
+          },
           "params_schema": {
             "additionalProperties": true,
             "type": "object",
@@ -1669,6 +1673,7 @@
           "read_only",
           "background",
           "release",
+          "chat_allowed",
           "params_schema"
         ],
         "title": "CommandInfo"
