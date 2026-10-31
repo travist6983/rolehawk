@@ -168,7 +168,7 @@ function CompletenessCard({
   const { score, missing } = overview.completeness;
   return (
     <Card>
-      <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center">
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1 space-y-2">
           <div className="flex items-baseline justify-between">
             <p className="font-medium">Profile {score}% complete</p>

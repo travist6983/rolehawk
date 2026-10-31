@@ -693,6 +693,8 @@ export interface components {
             background: boolean;
             /** Release */
             release: string;
+            /** Chat Allowed */
+            chat_allowed: boolean;
             /** Params Schema */
             params_schema: {
                 [key: string]: unknown;

@@ -334,12 +334,13 @@ def parse_preferences(markdown: str, default_currency: str = "USD") -> Preferenc
         key = name.strip().lower()
         items = _bullets(lines)
         first = items[0] if items else None
+        # Titles and places can contain commas, so only bullets separate them.
         if key in {"target titles", "target roles", "titles"}:
-            prefs.target_titles = _list_items(lines)
+            prefs.target_titles = dedupe(items)
         elif key == "seniority":
             prefs.seniority = first
         elif key == "locations":
-            prefs.locations = _list_items(lines)
+            prefs.locations = dedupe(items)
         elif key == "remote":
             prefs.remote = _parse_remote(first)
         elif key == "country":

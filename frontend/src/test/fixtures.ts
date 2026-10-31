@@ -33,11 +33,21 @@ export const llmStatus = (overrides: Partial<LLMStatus> = {}): LLMStatus => ({
 
 export const commands: CommandInfo[] = [
   {
+    name: "setup-import",
+    description: "Import a resume from a local file path.",
+    read_only: false,
+    background: false,
+    release: "v1.0",
+    chat_allowed: false,
+    params_schema: {},
+  },
+  {
     name: "context",
     description: "Export the context pack.",
     read_only: true,
     background: false,
     release: "v1.0",
+    chat_allowed: true,
     params_schema: {},
   },
   {
@@ -46,6 +56,7 @@ export const commands: CommandInfo[] = [
     read_only: true,
     background: false,
     release: "v1.0",
+    chat_allowed: true,
     params_schema: {},
   },
   {
@@ -54,6 +65,7 @@ export const commands: CommandInfo[] = [
     read_only: false,
     background: false,
     release: "v1.0",
+    chat_allowed: true,
     params_schema: {},
   },
   {
@@ -62,6 +74,7 @@ export const commands: CommandInfo[] = [
     read_only: true,
     background: true,
     release: "v1.0",
+    chat_allowed: true,
     params_schema: {},
   },
   {
@@ -70,6 +83,7 @@ export const commands: CommandInfo[] = [
     read_only: true,
     background: false,
     release: "v1.0",
+    chat_allowed: true,
     params_schema: {},
   },
 ];

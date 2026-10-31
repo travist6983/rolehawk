@@ -27,6 +27,7 @@ from offerbound.profile.parsing import (
     parse_salary,
     split_lines,
     split_list,
+    split_places,
 )
 
 QuestionKind = Literal["single", "multi", "text", "list", "form"]
@@ -269,9 +270,10 @@ def open_questions(
             Question(
                 id="prefs.locations",
                 prompt="Which cities or regions work for you?",
-                kind="list",
-                placeholder="London, Manchester",
-                value=[profile.contact.location] if profile.contact.location else None,
+                help="Separate places with semicolons; commas stay part of a place name.",
+                kind="text",
+                placeholder="Denver, CO; Boulder, CO",
+                value=profile.contact.location,
             )
         )
     if not prefs.salary_floor:
@@ -466,7 +468,9 @@ def apply_answer(
             raise AnswerError("Use a two-letter country code, like US, GB, or DE.")
         prefs.country = code
     elif question_id == "prefs.locations":
-        prefs.locations = _items(value)
+        # "Denver, CO" is one place: split on semicolons and newlines only.
+        places = value if isinstance(value, list) else split_places(_text(value))
+        prefs.locations = dedupe([p.strip() for p in places if p.strip()])
     elif question_id == "prefs.salary":
         floor = parse_salary(_text(value), countries.defaults_for(prefs.country).currency)
         if floor is None:

@@ -47,7 +47,7 @@ INTERVIEW_ANSWERS: dict[str, AnswerValue] = {
     "prefs.seniority": "Mid level",
     "prefs.remote": "hybrid",
     "prefs.country": "US",
-    "prefs.locations": "Denver, Boulder",
+    "prefs.locations": "Denver, CO; Boulder, CO",
     "prefs.salary": "95k",
     "prefs.work_auth": "Citizen or permanent resident",
 }
@@ -98,6 +98,7 @@ async def test_setup_by_interview_alone_without_ai(runtime: Runtime) -> None:
         skills = session.scalars(
             select(ProfileItem).where(ProfileItem.kind == ProfileItemKind.SKILL)
         ).all()
+    assert prefs.locations == ["Denver, CO", "Boulder, CO"]
     assert [(t.title, t.remote_policy.value, t.salary_min) for t in targets] == [
         ("Data Analyst", "hybrid", 95000),
         ("Analytics Engineer", "hybrid", 95000),

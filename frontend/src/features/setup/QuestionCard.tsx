@@ -112,7 +112,9 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
                 }}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors duration-150",
-                  on ? "border-primary bg-primary/10 text-primary" : "bg-card hover:border-primary",
+                  on
+                    ? "border-primary bg-primary/10 text-primary-text"
+                    : "bg-card hover:border-primary",
                 )}
               >
                 {on && <CheckIcon className="size-3.5" aria-hidden />}
@@ -149,6 +151,7 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
             <div className="flex gap-2">
               <Input
                 id={`${promptId}-text`}
+                autoComplete="off"
                 aria-labelledby={question.allow_other ? undefined : promptId}
                 aria-describedby={described}
                 value={text}
@@ -197,6 +200,7 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
                 ) : (
                   <Input
                     id={id}
+                    autoComplete="off"
                     required={field.required}
                     aria-describedby={described}
                     value={form[field.name] ?? ""}
