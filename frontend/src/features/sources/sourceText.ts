@@ -1,6 +1,25 @@
 /** Pure helpers for the Sources screen: pasted watchlist parsing and display text. */
 
+import type { PortalDefinition } from "@/api/queries";
+
 export { plural, timeAgo } from "@/lib/format";
+
+type RssDefinition = Extract<PortalDefinition, { kind: "rss" }>;
+export type CompanyInTitle = NonNullable<RssDefinition["company_in_title"]>;
+
+/** How a feed's titles carry the company, shown with an example title. */
+export const COMPANY_IN_TITLE: Record<CompanyInTitle, string> = {
+  none: "Not in the title",
+  prefix_colon: "Company: Job title",
+  suffix_comma: "Job title, Company",
+  suffix_at: "Job title at Company",
+};
+
+export const COMPANY_IN_TITLE_IDS = Object.keys(COMPANY_IN_TITLE) as CompanyInTitle[];
+
+export function isCompanyInTitle(value: string): value is CompanyInTitle {
+  return value in COMPANY_IN_TITLE;
+}
 
 export type AtsId = "greenhouse" | "lever" | "ashby" | "workable";
 

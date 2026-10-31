@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.apply.autofill import Autofiller
 from offerbound.apply.service import ApplyService
+from offerbound.commands.add_portal import register_add_portal
 from offerbound.commands.apply import register_apply
 from offerbound.commands.builtin import register_builtin
 from offerbound.commands.documents import register_documents
@@ -37,6 +38,7 @@ from offerbound.memory.files import MemoryFiles
 from offerbound.memory.proposals import MemoryService
 from offerbound.memory.sessions import SessionMaintenance
 from offerbound.paths import DataPaths
+from offerbound.portals.custom.service import AddPortalService
 from offerbound.portals.scrape import Scraper
 from offerbound.portals.state import PortalStore
 from offerbound.profile.service import ProfileService
@@ -71,6 +73,7 @@ class Runtime:
     setup: SetupService
     portals: PortalStore
     scraper: Scraper
+    add_portal: AddPortalService
     jobs: JobStore
     ranker: Ranker
     documents: DocumentService
@@ -143,12 +146,14 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_documents(commands)
     register_apply(commands)
     register_insights(commands)
+    register_add_portal(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
     state = AppStateStore(sessions)
     profiles = ProfileService(files, sessions, lambda: runtime_ref[0].settings)
-    portals = PortalStore(sessions)
+    add_portal = AddPortalService(paths, sessions, llm)
+    portals = PortalStore(sessions, extra=add_portal.portals)
     portals.sync_builtin()
     portals.seed_watchlist()
     memory = MemoryService(files, sessions, on_change=profiles.on_memory_changed)
@@ -180,7 +185,12 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         profiles=profiles,
         setup=SetupService(paths, sessions, profiles, state, llm),
         portals=portals,
-        scraper=Scraper(sessions, lambda: runtime_ref[0].settings.search.country),
+        scraper=Scraper(
+            sessions,
+            lambda: runtime_ref[0].settings.search.country,
+            extra=add_portal.portals,
+        ),
+        add_portal=add_portal,
         jobs=jobs,
         ranker=ranker,
         documents=documents,

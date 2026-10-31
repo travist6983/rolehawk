@@ -246,6 +246,7 @@ export const portal = (overrides: Partial<PortalView> = {}): PortalView => ({
   jobs_found: 0,
   companies: 59,
   docs_url: "https://developers.greenhouse.io/job-board.html",
+  custom: false,
   ...overrides,
 });
 

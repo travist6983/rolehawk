@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { errorText } from "@/api/errors";
 import {
   useClearCredentials,
+  useRemoveCustomPortal,
   useSaveCredentials,
   useSetPortalEnabled,
   type PortalView,
@@ -23,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { safeUrl } from "@/features/discover/discoverText";
 import { cn } from "@/lib/utils";
 
 import { coverage, fieldLabel, plural, timeAgo } from "./sourceText";
@@ -191,6 +193,64 @@ function CredentialsForm({ portal }: { portal: PortalView }) {
   );
 }
 
+function RemoveSource({ portal }: { portal: PortalView }) {
+  const remove = useRemoveCustomPortal();
+  const [confirming, setConfirming] = useState(false);
+  const definitionId = portal.id.replace(/^custom-/, "");
+  const link = safeUrl(portal.docs_url);
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      {link && (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1 text-primary-text underline-offset-4 hover:underline"
+        >
+          Site <ExternalLinkIcon className="size-3.5" aria-hidden />
+        </a>
+      )}
+      {confirming ? (
+        <>
+          <span className="text-muted-foreground">Remove it and its jobs?</span>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={remove.isPending}
+            onClick={() => {
+              remove.mutate(definitionId, {
+                onSuccess: () => toast(`${portal.name} removed`),
+                onError: (error) => toast.error(errorText(error, "Couldn't remove it")),
+              });
+            }}
+          >
+            Remove
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setConfirming(false);
+            }}
+          >
+            Keep
+          </Button>
+        </>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setConfirming(true);
+          }}
+        >
+          Remove source
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function PortalCard({
   portal,
   onManageCompanies,
@@ -252,6 +312,7 @@ export function PortalCard({
           )}
         </dl>
         {needsKey && <CredentialsForm portal={portal} />}
+        {portal.custom && <RemoveSource portal={portal} />}
       </CardContent>
     </Card>
   );

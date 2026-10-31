@@ -796,3 +796,52 @@ export function useReset() {
     },
   });
 }
+
+// --- /add-portal ----------------------------------------------------------------------
+
+export type Inspection = Schemas["Inspection"];
+export type PortalCandidate = Schemas["Candidate"];
+export type PortalTestResult = Schemas["TestResult"];
+export type PortalDefinition = NonNullable<PortalCandidate["definition"]>;
+
+export function useInspectPortal() {
+  return useMutation({
+    mutationFn: (url: string) => unwrap(api.POST("/api/portals/inspect", { body: { url } })),
+  });
+}
+
+export function useDraftPortal() {
+  return useMutation({
+    mutationFn: ({ url, name }: { url: string; name?: string }) =>
+      unwrap(api.POST("/api/portals/draft", { body: { url, name: name ?? null } })),
+  });
+}
+
+export function useTestPortal() {
+  return useMutation({
+    mutationFn: (definition: PortalDefinition) =>
+      unwrap(api.POST("/api/portals/test", { body: { definition } })),
+  });
+}
+
+export function useAddCustomPortal() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: (definition: PortalDefinition) =>
+      unwrap(api.POST("/api/portals/custom", { body: { definition } })),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveCustomPortal() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: async (definitionId: string) => {
+      const { response } = await api.DELETE("/api/portals/custom/{definition_id}", {
+        params: { path: { definition_id: definitionId } },
+      });
+      if (!response.ok) throw new ApiError(response.status, "Couldn't remove the source");
+    },
+    onSuccess: invalidate,
+  });
+}

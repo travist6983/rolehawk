@@ -42,3 +42,13 @@ Users add companies in the Sources screen; each is checked against its ATS befor
 airbnb, Lever: palantir, Ashby: ramp, Workable: workmotion, Remote OK, We Work Remotely).
 Adzuna and USAJOBS fixtures follow the documented response shapes (no key to record with).
 Tests never make live calls.
+
+## Custom sources (/add-portal)
+
+Users add careers pages and job boards from the Sources screen. Detection prefers, in order:
+a known ATS (added to the watchlist instead), an RSS/Atom feed the page links (job feeds
+ranked first), JSON-LD `JobPosting` data on the page or on the job pages it links to, a JSON
+job list (fields mapped automatically), and only then CSS selectors that Claude proposes.
+A source is saved only after a sandboxed test run returns at least 3 jobs. Live check on
+2026-10-31: python.org/jobs is detected as its "Python Job Opportunities" RSS feed (20 jobs
+in about 1 second through the sandbox).

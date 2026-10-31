@@ -1,0 +1,5 @@
+{"meta": {"total": 3}, "data": {"jobs": [
+ {"id": 7, "title": "Data Analyst", "absolute_url": "https://jobs.example.test/7", "location": {"name": "Remote"}, "content": "Remote role"},
+ {"id": 8, "title": "Senior Data Analyst", "absolute_url": "/jobs/8", "location": {"name": "Berlin"}},
+ {"id": 9, "title": "Data Scientist", "absolute_url": "/jobs/9", "location": {"name": "London"}}
+]}}

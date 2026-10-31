@@ -34,6 +34,7 @@ Built-in commands available today:
 | `pipeline`, `insights` | The board by stage with next actions; funnel, response rate by source, weekly activity, spend |
 | `html-report` | Self-contained HTML report in the reports folder (see `html-report/SKILL.md`) |
 | `reset` | Delete a scope of data after a zipped backup; typed confirmation (see `reset/SKILL.md`) |
+| `portal-inspect`, `portal-draft`, `portal-test`, `portal-add`, `portal-remove` | Add a careers page or job board as a sandboxed custom source (see `add-portal/SKILL.md`) |
 | `templates`, `document-preview` | CV/cover letter templates in use; render a preview to DOCX + PDF under documents/generated/previews |
 
 Feature commands register as they ship (see the release table).
