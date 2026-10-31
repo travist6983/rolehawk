@@ -209,7 +209,10 @@ describe("Onboarding", () => {
     await waitFor(() => {
       expect(applied?.profile.skills).toEqual(["TypeScript", "React"]);
     });
-    expect(await screen.findByRole("listitem", { current: "step" })).toHaveTextContent("Questions");
+    // The step changes only after the save response; wait for it (findBy would match the old step).
+    await waitFor(() => {
+      expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Questions");
+    });
   });
 
   it("shows why extraction failed", async () => {
