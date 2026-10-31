@@ -17,7 +17,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from offerbound.db.models import Job, JobScore, SearchTarget
 from offerbound.fit.filters import FilterCounts, build_rules, candidates
 from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, JobFit
-from offerbound.llm.errors import LLMError, LLMNotConfiguredError, SpendCapExceededError
+from offerbound.llm.errors import (
+    LLMError,
+    LLMNotConfiguredError,
+    LLMOutputError,
+    SpendCapExceededError,
+)
 from offerbound.llm.meter import estimate_tokens
 from offerbound.llm.prompting import untrusted
 from offerbound.llm.service import LLMService
@@ -265,6 +270,18 @@ class Ranker:
                         model=model,
                     )
                 )
+
+    async def score_one(self, job_id: int, task_id: str | None = None) -> JobFit:
+        """Score a single job now (the /apply fit gate), with the same rubric as /rank."""
+        with self._sessions() as session:
+            job = session.get(Job, job_id)
+        if job is None:
+            raise KeyError(job_id)
+        fits, model = await self._score([job], self._system(), task_id)
+        if not fits:
+            raise LLMOutputError("the fit check returned no score")
+        await asyncio.to_thread(self._store, fits, model, task_id)
+        return fits[0]
 
     # --- scores from elsewhere (Claude Code skills) -------------------------------------
 

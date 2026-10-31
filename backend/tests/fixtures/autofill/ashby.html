@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Senior Frontend Engineer @ Globex</title></head>
+<body>
+<div id="root"></div>
+<!-- Shaped like an Ashby /application page: the form is rendered by JavaScript. -->
+<script>
+  setTimeout(() => {
+    document.getElementById("root").innerHTML = `
+      <form id="ashby-form">
+        <div><label for="_systemfield_name">Name *</label><input id="_systemfield_name" name="_systemfield_name" required></div>
+        <div><label for="_systemfield_email">Email *</label><input id="_systemfield_email" name="_systemfield_email" type="email" required></div>
+        <div><label for="_systemfield_resume">Resume *</label><input id="_systemfield_resume" type="file" required></div>
+        <div><label for="q1">LinkedIn Profile</label><input id="q1" name="q1"></div>
+        <div><label for="q2">Phone number</label><input id="q2" name="q2"></div>
+        <div><label for="q3">Are you authorized to work in the US? *</label><input id="q3" name="q3" required></div>
+        <button type="submit">Submit Application</button>
+      </form>`;
+    document.getElementById("ashby-form").addEventListener("submit", (e) => { e.preventDefault(); fetch("/submitted"); });
+  }, 150);
+</script>
+</body></html>

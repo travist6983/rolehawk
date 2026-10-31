@@ -18,6 +18,7 @@ const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
 const SourcesPage = lazy(() => import("@/features/sources/SourcesPage"));
 const DiscoverPage = lazy(() => import("@/features/discover/DiscoverPage"));
+const ApplicationPage = lazy(() => import("@/features/applications/ApplicationPage"));
 const OnboardingPage = lazy(() => import("@/features/setup/OnboardingPage"));
 const placeholders = () => import("@/features/placeholders");
 const InsightsPage = lazy(() => placeholders().then((m) => ({ default: m.InsightsPage })));
@@ -33,6 +34,10 @@ export function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={screen(<PipelinePage />, <BoardSkeleton />)} />
         <Route path="discover" element={screen(<DiscoverPage />, <TableSkeleton />)} />
+        <Route
+          path="applications/:id"
+          element={screen(<ApplicationPage />, <DocumentSkeleton />)}
+        />
         <Route path="profile" element={screen(<ProfilePage />, <DocumentSkeleton />)} />
         <Route path="sources" element={screen(<SourcesPage />, <CardGridSkeleton />)} />
         <Route path="insights" element={screen(<InsightsPage />, <ChartSkeleton />)} />

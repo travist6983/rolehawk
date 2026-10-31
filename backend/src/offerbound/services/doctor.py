@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import sys
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
 import keyring
 import keyring.errors
@@ -49,10 +50,18 @@ def _chromium() -> Check:
             browser = p.chromium.launch(headless=True)
             version = browser.version
             browser.close()
+            visible = Path(p.chromium.executable_path).exists()
     except PlaywrightError as exc:
         first = str(exc).strip().splitlines()[0][:120]
         return Check("chromium", False, f"{first}. Fix: {INSTALL_HINT}")
-    return Check("chromium", True, f"Chromium {version} (PDF export)")
+    if not visible:
+        return Check(
+            "chromium",
+            True,
+            f"Chromium {version} for PDF export; autofill needs the full browser: "
+            "uv run playwright install chromium",
+        )
+    return Check("chromium", True, f"Chromium {version} (PDF export and autofill)")
 
 
 def run_checks(paths: DataPaths) -> list[Check]:

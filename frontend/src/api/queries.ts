@@ -580,3 +580,121 @@ export function templatePreviewUrl(id: string, format: "pdf" | "docx" = "pdf"): 
   const query = format === "pdf" ? "" : "?format=docx";
   return `/api/templates/${encodeURIComponent(id)}/preview${query}`;
 }
+
+// --- applications ---------------------------------------------------------------------
+
+export type ApplyPlan = Schemas["ApplyPlan"];
+export type ApplicationDetail = Schemas["ApplicationDetail"];
+export type Bundle = Schemas["Bundle"];
+export type Flag = Schemas["Flag"];
+export type CvDocument = Schemas["CvDocument-Output"];
+export type CoverLetter = Schemas["CoverLetter-Output"];
+export type Stage = Schemas["Stage"];
+export type AutofillReport = Schemas["AutofillReport"];
+export type RegenerateSection = Schemas["RegenerateIn"]["section"];
+
+export const applicationKeys = {
+  detail: (id: number) => ["applications", id] as const,
+  plan: (jobId: number) => ["applications", "plan", jobId] as const,
+};
+
+export function useApplyPlan(jobId: number | null) {
+  return useQuery({
+    queryKey: applicationKeys.plan(jobId ?? -1),
+    queryFn: () => unwrap(api.POST("/api/apply/plan", { body: { job_id: jobId ?? -1 } })),
+    enabled: jobId !== null,
+    staleTime: 0,
+  });
+}
+
+export function useStartApply() {
+  return useMutation({
+    mutationFn: (body: Schemas["ApplyParams"]) => unwrap(api.POST("/api/apply", { body })),
+  });
+}
+
+export function useApplication(id: number) {
+  return useQuery({
+    queryKey: applicationKeys.detail(id),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/applications/{application_id}", {
+          params: { path: { application_id: id } },
+        }),
+      ),
+  });
+}
+
+function useSetApplication(id: number) {
+  const client = useQueryClient();
+  return (detail: ApplicationDetail) => {
+    client.setQueryData(applicationKeys.detail(id), detail);
+    void client.invalidateQueries({ queryKey: jobKeys.all });
+  };
+}
+
+export function useUpdateApplication(id: number) {
+  const onSuccess = useSetApplication(id);
+  return useMutation({
+    mutationFn: (body: Schemas["StagePatch"]) =>
+      unwrap(
+        api.PATCH("/api/applications/{application_id}", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useSaveDocuments(id: number) {
+  const onSuccess = useSetApplication(id);
+  return useMutation({
+    mutationFn: (body: Schemas["DocumentsIn"]) =>
+      unwrap(
+        api.PUT("/api/applications/{application_id}/documents", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useRegenerate(id: number) {
+  return useMutation({
+    mutationFn: (body: Schemas["RegenerateIn"]) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/regenerate", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+  });
+}
+
+export function useAutofill(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/autofill", {
+          params: { path: { application_id: id } },
+        }),
+      ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: applicationKeys.detail(id) });
+    },
+  });
+}
+
+/** Same-origin GET (the session cookie authorizes it): for iframes and download links. */
+export function applicationFileUrl(
+  id: number,
+  document: "cv" | "cover_letter",
+  format: "pdf" | "docx",
+  version?: string,
+): string {
+  const query = version ? `?v=${encodeURIComponent(version)}` : "";
+  return `/api/applications/${String(id)}/files/${document}.${format}${query}`;
+}

@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from offerbound.apply.autofill import Autofiller
+from offerbound.apply.service import ApplyService
+from offerbound.commands.apply import register_apply
 from offerbound.commands.builtin import register_builtin
 from offerbound.commands.documents import register_documents
 from offerbound.commands.rank import register_rank
@@ -66,6 +69,8 @@ class Runtime:
     jobs: JobStore
     ranker: Ranker
     documents: DocumentService
+    applications: ApplyService
+    autofill: Autofiller
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -95,6 +100,7 @@ class Runtime:
     async def aclose(self) -> None:
         await self.tasks.shutdown()
         await self.documents.aclose()
+        await self.autofill.aclose()
         self.engine.dispose()
 
 
@@ -126,6 +132,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_scrape(commands)
     register_rank(commands)
     register_documents(commands)
+    register_apply(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
@@ -135,6 +142,14 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     portals.sync_builtin()
     portals.seed_watchlist()
     memory = MemoryService(files, sessions, on_change=profiles.on_memory_changed)
+    jobs = JobStore(sessions)
+    ranker = Ranker(sessions, llm, memory, profiles.load_preferences)
+    documents = DocumentService(
+        paths,
+        lambda: runtime_ref[0].settings,
+        lambda: runtime_ref[0].reload_settings(),
+        profiles.load_profile,
+    )
     runtime = Runtime(
         paths=paths,
         settings=settings,
@@ -152,14 +167,21 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         setup=SetupService(paths, sessions, profiles, state, llm),
         portals=portals,
         scraper=Scraper(sessions, lambda: runtime_ref[0].settings.search.country),
-        jobs=JobStore(sessions),
-        ranker=Ranker(sessions, llm, memory, profiles.load_preferences),
-        documents=DocumentService(
+        jobs=jobs,
+        ranker=ranker,
+        documents=documents,
+        applications=ApplyService(
             paths,
+            sessions,
             lambda: runtime_ref[0].settings,
-            lambda: runtime_ref[0].reload_settings(),
+            llm,
+            memory,
             profiles.load_profile,
+            ranker,
+            jobs,
+            documents,
         ),
+        autofill=Autofiller(headless=False),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)

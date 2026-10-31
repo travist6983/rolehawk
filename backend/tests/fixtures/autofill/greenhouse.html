@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Apply: Senior Frontend Engineer at Globex</title></head>
+<body>
+<!-- Shaped like a Greenhouse job board form (job-boards.greenhouse.io). -->
+<form id="application-form" action="/submitted" method="post">
+  <div class="field"><label for="first_name">First Name<span class="asterisk">*</span></label>
+    <input type="text" id="first_name" name="job_application[first_name]" required></div>
+  <div class="field"><label for="last_name">Last Name<span class="asterisk">*</span></label>
+    <input type="text" id="last_name" name="job_application[last_name]" required></div>
+  <div class="field"><label for="email">Email<span class="asterisk">*</span></label>
+    <input type="text" id="email" name="job_application[email]" required></div>
+  <div class="field"><label for="phone">Phone</label>
+    <input type="tel" id="phone" name="job_application[phone]"></div>
+  <div class="field"><label for="resume">Resume/CV<span class="asterisk">*</span></label>
+    <button type="button">Attach</button>
+    <input type="file" id="resume" name="resume" style="display:none" required></div>
+  <div class="field"><label for="cover_letter">Cover Letter</label>
+    <input type="file" id="cover_letter" name="cover_letter" style="display:none"></div>
+  <div class="field"><label for="question_101">LinkedIn Profile</label>
+    <input type="text" id="question_101" name="job_application[answers][0][text_value]"></div>
+  <div class="field"><label for="question_102">Website</label>
+    <input type="text" id="question_102" name="job_application[answers][1][text_value]"></div>
+  <div class="field"><label for="question_103">Why do you want to work at Globex?<span class="asterisk">*</span></label>
+    <textarea id="question_103" name="job_application[answers][2][text_value]" required></textarea></div>
+  <div class="field"><label><input type="checkbox" name="consent" required> I agree to the privacy notice</label></div>
+  <button type="submit" id="submit_app">Submit application</button>
+</form>
+<script>
+  document.getElementById("application-form").addEventListener("submit", () => { fetch("/submitted"); });
+</script>
+</body></html>

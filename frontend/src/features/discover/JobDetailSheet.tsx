@@ -1,11 +1,14 @@
 import {
   BookmarkIcon,
   BookmarkXIcon,
+  FileTextIcon,
+  SendIcon,
   EyeOffIcon,
   ExternalLinkIcon,
   SparklesIcon,
   Undo2Icon,
 } from "lucide-react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 import { errorText } from "@/api/errors";
@@ -78,7 +81,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
   );
 }
 
-function Actions({ job }: { job: JobDetail }) {
+function Actions({ job, onApply }: { job: JobDetail; onApply: (id: number) => void }) {
   const save = useSaveJobs();
   const dismiss = useDismissJobs();
   const busy = save.isPending || dismiss.isPending;
@@ -88,6 +91,23 @@ function Actions({ job }: { job: JobDetail }) {
 
   return (
     <div className="flex flex-wrap gap-2">
+      {job.application_id !== null && job.stage !== null && job.stage !== "saved" ? (
+        <Button size="sm" asChild>
+          <Link to={`/applications/${String(job.application_id)}`}>
+            <FileTextIcon /> Open application
+          </Link>
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() => {
+            onApply(job.id);
+          }}
+        >
+          <SendIcon /> Apply
+        </Button>
+      )}
       {job.stage === null ? (
         <Button
           size="sm"
@@ -158,10 +178,12 @@ export function JobDetailSheet({
   id,
   onClose,
   onRank,
+  onApply,
 }: {
   id: number | null;
   onClose: () => void;
   onRank: (id: number) => void;
+  onApply: (id: number) => void;
 }) {
   const job = useJob(id);
   const data = job.data;
@@ -188,7 +210,7 @@ export function JobDetailSheet({
               </p>
             </SheetHeader>
             <div className="space-y-5 px-4 pb-6">
-              <Actions job={data} />
+              <Actions job={data} onApply={onApply} />
               <FitSection
                 job={data}
                 onRank={() => {
