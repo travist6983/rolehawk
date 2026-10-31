@@ -190,6 +190,8 @@ main() {
   if [ -n "${OFFERBOUND_APP_HOME:-}" ]; then
     home_ref="$(quote "$home")"
   else
+    # Literal $HOME: the launcher expands it when it runs.
+    # shellcheck disable=SC2016
     home_ref='"$HOME/.offerbound"'
   fi
   write_launcher "$bindir" "$home_ref"
