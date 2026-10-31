@@ -537,7 +537,7 @@ Tests: run against local fixture HTML sites (a fake Workday-style multi-page for
 Five decisions are still open; none block Chunks 1 to 4.
 
 - [ ] Project name and GitHub owner for the install URLs.
-- [ ] Does the Claude Agent SDK path permit use inside a distributed third-party app? Check Anthropic's current terms before Chunk 3 and drop that provider if not.
+- [x] Does the Claude Agent SDK path permit use inside a distributed third-party app? **Resolved 2026-10-31: no.** The Agent SDK docs state that, unless previously approved, Anthropic does not allow third-party developers to offer claude.ai login or rate limits in their products. The in-app provider is API-key only; Claude Code users run commands through `skills/`, where their own Claude Code session does the reasoning.
 - [ ] Voice mode for /interview mock sessions: v1.1 or v2?
 - [ ] Should the starter company watchlist be curated by industry or by country first?
 - [ ] Telemetry stays off, but do you want an opt-in "share anonymized source health" ping so broken portals get noticed faster?

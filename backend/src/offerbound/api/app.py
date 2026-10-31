@@ -6,17 +6,21 @@ Run with `offerbound start` (or `uv run poe dev`). For uvicorn directly:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import secrets
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from offerbound import __version__
-from offerbound.api.routes import events, system, tasks
+from offerbound.api.routes import chat, commands, events, llm, memory, system, tasks
 from offerbound.api.security import SecurityPolicy, SessionGuard
+from offerbound.llm import errors as llm_errors
+from offerbound.llm.provider import LLMProvider
 from offerbound.logging_setup import configure_logging, register_secret
 from offerbound.paths import DataPaths
 from offerbound.services.runtime import open_runtime, prepare_data_folder
@@ -29,6 +33,7 @@ def create_app(
     paths: DataPaths | None = None,
     token: str | None = None,
     extra_origins: Iterable[str] | None = None,
+    provider: LLMProvider | None = None,
 ) -> FastAPI:
     if not logging.getLogger().handlers:
         configure_logging()
@@ -42,17 +47,42 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        runtime = open_runtime(paths)
+        runtime = open_runtime(paths, provider=provider)
         app.state.runtime = runtime
+        maintenance = asyncio.create_task(runtime.startup_maintenance())
         try:
             yield
         finally:
+            maintenance.cancel()
             await runtime.aclose()
 
     app = FastAPI(title="Offerbound AI", version=__version__, lifespan=lifespan)
     app.state.policy = policy
     app.add_middleware(SessionGuard, policy=policy)
-    app.include_router(system.router)
-    app.include_router(tasks.router)
-    app.include_router(events.router)
+    app.add_exception_handler(llm_errors.LLMError, _llm_error_handler)
+    for router in (
+        system.router,
+        tasks.router,
+        events.router,
+        commands.router,
+        llm.router,
+        chat.router,
+        memory.router,
+    ):
+        app.include_router(router)
     return app
+
+
+_LLM_STATUS: list[tuple[type[llm_errors.LLMError], int]] = [
+    (llm_errors.LLMAuthError, 400),
+    (llm_errors.LLMNotConfiguredError, 409),
+    (llm_errors.SpendCapExceededError, 402),
+    (llm_errors.LLMUnavailableError, 503),
+    (llm_errors.LLMRefusalError, 422),
+]
+
+
+async def _llm_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    status = next((code for kind, code in _LLM_STATUS if isinstance(exc, kind)), 502)
+    message = exc.user_message if isinstance(exc, llm_errors.LLMError) else "AI request failed."
+    return JSONResponse({"detail": message, "kind": type(exc).__name__}, status_code=status)

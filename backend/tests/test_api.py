@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from offerbound.api.app import create_app
 from offerbound.api.security import TOKEN_COOKIE
+from offerbound.llm.fake import FakeProvider
 from offerbound.paths import DataPaths
 from tests.conftest import BASE_URL, TEST_TOKEN
 
@@ -22,7 +23,12 @@ def test_api_requires_token(anon_client: TestClient) -> None:
 
 def test_header_token_allows_all_methods(client: TestClient) -> None:
     assert client.get("/api/tasks").status_code == 200
-    assert client.post("/api/tasks/selftest", json={"steps": 1, "delay_s": 0}).status_code == 202
+    assert (
+        client.post(
+            "/api/commands/selftest", json={"params": {"steps": 1, "delay_s": 0}}
+        ).status_code
+        == 200
+    )
 
 
 def test_launch_url_sets_cookie_for_safe_methods_only(anon_client: TestClient) -> None:
@@ -37,7 +43,7 @@ def test_launch_url_sets_cookie_for_safe_methods_only(anon_client: TestClient) -
     assert session.status_code == 200
     assert session.json()["token"] == TEST_TOKEN
     # Cookies alone never authorize writes.
-    assert anon_client.post("/api/tasks/selftest", json={}).status_code == 401
+    assert anon_client.post("/api/commands/selftest", json={}).status_code == 401
 
 
 def test_wrong_launch_token_sets_no_cookie(anon_client: TestClient) -> None:
@@ -58,14 +64,17 @@ def test_foreign_origin_blocked(client: TestClient) -> None:
     assert same.status_code == 200
 
 
-def test_dev_origin_allowed_when_configured(paths: DataPaths) -> None:
-    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=["http://127.0.0.1:5173"])
+def test_dev_origin_allowed_when_configured(paths: DataPaths, fake: FakeProvider) -> None:
+    app = create_app(
+        paths=paths, token=TEST_TOKEN, extra_origins=["http://127.0.0.1:5173"], provider=fake
+    )
     with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
         assert c.get("/api/tasks", headers={"Origin": "http://127.0.0.1:5173"}).status_code == 200
 
 
 def test_selftest_runs_to_completion(client: TestClient) -> None:
-    task_id = client.post("/api/tasks/selftest", json={"steps": 2, "delay_s": 0}).json()["id"]
+    body = {"params": {"steps": 2, "delay_s": 0}}
+    task_id = client.post("/api/commands/selftest", json=body).json()["task_id"]
     deadline = time.monotonic() + 5
     status = None
     while time.monotonic() < deadline:

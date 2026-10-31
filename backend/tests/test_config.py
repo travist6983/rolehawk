@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from offerbound.config import ProviderKind, load_settings, write_default_config
+from offerbound.config import ProviderKind, load_settings, update_settings, write_default_config
 
 
 def test_defaults_when_file_missing(tmp_path: Path) -> None:
@@ -22,9 +22,12 @@ def test_default_file_round_trips(tmp_path: Path) -> None:
 
 def test_values_from_file(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
-    config.write_text('[llm]\nprovider = "claude_code"\nmonthly_cap_usd = 15\n', encoding="utf-8")
+    config.write_text(
+        '[llm]\nmodel = "claude-sonnet-5-5"\nmonthly_cap_usd = 15\n', encoding="utf-8"
+    )
     settings = load_settings(config)
-    assert settings.llm.provider is ProviderKind.CLAUDE_CODE
+    assert settings.llm.provider is ProviderKind.ANTHROPIC_API
+    assert settings.llm.model == "claude-sonnet-5-5"
     assert settings.llm.monthly_cap_usd == 15
 
 
@@ -59,3 +62,22 @@ def test_invalid_values_rejected(tmp_path: Path) -> None:
     config.write_text("[search]\nfit_threshold = 150\n", encoding="utf-8")
     with pytest.raises(ValidationError):
         load_settings(config)
+
+
+def test_update_settings_preserves_comments_and_validates(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    write_default_config(config)
+    settings = update_settings(
+        config, "llm", {"model": "claude-haiku-5-5", "monthly_cap_usd": 12.5}
+    )
+    assert settings.llm.model == "claude-haiku-5-5"
+    text = config.read_text(encoding="utf-8")
+    assert "Secrets (API keys" in text  # user-facing comments survive
+    assert load_settings(config).llm.monthly_cap_usd == 12.5
+
+    update_settings(config, "llm", {"monthly_cap_usd": None})
+    assert load_settings(config).llm.monthly_cap_usd is None
+
+    with pytest.raises(ValidationError):
+        update_settings(config, "search", {"fit_threshold": 500})
+    assert load_settings(config).search.fit_threshold == 60  # invalid write left file intact

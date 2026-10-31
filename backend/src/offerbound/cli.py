@@ -12,6 +12,8 @@ offerbound backup          zip the data folder into <data>/backups
 from __future__ import annotations
 
 import argparse
+import asyncio
+import getpass
 import json
 import os
 import secrets
@@ -21,6 +23,7 @@ import time
 import urllib.request
 import webbrowser
 from collections.abc import Sequence
+from typing import Any
 
 from offerbound import __version__
 from offerbound.paths import DataPaths
@@ -125,6 +128,98 @@ def cmd_backup(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_params(pairs: list[str], params_json: str | None) -> dict[str, Any]:
+    params: dict[str, Any] = json.loads(params_json) if params_json else {}
+    if not isinstance(params, dict):
+        raise SystemExit("--params-json must be a JSON object")
+    for pair in pairs:
+        key, sep, raw = pair.partition("=")
+        if not sep or not key:
+            raise SystemExit(f"--param expects key=value, got {pair!r}")
+        try:
+            params[key] = json.loads(raw)
+        except json.JSONDecodeError:
+            params[key] = raw
+    return params
+
+
+async def _run_command(name: str, params: dict[str, Any]) -> tuple[int, Any]:
+    from pydantic import ValidationError
+
+    from offerbound.commands.registry import UnknownCommandError
+    from offerbound.commands.runner import CommandStarted, run_command
+    from offerbound.llm.errors import LLMError
+    from offerbound.services.runtime import open_runtime
+    from offerbound.services.tasks import TASK_EVENT
+
+    runtime = open_runtime(DataPaths.default())
+    try:
+        try:
+            spec = runtime.commands.get(name)
+        except UnknownCommandError:
+            names = ", ".join(c.name for c in runtime.commands.all())
+            return 2, {"error": f"unknown command {name!r}", "available": names}
+        async with runtime.bus.subscribe() as queue:
+            try:
+                result = await run_command(runtime, spec, params)
+            except ValidationError as exc:
+                return 2, {"error": "invalid parameters", "details": exc.errors(include_url=False)}
+            except LLMError as exc:
+                return 3, {"error": exc.user_message, "kind": type(exc).__name__}
+            if not isinstance(result, CommandStarted):
+                return 0, result
+            while True:
+                event = await queue.get()
+                if event.type != TASK_EVENT or event.data.get("id") != result.task_id:
+                    continue
+                if event.data.get("message"):
+                    print(f"[{spec.name}] {event.data['message']}", file=sys.stderr, flush=True)
+                if event.data.get("status") in {"succeeded", "failed", "cancelled"}:
+                    return (0 if event.data["status"] == "succeeded" else 1), event.data
+    finally:
+        await runtime.aclose()
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    params = _parse_params(args.param or [], args.params_json)
+    code, output = asyncio.run(_run_command(args.name, params))
+    text = json.dumps(output, indent=None if args.json else 2, default=str)
+    print(text, file=sys.stdout if code == 0 else sys.stderr)
+    return code
+
+
+async def _llm(action: str, key: str | None) -> tuple[int, Any]:
+    from offerbound.llm.errors import LLMError
+    from offerbound.services import llm_settings
+    from offerbound.services.runtime import open_runtime
+
+    runtime = open_runtime(DataPaths.default())
+    try:
+        if action == "set-key" and key:
+            status = await llm_settings.set_api_key(runtime, key)
+        elif action == "clear-key":
+            status = await llm_settings.clear_api_key(runtime)
+        else:
+            status = llm_settings.status(runtime)
+        return 0, status.model_dump(mode="json")
+    except LLMError as exc:
+        return 3, {"error": exc.user_message}
+    finally:
+        await runtime.aclose()
+
+
+def cmd_llm(args: argparse.Namespace) -> int:
+    key = None
+    if args.llm_command == "set-key":
+        key = sys.stdin.readline().strip() if args.stdin else getpass.getpass("Anthropic API key: ")
+        if not key:
+            print("No key entered.", file=sys.stderr)
+            return 2
+    code, output = asyncio.run(_llm(args.llm_command, key))
+    print(json.dumps(output, indent=2), file=sys.stdout if code == 0 else sys.stderr)
+    return code
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="offerbound", description="Offerbound AI job search copilot"
@@ -153,6 +248,23 @@ def build_parser() -> argparse.ArgumentParser:
     db.set_defaults(func=cmd_db)
 
     sub.add_parser("backup", help="zip the data folder").set_defaults(func=cmd_backup)
+
+    run = sub.add_parser("run", help="run a command against the data folder")
+    run.add_argument("name", help="command name, e.g. context, memory, spend, selftest")
+    run.add_argument(
+        "--param", action="append", metavar="KEY=VALUE", help="parameter (value may be JSON)"
+    )
+    run.add_argument("--params-json", help="all parameters as one JSON object")
+    run.add_argument("--json", action="store_true", help="compact JSON output for tools")
+    run.set_defaults(func=cmd_run)
+
+    llm = sub.add_parser("llm", help="Claude connection")
+    llm_sub = llm.add_subparsers(dest="llm_command", required=True)
+    llm_sub.add_parser("status", help="show connection, model routing and spend")
+    set_key = llm_sub.add_parser("set-key", help="validate and store an API key in the keychain")
+    set_key.add_argument("--stdin", action="store_true", help="read the key from stdin")
+    llm_sub.add_parser("clear-key", help="remove the stored API key")
+    llm.set_defaults(func=cmd_llm)
     return parser
 
 
