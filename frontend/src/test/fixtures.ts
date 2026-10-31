@@ -354,6 +354,7 @@ export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
   score_model: "claude-haiku-5-5",
   stage: null,
   dismissed: false,
+  integrity: "clean",
   ...overrides,
 });
 
@@ -361,6 +362,7 @@ export const jobDetail = (overrides: Partial<JobDetail> = {}): JobDetail => ({
   ...jobRow(),
   description: "About the role\n\nYou'll own reporting for our finance team.",
   application_id: null,
+  integrity_report: null,
   ...overrides,
 });
 

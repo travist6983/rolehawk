@@ -2334,6 +2334,61 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /**
+         * IntegrityView
+         * @description What the API shows: the findings plus a verdict and a one-line summary.
+         */
+        IntegrityView: {
+            /**
+             * Hidden Blocks
+             * @description Hidden HTML blocks with text, removed
+             * @default 0
+             */
+            hidden_blocks: number;
+            /**
+             * Hidden Excerpts
+             * @description Their first words
+             */
+            hidden_excerpts: string[];
+            /**
+             * Hidden Urls
+             * @description Links only in hidden text
+             */
+            hidden_urls: string[];
+            /**
+             * Invisible Chars
+             * @description Removed characters that can carry or hide text
+             * @default 0
+             */
+            invisible_chars: number;
+            /**
+             * Tampering
+             * @description Why those look deliberate
+             */
+            tampering: string[];
+            /**
+             * Invisible Text
+             * @description Text spelled in invisible characters, decoded
+             */
+            invisible_text: string[];
+            /**
+             * Instruction Lines
+             * @description Lines addressed to AI tools, quoted
+             */
+            instruction_lines: string[];
+            /**
+             * Mixed Script Words
+             * @description Words mixing Latin with look-alike letters
+             */
+            mixed_script_words: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "clean" | "cleaned" | "warning";
+            /** Summary */
+            summary: string;
+        };
         /** InterviewState */
         InterviewState: {
             question: components["schemas"]["Question"] | null;
@@ -2385,12 +2440,20 @@ export interface components {
             /** Dismissed */
             dismissed: boolean;
             /**
+             * Integrity
+             * @description clean, cleaned (hidden text removed), or warning
+             * @enum {string}
+             */
+            integrity: "clean" | "cleaned" | "warning";
+            /**
              * Description
              * @description Third-party text from the posting
              */
             description: string;
             /** Application Id */
             application_id: number | null;
+            /** @description What the integrity check removed or found; null when nothing */
+            integrity_report: components["schemas"]["IntegrityView"] | null;
         };
         /** JobPage */
         JobPage: {
@@ -2440,6 +2503,12 @@ export interface components {
             stage: components["schemas"]["Stage"] | null;
             /** Dismissed */
             dismissed: boolean;
+            /**
+             * Integrity
+             * @description clean, cleaned (hidden text removed), or warning
+             * @enum {string}
+             */
+            integrity: "clean" | "cleaned" | "warning";
         };
         /**
          * JobStats
@@ -2645,6 +2714,7 @@ export interface components {
             description: string;
             /** Posted At */
             posted_at?: string | null;
+            integrity?: components["schemas"]["PostingIntegrity"] | null;
         };
         /** PlanIn */
         PlanIn: {
@@ -2738,6 +2808,54 @@ export interface components {
              * @description Added with /add-portal
              */
             custom: boolean;
+        };
+        /**
+         * PostingIntegrity
+         * @description What the check removed or found in one posting. Empty means nothing to report.
+         */
+        PostingIntegrity: {
+            /**
+             * Hidden Blocks
+             * @description Hidden HTML blocks with text, removed
+             * @default 0
+             */
+            hidden_blocks: number;
+            /**
+             * Hidden Excerpts
+             * @description Their first words
+             */
+            hidden_excerpts: string[];
+            /**
+             * Hidden Urls
+             * @description Links only in hidden text
+             */
+            hidden_urls: string[];
+            /**
+             * Invisible Chars
+             * @description Removed characters that can carry or hide text
+             * @default 0
+             */
+            invisible_chars: number;
+            /**
+             * Tampering
+             * @description Why those look deliberate
+             */
+            tampering: string[];
+            /**
+             * Invisible Text
+             * @description Text spelled in invisible characters, decoded
+             */
+            invisible_text: string[];
+            /**
+             * Instruction Lines
+             * @description Lines addressed to AI tools, quoted
+             */
+            instruction_lines: string[];
+            /**
+             * Mixed Script Words
+             * @description Words mixing Latin with look-alike letters
+             */
+            mixed_script_words: string[];
         };
         /** Preferences */
         "Preferences-Input": {

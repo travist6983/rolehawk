@@ -1,5 +1,5 @@
 import { observeElementRect, useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { BookmarkIcon } from "lucide-react";
+import { BookmarkIcon, ShieldAlertIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import type { JobRow } from "@/api/queries";
@@ -170,6 +170,15 @@ export function JobTable({
                         <BookmarkIcon aria-hidden />{" "}
                         {job.stage === "saved" ? "Saved" : "In pipeline"}
                       </Badge>
+                    )}
+                    {job.integrity === "warning" && (
+                      <span
+                        className="flex shrink-0 items-center gap-0.5 text-caution"
+                        title="Parts of this posting are aimed at AI tools"
+                      >
+                        <ShieldAlertIcon aria-hidden className="size-3" />
+                        <span className="sr-only">Parts of this posting are aimed at AI tools</span>
+                      </span>
                     )}
                     <span className="truncate md:hidden">· {whereText(job)}</span>
                   </span>

@@ -6550,6 +6550,98 @@
         ],
         "title": "Inspection"
       },
+      "IntegrityView": {
+        "properties": {
+          "hidden_blocks": {
+            "type": "integer",
+            "title": "Hidden Blocks",
+            "description": "Hidden HTML blocks with text, removed",
+            "default": 0
+          },
+          "hidden_excerpts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Excerpts",
+            "description": "Their first words"
+          },
+          "hidden_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Urls",
+            "description": "Links only in hidden text"
+          },
+          "invisible_chars": {
+            "type": "integer",
+            "title": "Invisible Chars",
+            "description": "Removed characters that can carry or hide text",
+            "default": 0
+          },
+          "tampering": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tampering",
+            "description": "Why those look deliberate"
+          },
+          "invisible_text": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invisible Text",
+            "description": "Text spelled in invisible characters, decoded"
+          },
+          "instruction_lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Instruction Lines",
+            "description": "Lines addressed to AI tools, quoted"
+          },
+          "mixed_script_words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mixed Script Words",
+            "description": "Words mixing Latin with look-alike letters"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Verdict"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hidden_blocks",
+          "hidden_excerpts",
+          "hidden_urls",
+          "invisible_chars",
+          "tampering",
+          "invisible_text",
+          "instruction_lines",
+          "mixed_script_words",
+          "verdict",
+          "summary"
+        ],
+        "title": "IntegrityView",
+        "description": "What the API shows: the findings plus a verdict and a one-line summary."
+      },
       "InterviewState": {
         "properties": {
           "question": {
@@ -6722,6 +6814,16 @@
             "type": "boolean",
             "title": "Dismissed"
           },
+          "integrity": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Integrity",
+            "description": "clean, cleaned (hidden text removed), or warning"
+          },
           "description": {
             "type": "string",
             "title": "Description",
@@ -6737,6 +6839,17 @@
               }
             ],
             "title": "Application Id"
+          },
+          "integrity_report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntegrityView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the integrity check removed or found; null when nothing"
           }
         },
         "type": "object",
@@ -6759,8 +6872,10 @@
           "score_model",
           "stage",
           "dismissed",
+          "integrity",
           "description",
-          "application_id"
+          "application_id",
+          "integrity_report"
         ],
         "title": "JobDetail"
       },
@@ -6926,6 +7041,16 @@
           "dismissed": {
             "type": "boolean",
             "title": "Dismissed"
+          },
+          "integrity": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Integrity",
+            "description": "clean, cleaned (hidden text removed), or warning"
           }
         },
         "type": "object",
@@ -6947,7 +7072,8 @@
           "scored_at",
           "score_model",
           "stage",
-          "dismissed"
+          "dismissed",
+          "integrity"
         ],
         "title": "JobRow"
       },
@@ -7450,6 +7576,16 @@
               }
             ],
             "title": "Posted At"
+          },
+          "integrity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostingIntegrity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7705,6 +7841,83 @@
           "custom"
         ],
         "title": "PortalView"
+      },
+      "PostingIntegrity": {
+        "properties": {
+          "hidden_blocks": {
+            "type": "integer",
+            "title": "Hidden Blocks",
+            "description": "Hidden HTML blocks with text, removed",
+            "default": 0
+          },
+          "hidden_excerpts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Excerpts",
+            "description": "Their first words"
+          },
+          "hidden_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Urls",
+            "description": "Links only in hidden text"
+          },
+          "invisible_chars": {
+            "type": "integer",
+            "title": "Invisible Chars",
+            "description": "Removed characters that can carry or hide text",
+            "default": 0
+          },
+          "tampering": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tampering",
+            "description": "Why those look deliberate"
+          },
+          "invisible_text": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invisible Text",
+            "description": "Text spelled in invisible characters, decoded"
+          },
+          "instruction_lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Instruction Lines",
+            "description": "Lines addressed to AI tools, quoted"
+          },
+          "mixed_script_words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mixed Script Words",
+            "description": "Words mixing Latin with look-alike letters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hidden_blocks",
+          "hidden_excerpts",
+          "hidden_urls",
+          "invisible_chars",
+          "tampering",
+          "invisible_text",
+          "instruction_lines",
+          "mixed_script_words"
+        ],
+        "title": "PostingIntegrity",
+        "description": "What the check removed or found in one posting. Empty means nothing to report."
       },
       "Preferences-Input": {
         "properties": {

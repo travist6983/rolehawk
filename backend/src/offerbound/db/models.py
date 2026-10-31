@@ -206,6 +206,8 @@ class Job(Base):
     hash: Mapped[str] = mapped_column(String(64), unique=True)
     # Hidden from Discover and never ranked again (the user said "not for me").
     dismissed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # What the integrity check removed or found (portals/integrity.py); null when nothing.
+    integrity: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
 
 class Task(Base):

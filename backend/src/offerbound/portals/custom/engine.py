@@ -24,6 +24,7 @@ from offerbound.portals.custom.definition import (
 )
 from offerbound.portals.feeds import _safe_xml
 from offerbound.portals.http import USER_AGENT
+from offerbound.portals.integrity import clean_posting
 from offerbound.portals.text import html_to_text, looks_remote, parse_datetime
 
 Definition = RssDefinition | JsonLdDefinition | JsonApiDefinition | HtmlDefinition
@@ -80,13 +81,16 @@ def dig(data: Any, path: str | None) -> Any:
     return current
 
 
-def _text(value: Any) -> str | None:
-    if value is None:
-        return None
+def _unwrap(value: Any) -> Any:
     if isinstance(value, dict):
         value = value.get("name") or value.get("text") or value.get("value")
     if isinstance(value, list):
         value = ", ".join(t for t in (_text(v) for v in value) if t)
+    return value
+
+
+def _text(value: Any) -> str | None:
+    value = _unwrap(value)
     text = html_to_text(str(value)) if value is not None else ""
     return text or None
 
@@ -109,6 +113,8 @@ def _job(
     if not link.startswith(("https://", "http://")):
         return None
     where = _text(location)
+    body = _unwrap(description)
+    desc = clean_posting(str(body) if body is not None else None)
     return NormalizedJob(
         external_id=str(external_id or link)[:255],
         url=link,
@@ -116,7 +122,8 @@ def _job(
         title=title_text[:255],
         location=where,
         remote=looks_remote(where, title_text),
-        description=_text(description) or "",
+        description=desc.text,
+        integrity=desc.integrity,
         posted_at=parse_datetime(posted_at) if isinstance(posted_at, str | int | float) else None,
     )
 

@@ -22,6 +22,7 @@ from offerbound.db.models import (
     StageEventSource,
 )
 from offerbound.db.types import utcnow
+from offerbound.portals.integrity import IntegrityView, Verdict
 
 MAX_PAGE = 500
 
@@ -63,11 +64,15 @@ class JobRow(BaseModel):
     score_model: str | None
     stage: Stage | None
     dismissed: bool
+    integrity: Verdict = Field(description="clean, cleaned (hidden text removed), or warning")
 
 
 class JobDetail(JobRow):
     description: str = Field(description="Third-party text from the posting")
     application_id: int | None
+    integrity_report: IntegrityView | None = Field(
+        description="What the integrity check removed or found; null when nothing"
+    )
 
 
 class JobStats(BaseModel):
@@ -140,6 +145,7 @@ class JobStore:
     @staticmethod
     def _row(values: Any) -> dict[str, Any]:
         job, score, reasons, gaps, scored_at, model, stage, app_id, source = values
+        report = IntegrityView.of(job.integrity)
         return {
             "id": job.id,
             "title": job.title,
@@ -159,6 +165,8 @@ class JobStore:
             "score_model": model,
             "stage": stage,
             "dismissed": job.dismissed_at is not None,
+            "integrity": report.verdict if report else "clean",
+            "integrity_report": report,
             "description": job.description,
             "application_id": app_id,
         }

@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 
 import { safeUrl, whereText } from "./discoverText";
+import { IntegrityNotice } from "./IntegrityNotice";
 
 function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
   if (job.score === null) {
@@ -222,8 +223,9 @@ export function JobDetailSheet({
                   From the posting
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Written by the employer and shown as-is.
+                  Written by the employer. Hidden text and invisible characters are removed.
                 </p>
+                <IntegrityNotice report={data.integrity_report} />
                 <div className="text-sm leading-relaxed break-words whitespace-pre-line">
                   {data.description || "No description was included."}
                 </div>
