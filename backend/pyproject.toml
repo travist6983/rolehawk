@@ -1,0 +1,64 @@
+[project]
+name = "offerbound"
+version = "0.1.0"
+description = "Free, open source AI job search copilot. Finds, ranks, and applies to jobs with Claude. Runs locally."
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+]
+
+[project.scripts]
+offerbound = "offerbound.cli:main"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "mypy>=1.13",
+    "poethepoet>=0.31",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/offerbound"]
+
+# ---------------------------------------------------------------------------
+# Cross-platform tasks: `uv run poe <task>` (no Makefile, so Windows works).
+# ---------------------------------------------------------------------------
+[tool.poe.tasks]
+dev = { cmd = "uvicorn offerbound.api.app:app --host 127.0.0.1 --port 8765 --reload", help = "Run the API with autoreload" }
+lint = { cmd = "ruff check .", help = "Lint with ruff" }
+format = { cmd = "ruff format .", help = "Format with ruff" }
+format-check = { cmd = "ruff format --check .", help = "Check formatting" }
+fix = { sequence = ["ruff check --fix .", "ruff format ."], default_item_type = "cmd", help = "Auto-fix lint and format" }
+typecheck = { cmd = "mypy", help = "Type-check with mypy (strict)" }
+test = { cmd = "pytest", help = "Run tests" }
+check = { sequence = ["lint", "format-check", "typecheck", "test"], help = "Everything CI runs" }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "ASYNC", "S", "PT", "N"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"

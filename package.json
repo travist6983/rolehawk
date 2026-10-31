@@ -1,0 +1,14 @@
+{
+  "name": "offerbound-ai-job-search",
+  "private": true,
+  "description": "Root task shortcuts. Each runs the matching task in backend/ (uv + poe) and frontend/ (npm).",
+  "scripts": {
+    "setup": "cd backend && uv sync && cd ../frontend && npm ci",
+    "dev:backend": "cd backend && uv run poe dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "lint": "cd backend && uv run poe lint && uv run poe format-check && cd ../frontend && npm run lint",
+    "typecheck": "cd backend && uv run poe typecheck && cd ../frontend && npm run typecheck",
+    "test": "cd backend && uv run poe test && cd ../frontend && npm test",
+    "check": "cd backend && uv run poe check && cd ../frontend && npm run check && npm run build"
+  }
+}
