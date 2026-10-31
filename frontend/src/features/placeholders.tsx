@@ -1,4 +1,4 @@
-import { ChartColumnIcon, CompassIcon, RadioTowerIcon, SearchXIcon } from "lucide-react";
+import { ChartColumnIcon, CompassIcon, SearchXIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import { useLLMStatus } from "@/api/queries";
@@ -33,19 +33,6 @@ export function DiscoverPage() {
             action: { label: "Settings", to: "/settings" },
           },
         ]}
-      />
-    </>
-  );
-}
-
-export function SourcesPage() {
-  return (
-    <>
-      <PageHeader title="Sources" description="Where Offerbound looks for jobs." />
-      <EmptyState
-        icon={RadioTowerIcon}
-        title="Job sources are on the way"
-        description="Greenhouse, Lever, Ashby, Workable, remote job feeds, and Adzuna will appear here as cards you can switch on."
       />
     </>
   );

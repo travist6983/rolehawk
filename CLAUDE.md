@@ -34,6 +34,10 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
     profile/             typed profile + preferences, markdown parser/renderer, merge, document
                          parsing (PDF/DOCX/TXT/LinkedIn ZIP), extraction, gap interview, /setup
     chat/                chat turns (streaming, tool loop), tools, read-only pipeline SQL
+    portals/             job sources: Portal protocol, ATS boards (Greenhouse, Lever, Ashby,
+                         Workable) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
+                         (pacing, retries), title matching, Scraper (/scrape, dedupe),
+                         PortalStore (source settings, company watchlist), SOURCES.md
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here
       runtime.py         opens data folder, migrates, wires every service together
@@ -49,7 +53,8 @@ frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui +
                          session bootstrap
   src/app/               shell, routes (lazy screens with matching skeletons), nav, session gate
   src/features/          one folder per feature: chat (drawer, slash menu, card registry),
-                         events (SSE provider, progress tray), memory, settings, profile, ...
+                         events (SSE provider, progress tray), memory, settings, profile,
+                         sources, ...
   src/components/ui/     shadcn/ui components (add with `npx shadcn@latest add <name>`)
   src/components/        shared app components (empty states, skeletons, layout, ScoreBadge)
   src/lib/               theme, hotkeys, small pure helpers
@@ -57,7 +62,7 @@ frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui +
 skills/<command>/        SKILL.md per command (thin wrappers over the CLI)
 scripts/                 install.sh (Mac/Linux), install.ps1 (Windows)
 data/
-  companies/             ATS company watchlists, one CSV per ATS
+  companies/             ATS company watchlists, one CSV per ATS (verified live; see README)
   country_sources.toml   per-country feeds, currency, salary period
 docs/SPEC.md             product spec and build plan
 .github/workflows/ci.yml lint + typecheck + tests on ubuntu, macos, windows
@@ -114,7 +119,8 @@ Run `npm run check` from the root before you call a chunk done.
 - **Setup is review-first.** Imported or extracted data becomes a draft the user reviews before it is applied; applying merges (existing facts win) so re-running never duplicates. The gap interview is deterministic (no AI), so setup works without an API key.
 - **Uploads are untrusted input.** Size caps, archive bomb checks, content-sniffed types, and only known LinkedIn CSVs are read. Commands that read local paths set `chat_allowed=False`.
 - **Untrusted text stays untrusted.** Job descriptions, emails, and web pages go in delimited blocks, never in system prompts. Tools triggered while processing them are read-only.
-- **No live network calls in tests.** Use recorded fixtures (respx/vcrpy) and a `FakeProvider` for the LLM.
+- **No live network calls in tests.** Use recorded fixtures and a `FakeProvider` for the LLM. Job sources use `tests/portal_web.py` (`FakeWeb`: an httpx2 `MockTransport` over `tests/fixtures/portals/`); swap `runtime.scraper.http_factory` to use it in API tests.
+- **Job sources are polite.** All source traffic goes through `PoliteClient` (identifying User-Agent, per-host pacing from `min_interval_s`, retries honoring Retry-After). Verify endpoints and terms before adding or changing one and record them in `portals/SOURCES.md`. Third-party XML is parsed with DTDs refused; ATS slugs must match `SLUG_PATTERN` (they go into URL paths).
 - **Types are strict on both sides.** mypy `strict = true`; TypeScript `strict` plus `noUncheckedIndexedAccess`. Don't add `Any`, `# type: ignore`, or `as unknown as` without a comment explaining why.
 - **Cross-platform always.** Use `pathlib`, no shell-specific syntax in npm or poe scripts, and no tools that need admin rights. CI runs on Linux, macOS, and Windows.
 - **Schema changes** go in `db/models.py` plus a migration from `offerbound db revision`; review the generated file. Migrations never import app code (the autogen hook renders plain `sa.*` types). `test_models_match_migrations` fails if they drift.

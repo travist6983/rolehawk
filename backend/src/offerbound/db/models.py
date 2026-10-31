@@ -390,3 +390,21 @@ class SourceDocument(Base):
     size: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class Company(TimestampMixin, Base):
+    """A company on an ATS watchlist (ATS sources search by company, not keyword)."""
+
+    __tablename__ = "companies"
+    __table_args__ = (UniqueConstraint("ats", "slug"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ats: Mapped[str] = mapped_column(String(32), index=True)
+    slug: Mapped[str] = mapped_column(String(128))
+    name: Mapped[str] = mapped_column(String(255))
+    industry: Mapped[str | None] = mapped_column(String(64))
+    country: Mapped[str | None] = mapped_column(String(8))
+    source: Mapped[str] = mapped_column(String(16), default="starter")  # starter | user
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_job_count: Mapped[int | None] = mapped_column(Integer)
+    last_error: Mapped[str | None] = mapped_column(Text)

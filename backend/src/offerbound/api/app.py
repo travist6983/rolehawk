@@ -24,6 +24,7 @@ from offerbound.api.routes import (
     events,
     llm,
     memory,
+    portals,
     profile,
     setup,
     system,
@@ -83,6 +84,7 @@ def create_app(
         memory.router,
         profile.router,
         setup.router,
+        portals.router,
     ):
         app.include_router(router)
     mount_web(app, web_dir or find_web_dir())

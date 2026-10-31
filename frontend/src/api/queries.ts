@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 import { api, ApiError, unwrap, type Schemas } from "./client";
 
@@ -137,6 +138,7 @@ export function useRunCommand() {
 // --- profile & setup ------------------------------------------------------------------
 
 export type ProfileOverview = Schemas["ProfileOverview"];
+export type SearchTargetView = Schemas["SearchTargetView"];
 // Responses use the "-Output" variants (every field present); request bodies the "-Input" ones.
 export type Profile = Schemas["Profile-Output"];
 export type Preferences = Schemas["Preferences-Output"];
@@ -293,6 +295,152 @@ export function useSaveMemoryFile() {
       markdown: string;
     }) =>
       unwrap(api.PUT("/api/memory/{target}", { params: { path: { target } }, body: { markdown } })),
+    onSuccess: invalidate,
+  });
+}
+
+// --- sources & scrape -----------------------------------------------------------------
+
+export type PortalView = Schemas["PortalView"];
+export type CompanyView = Schemas["CompanyView"];
+export type CompanyCheck = Schemas["CompanyCheck"];
+export type ScrapeSummary = Schemas["ScrapeSummary"];
+export type PortalRun = Schemas["PortalRun"];
+
+export const sourceKeys = {
+  portals: ["sources", "portals"] as const,
+  companies: ["sources", "companies"] as const,
+  lastScrape: ["sources", "last-scrape"] as const,
+};
+
+export function usePortals() {
+  return useQuery({
+    queryKey: sourceKeys.portals,
+    queryFn: () => unwrap(api.GET("/api/portals")),
+  });
+}
+
+export function useCompanies() {
+  return useQuery({
+    queryKey: sourceKeys.companies,
+    queryFn: () => unwrap(api.GET("/api/companies")),
+  });
+}
+
+/** The last successful search's per-source results, or null before the first one. */
+export function useLastScrape() {
+  return useQuery({
+    queryKey: sourceKeys.lastScrape,
+    queryFn: async (): Promise<ScrapeSummary | null> => {
+      const { data, response } = await api.GET("/api/scrape/last");
+      if (!response.ok) throw new ApiError(response.status, "Couldn't load the last search");
+      return data ?? null;
+    },
+  });
+}
+
+/** A search or watchlist change moves counts on the cards: refresh everything sources-related. */
+export function useInvalidateSources() {
+  const client = useQueryClient();
+  return useCallback(() => {
+    void client.invalidateQueries({ queryKey: ["sources"] });
+  }, [client]);
+}
+
+function useReplacePortal() {
+  const client = useQueryClient();
+  return (portal: PortalView) => {
+    client.setQueryData<PortalView[]>(sourceKeys.portals, (current) =>
+      current?.map((p) => (p.id === portal.id ? portal : p)),
+    );
+  };
+}
+
+export function useSetPortalEnabled() {
+  const onSuccess = useReplacePortal();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      unwrap(
+        api.PATCH("/api/portals/{portal_id}", {
+          params: { path: { portal_id: id } },
+          body: { enabled },
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useSaveCredentials() {
+  const onSuccess = useReplacePortal();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Schemas["CredentialsIn"]) =>
+      unwrap(
+        api.PUT("/api/portals/{portal_id}/credentials", {
+          params: { path: { portal_id: id } },
+          body,
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useClearCredentials() {
+  const onSuccess = useReplacePortal();
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        api.DELETE("/api/portals/{portal_id}/credentials", {
+          params: { path: { portal_id: id } },
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useStartScrape() {
+  return useMutation({
+    mutationFn: (portalIds?: string[]) =>
+      unwrap(api.POST("/api/scrape", { body: { portal_ids: portalIds ?? null } })),
+  });
+}
+
+export function useCheckCompany() {
+  return useMutation({
+    mutationFn: (body: Schemas["CheckIn"]) => unwrap(api.POST("/api/companies/check", { body })),
+  });
+}
+
+export function useAddCompanies() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: (body: Schemas["CompaniesIn"]) => unwrap(api.POST("/api/companies", { body })),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetCompanyEnabled() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
+      unwrap(
+        api.PATCH("/api/companies/{company_id}", {
+          params: { path: { company_id: id } },
+          body: { enabled },
+        }),
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveCompany() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { response } = await api.DELETE("/api/companies/{company_id}", {
+        params: { path: { company_id: id } },
+      });
+      if (!response.ok) throw new ApiError(response.status, "Couldn't remove the company");
+    },
     onSuccess: invalidate,
   });
 }

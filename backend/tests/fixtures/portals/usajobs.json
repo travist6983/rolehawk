@@ -1,0 +1,41 @@
+{
+  "LanguageCode": "EN",
+  "SearchParameters": {},
+  "SearchResult": {
+    "SearchResultCount": 1,
+    "SearchResultCountAll": 1,
+    "SearchResultItems": [
+      {
+        "MatchedObjectId": "845120900",
+        "MatchedObjectDescriptor": {
+          "PositionID": "BLS-27-SYN-0001",
+          "PositionTitle": "Data Analyst ",
+          "PositionURI": "https://www.usajobs.gov:443/GetJob/ViewDetails/845120900",
+          "ApplyURI": ["https://www.usajobs.gov:443/GetJob/ViewDetails/845120900?PostingChannelID="],
+          "PositionLocationDisplay": "Washington, District of Columbia",
+          "PositionLocation": [{"LocationName": "Washington, District of Columbia", "CountryCode": "United States"}],
+          "OrganizationName": "Bureau of Labor Statistics",
+          "DepartmentName": "Department of Labor",
+          "JobCategory": [{"Name": "Statistics", "Code": "1530"}],
+          "PositionRemuneration": [
+            {"MinimumRange": "86962.0", "MaximumRange": "113047.0", "RateIntervalCode": "PA", "Description": "Per Year"}
+          ],
+          "PositionStartDate": "2026-10-27T00:00:00.0000",
+          "PositionEndDate": "2026-11-10T23:59:59.9970",
+          "PublicationStartDate": "2026-10-27T00:00:00.0000",
+          "ApplicationCloseDate": "2026-11-10T23:59:59.9970",
+          "QualificationSummary": "One year of specialized experience analyzing labor data.",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "Analyze employment statistics and prepare data products for publication.",
+              "TeleworkEligible": true,
+              "RemoteIndicator": false
+            },
+            "IsRadialSearch": false
+          }
+        },
+        "RelevanceRank": 0
+      }
+    ]
+  }
+}

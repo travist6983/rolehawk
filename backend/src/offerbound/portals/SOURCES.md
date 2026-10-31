@@ -1,0 +1,44 @@
+# Job sources: endpoints and terms
+
+Verified **2026-10-31** against each source's public documentation and a live request.
+Re-verify before each release; change endpoints here and in `ats.py` / `feeds.py` together.
+
+| Source | Endpoint (public unless noted) | Docs | Live check | Notes |
+| --- | --- | --- | --- | --- |
+| Greenhouse | `GET https://boards-api.greenhouse.io/v1/boards/{board}/jobs?content=true` | [developers.greenhouse.io/job-board.html](https://developers.greenhouse.io/job-board.html) (now redirects to docs.greenhouse.io) | 200 | No auth for GET. `content=true` adds the description, departments, offices. |
+| Lever | `GET https://api.lever.co/v0/postings/{site}?mode=json` (EU: `api.eu.lever.co`) | [github.com/lever/postings-api](https://github.com/lever/postings-api) | 200 | No auth. Docs: published postings "may be scraped by third parties". We fall back to the EU host on 404. |
+| Ashby | `GET https://api.ashbyhq.com/posting-api/job-board/{board}?includeCompensation=true` | [developers.ashbyhq.com/docs/public-job-posting-api](https://developers.ashbyhq.com/docs/public-job-posting-api) (updated 2026-10-23) | 200 | Docs list no `id`, but live responses include one; we fall back to `jobUrl`. `isListed=false` jobs are skipped. |
+| Workable | `GET https://apply.workable.com/api/v1/widget/accounts/{subdomain}?details=true` | [help.workable.com/…/115012771647](https://help.workable.com/hc/en-us/articles/115012771647) | 200 | **Correction:** docs show `www.workable.com/api/accounts/{subdomain}?details=true`, which now 302-redirects to the endpoint we call. |
+| Remote OK | `GET https://remoteok.com/api` | [remoteok.com/api](https://remoteok.com/api) (terms in the response's `legal` field) | 200 | First array element is the legal notice. **Terms:** link back to the Remote OK job URL and mention Remote OK as the source; don't use their logo. We store and show the remoteok.com URL and the source name. |
+| We Work Remotely | `GET https://weworkremotely.com/remote-jobs.rss` (categories: `/categories/<slug>.rss`) | Docs page returned 403 to automated fetches; feeds verified live | 200 | Item titles are `Company: Position`. RSS parsed with DTDs refused. |
+| Adzuna | `GET https://api.adzuna.com/v1/api/jobs/{country}/search/{page}?app_id=…&app_key=…&what=…` | [developer.adzuna.com/docs/search](https://developer.adzuna.com/docs/search), [terms](https://developer.adzuna.com/docs/terms_of_service) | 401 without key (expected) | Free key. Personal job search is a permitted use; show "Adzuna" with a link on listings. **Unverified:** the country list in `feeds.py` is Adzuna's published markets from prior knowledge; the docs' interactive reference didn't render. Confirm with a key. |
+| USAJOBS | `GET https://data.usajobs.gov/api/search?Keyword=…` with headers `Host`, `User-Agent: <email>`, `Authorization-Key` | [developer.usajobs.gov/api-reference/get-api-search](https://developer.usajobs.gov/api-reference/get-api-search) | 401 without key (expected) | Free key. Max 500 rows/page, 10,000/query. |
+
+No source was dropped. Indeed and LinkedIn (high-risk scrapers) arrive separately, opt-in.
+
+## Company watchlists
+
+ATS sources search per company. `data/companies/<ats>.csv` holds a starter list where every
+row was checked live (a job board exists with open jobs) on 2026-10-31:
+
+| ATS | Companies |
+| --- | --- |
+| Greenhouse | 59 |
+| Ashby | 33 |
+| Lever | 16 |
+| Workable | 6 |
+
+To grow or re-check the lists:
+
+```bash
+uv run python scripts/verify_watchlist.py candidates.csv   # columns: ats,slug,name,industry,country
+```
+
+Users add companies in the Sources screen; each is checked against its ATS before saving.
+
+## Test fixtures
+
+`tests/fixtures/portals/` holds trimmed real responses recorded 2026-10-31 (Greenhouse:
+airbnb, Lever: palantir, Ashby: ramp, Workable: workmotion, Remote OK, We Work Remotely).
+Adzuna and USAJOBS fixtures follow the documented response shapes (no key to record with).
+Tests never make live calls.

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.commands.builtin import register_builtin
 from offerbound.commands.registry import CommandRegistry
+from offerbound.commands.scrape import register_scrape
 from offerbound.commands.setup import register_setup
 from offerbound.config import Settings, load_settings, write_default_config
 from offerbound.db import migrate
@@ -25,6 +26,8 @@ from offerbound.memory.files import MemoryFiles
 from offerbound.memory.proposals import MemoryService
 from offerbound.memory.sessions import SessionMaintenance
 from offerbound.paths import DataPaths
+from offerbound.portals.scrape import Scraper
+from offerbound.portals.state import PortalStore
 from offerbound.profile.service import ProfileService
 from offerbound.profile.setup import SetupService
 from offerbound.services.app_state import AppStateStore
@@ -53,6 +56,8 @@ class Runtime:
     state: AppStateStore
     profiles: ProfileService
     setup: SetupService
+    portals: PortalStore
+    scraper: Scraper
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -109,11 +114,15 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     commands = CommandRegistry()
     register_builtin(commands)
     register_setup(commands)
+    register_scrape(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
     state = AppStateStore(sessions)
     profiles = ProfileService(files, sessions, lambda: runtime_ref[0].settings)
+    portals = PortalStore(sessions)
+    portals.sync_builtin()
+    portals.seed_watchlist()
     runtime = Runtime(
         paths=paths,
         settings=settings,
@@ -129,6 +138,8 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         state=state,
         profiles=profiles,
         setup=SetupService(paths, sessions, profiles, state, llm),
+        portals=portals,
+        scraper=Scraper(sessions, lambda: runtime_ref[0].settings.search.country),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)

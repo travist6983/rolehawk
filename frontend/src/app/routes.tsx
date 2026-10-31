@@ -16,10 +16,10 @@ import { AppShell } from "./AppShell";
 const PipelinePage = lazy(() => import("@/features/pipeline/PipelinePage"));
 const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const SourcesPage = lazy(() => import("@/features/sources/SourcesPage"));
 const OnboardingPage = lazy(() => import("@/features/setup/OnboardingPage"));
 const placeholders = () => import("@/features/placeholders");
 const DiscoverPage = lazy(() => placeholders().then((m) => ({ default: m.DiscoverPage })));
-const SourcesPage = lazy(() => placeholders().then((m) => ({ default: m.SourcesPage })));
 const InsightsPage = lazy(() => placeholders().then((m) => ({ default: m.InsightsPage })));
 const NotFoundPage = lazy(() => placeholders().then((m) => ({ default: m.NotFoundPage })));
 

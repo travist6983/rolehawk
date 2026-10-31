@@ -81,6 +81,9 @@ def cmd_start(args: argparse.Namespace) -> int:
         port=port,
         reload=args.dev,
         log_config=None,
+        # Open event streams (a browser tab on /api/events) never end by themselves; without a
+        # limit, Ctrl+C and dev reloads wait on them forever. Browsers reconnect on their own.
+        timeout_graceful_shutdown=2,
     )
     return 0
 

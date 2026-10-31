@@ -22,6 +22,9 @@ Built-in commands available today:
 | `selftest` | Short background task to check progress output |
 | `setup`, `setup-import`, `setup-extract`, `setup-draft`, `setup-apply` | Profile setup from documents (see `setup/SKILL.md`) |
 | `setup-interview`, `setup-answer`, `setup-skip` | The gap interview, one question at a time |
+| `scrape` | Search every enabled job source for the active search targets (background; see `scrape/SKILL.md`) |
+| `sources` | Job sources: status, what each still needs, jobs found, last search results |
+| `watchlist`, `watchlist-add` | The companies whose job boards are searched; add more (checked first) |
 
 Feature commands register as they ship (see the release table).
 

@@ -10,6 +10,7 @@ import {
   profileOverview,
   question,
   sampleProfile,
+  searchTarget,
   task,
 } from "@/test/fixtures";
 import { renderApp } from "@/test/render";
@@ -136,6 +137,25 @@ describe("Onboarding", () => {
     expect(screen.getByRole("list", { name: "Search targets" })).toHaveTextContent("Data Analyst");
     await user.click(screen.getByRole("button", { name: "Finish setup" }));
     expect(await screen.findByRole("heading", { name: "Profile", level: 1 })).toBeInTheDocument();
+  });
+
+  it("ends by starting the first search and opening Sources", async () => {
+    let started = false;
+    server.use(
+      http.get("/api/profile", () =>
+        HttpResponse.json(profileOverview({ search_targets: [searchTarget()] })),
+      ),
+      http.post("/api/scrape", () => {
+        started = true;
+        return HttpResponse.json({ task_id: "s1" }, { status: 202 });
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=sources");
+    expect(await screen.findByText("6 job sources are ready")).toBeInTheDocument();
+    expect(screen.getByText(/starter watchlist of 114 companies/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Search now" }));
+    expect(await screen.findByRole("heading", { name: "Sources", level: 1 })).toBeInTheDocument();
+    expect(started).toBe(true);
   });
 
   it("uploads a resume, follows extraction live, and saves the reviewed draft", async () => {

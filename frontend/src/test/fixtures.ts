@@ -1,13 +1,18 @@
 import type {
   CommandInfo,
+  CompanyView,
   InterviewState,
   LLMStatus,
   MemorySnapshot,
+  PortalRun,
+  PortalView,
   Preferences,
   Profile,
   ProfileOverview,
   ProposalView,
   Question,
+  ScrapeSummary,
+  SearchTargetView,
   TaskView,
 } from "@/api/queries";
 
@@ -206,5 +211,111 @@ export const interviewState = (overrides: Partial<InterviewState> = {}): Intervi
   answered: 2,
   remaining: 6,
   complete: false,
+  ...overrides,
+});
+
+// --- sources ------------------------------------------------------------------------------
+
+export const portal = (overrides: Partial<PortalView> = {}): PortalView => ({
+  id: "greenhouse",
+  name: "Greenhouse",
+  kind: "ats",
+  risk_level: "low",
+  countries: ["*"],
+  enabled: true,
+  ready: true,
+  missing: [],
+  secret_fields: [],
+  config_fields: [],
+  config: {},
+  status: null,
+  last_run_at: null,
+  last_error: null,
+  jobs_found: 0,
+  companies: 59,
+  docs_url: "https://developers.greenhouse.io/job-board.html",
+  ...overrides,
+});
+
+/** The eight built-in sources on a fresh install: ATS boards ready, keyed feeds not. */
+export const portals = (): PortalView[] => [
+  portal(),
+  portal({ id: "lever", name: "Lever", companies: 16 }),
+  portal({ id: "ashby", name: "Ashby", companies: 33 }),
+  portal({ id: "workable", name: "Workable", companies: 6 }),
+  portal({ id: "remoteok", name: "Remote OK", kind: "feed", companies: null }),
+  portal({ id: "weworkremotely", name: "We Work Remotely", kind: "feed", companies: null }),
+  portal({
+    id: "adzuna",
+    name: "Adzuna",
+    kind: "feed",
+    companies: null,
+    countries: ["GB", "US", "DE"],
+    ready: false,
+    missing: ["an app ID", "an app key"],
+    secret_fields: ["app_id", "app_key"],
+    docs_url: "https://developer.adzuna.com/docs/search",
+  }),
+  portal({
+    id: "usajobs",
+    name: "USAJOBS",
+    kind: "feed",
+    companies: null,
+    countries: ["US"],
+    ready: false,
+    missing: ["an API key", "your email"],
+    secret_fields: ["api_key"],
+    config_fields: ["email"],
+    docs_url: "https://developer.usajobs.gov/api-reference/get-api-search",
+  }),
+];
+
+export const company = (overrides: Partial<CompanyView> = {}): CompanyView => ({
+  id: 1,
+  ats: "greenhouse",
+  slug: "airbnb",
+  name: "Airbnb",
+  industry: "Travel",
+  country: "US",
+  source: "starter",
+  enabled: true,
+  last_job_count: null,
+  last_error: null,
+  ...overrides,
+});
+
+export const portalRun = (overrides: Partial<PortalRun> = {}): PortalRun => ({
+  portal_id: "greenhouse",
+  name: "Greenhouse",
+  status: "ok",
+  found: 1200,
+  matched: 40,
+  new: 12,
+  duplicates: 28,
+  errors: [],
+  detail: null,
+  ...overrides,
+});
+
+export const scrapeSummary = (overrides: Partial<ScrapeSummary> = {}): ScrapeSummary => ({
+  started_at: "2026-10-31T11:59:00Z",
+  finished_at: "2026-10-31T12:00:00Z",
+  queries: ["Data Analyst"],
+  portals: [portalRun()],
+  found: 1200,
+  new: 12,
+  duplicates: 28,
+  ...overrides,
+});
+
+export const searchTarget = (overrides: Partial<SearchTargetView> = {}): SearchTargetView => ({
+  id: 1,
+  title: "Data Analyst",
+  seniority: null,
+  locations: [],
+  remote_policy: "any",
+  country: "US",
+  salary_min: null,
+  active: true,
   ...overrides,
 });

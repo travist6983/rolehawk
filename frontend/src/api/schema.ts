@@ -555,6 +555,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Portals */
+        get: operations["list_portals_api_portals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portals/{portal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Portal */
+        patch: operations["patch_portal_api_portals__portal_id__patch"];
+        trace?: never;
+    };
+    "/api/portals/{portal_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Credentials
+         * @description API keys go to the OS keychain; non-secret settings (e.g. the USAJOBS email) to the
+         *     database.
+         */
+        put: operations["put_credentials_api_portals__portal_id__credentials_put"];
+        post?: never;
+        /** Delete Credentials */
+        delete: operations["delete_credentials_api_portals__portal_id__credentials_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scrape": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scrape
+         * @description Starts a background search; follow progress over /api/events.
+         */
+        post: operations["scrape_api_scrape_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scrape/last": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Last Scrape
+         * @description Results of the most recent successful search, or null if none has run.
+         */
+        get: operations["last_scrape_api_scrape_last_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Companies */
+        get: operations["list_companies_api_companies_get"];
+        put?: never;
+        /** Add Companies */
+        post: operations["add_companies_api_companies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{company_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Company */
+        delete: operations["delete_company_api_companies__company_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Company */
+        patch: operations["patch_company_api_companies__company_id__patch"];
+        trace?: never;
+    };
+    "/api/companies/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Company
+         * @description Look the company up on its ATS before adding it (one public request).
+         */
+        post: operations["check_company_api_companies_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -667,6 +819,13 @@ export interface components {
              */
             updated_at: string;
         };
+        /** CheckIn */
+        CheckIn: {
+            /** Ats */
+            ats: string;
+            /** Slug */
+            slug: string;
+        };
         /** Choice */
         Choice: {
             /** Value */
@@ -707,6 +866,64 @@ export interface components {
             /** Result */
             result?: unknown;
         };
+        /** CompaniesIn */
+        CompaniesIn: {
+            /** Ats */
+            ats: string;
+            /** Companies */
+            companies: components["schemas"]["CompanyIn"][];
+        };
+        /** CompanyCheck */
+        CompanyCheck: {
+            /** Ok */
+            ok: boolean;
+            /** Jobs */
+            jobs: number;
+            /**
+             * Company
+             * @description The name the ATS reports, when it differs
+             */
+            company: string | null;
+            /** Detail */
+            detail: string | null;
+        };
+        /** CompanyIn */
+        CompanyIn: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name?: string | null;
+            /** Industry */
+            industry?: string | null;
+        };
+        /** CompanyPatch */
+        CompanyPatch: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** CompanyView */
+        CompanyView: {
+            /** Id */
+            id: number;
+            /** Ats */
+            ats: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Industry */
+            industry: string | null;
+            /** Country */
+            country: string | null;
+            /** Source */
+            source: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Last Job Count */
+            last_job_count: number | null;
+            /** Last Error */
+            last_error: string | null;
+        };
         /** Completeness */
         Completeness: {
             /** Score */
@@ -739,6 +956,17 @@ export interface components {
             location: string | null;
             /** Links */
             links: string[];
+        };
+        /** CredentialsIn */
+        CredentialsIn: {
+            /** Secrets */
+            secrets?: {
+                [key: string]: string;
+            };
+            /** Config */
+            config?: {
+                [key: string]: string;
+            };
         };
         /** DocumentView */
         DocumentView: {
@@ -1014,6 +1242,89 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * PortalKind
+         * @enum {string}
+         */
+        PortalKind: "ats" | "feed" | "scraper" | "plugin";
+        /** PortalPatch */
+        PortalPatch: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** PortalRun */
+        PortalRun: {
+            /** Portal Id */
+            portal_id: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /**
+             * Found
+             * @default 0
+             */
+            found: number;
+            /**
+             * Matched
+             * @default 0
+             */
+            matched: number;
+            /**
+             * New
+             * @default 0
+             */
+            new: number;
+            /**
+             * Duplicates
+             * @default 0
+             */
+            duplicates: number;
+            /** Errors */
+            errors: string[];
+            /** Detail */
+            detail: string | null;
+        };
+        /** PortalView */
+        PortalView: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            kind: components["schemas"]["PortalKind"];
+            risk_level: components["schemas"]["RiskLevel"];
+            /** Countries */
+            countries: string[];
+            /** Enabled */
+            enabled: boolean;
+            /** Ready */
+            ready: boolean;
+            /**
+             * Missing
+             * @description What has to be set up before it can run
+             */
+            missing: string[];
+            /** Secret Fields */
+            secret_fields: string[];
+            /** Config Fields */
+            config_fields: string[];
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string | null;
+            /** Last Run At */
+            last_run_at: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /** Jobs Found */
+            jobs_found: number;
+            /** Companies */
+            companies: number | null;
+            /** Docs Url */
+            docs_url: string;
+        };
         /** Preferences */
         "Preferences-Input": {
             /** Target Titles */
@@ -1205,6 +1516,11 @@ export interface components {
          * @enum {string}
          */
         RemotePreference: "remote" | "hybrid" | "onsite" | "any";
+        /**
+         * RiskLevel
+         * @enum {string}
+         */
+        RiskLevel: "low" | "medium" | "high";
         /** RouteView */
         RouteView: {
             task: components["schemas"]["Task"];
@@ -1236,6 +1552,34 @@ export interface components {
          * @enum {string}
          */
         SalaryPeriod: "year" | "month" | "hour";
+        /** ScrapeIn */
+        ScrapeIn: {
+            /** Portal Ids */
+            portal_ids?: string[] | null;
+        };
+        /** ScrapeSummary */
+        ScrapeSummary: {
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Queries */
+            queries: string[];
+            /** Portals */
+            portals: components["schemas"]["PortalRun"][];
+            /** Found */
+            found: number;
+            /** New */
+            new: number;
+            /** Duplicates */
+            duplicates: number;
+        };
         /** SearchTargetView */
         SearchTargetView: {
             /** Id */
@@ -2327,6 +2671,341 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InterviewState"];
+                };
+            };
+        };
+    };
+    list_portals_api_portals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalView"][];
+                };
+            };
+        };
+    };
+    patch_portal_api_portals__portal_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                portal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_credentials_api_portals__portal_id__credentials_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                portal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_credentials_api_portals__portal_id__credentials_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                portal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scrape_api_scrape_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ScrapeIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    last_scrape_api_scrape_last_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScrapeSummary"] | null;
+                };
+            };
+        };
+    };
+    list_companies_api_companies_get: {
+        parameters: {
+            query?: {
+                ats?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_companies_api_companies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompaniesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_company_api_companies__company_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_company_api_companies__company_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_company_api_companies_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyCheck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
