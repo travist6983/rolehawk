@@ -21,10 +21,18 @@ Backends behind the service layer: SQLite (`offerbound.db`, WAL, FTS5) plus mark
 ```
 backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
   src/offerbound/
-    api/                 FastAPI app and routes (thin)
+    paths.py             data folder resolver (OFFERBOUND_HOME, ~/Offerbound, %USERPROFILE%)
+    config.py            config.toml + OFFERBOUND_* env -> Settings (unknown keys rejected)
+    keychain.py          secrets via keyring; log redaction
+    db/                  SQLAlchemy models, engine (WAL, FKs), FTS5 search, Alembic migrations
     services/            business logic: every command lives here
-    cli.py               `offerbound` command (start, update, doctor, run <command>)
-  tests/                 pytest
+      runtime.py         opens data folder, migrates, wires engine/bus/task runner
+      tasks.py           background task runner (persisted to `tasks`, events on the bus)
+      events.py, stream.py  in-process event bus -> SSE
+      backup.py, doctor.py
+    api/                 FastAPI app factory, SessionGuard auth middleware, thin routes
+    cli.py               `offerbound` command (start, doctor, db, backup; run <command> later)
+  tests/                 pytest (temp data folder + in-memory keyring per test)
 frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui
   src/components/ui/     shadcn/ui components (add with `npx shadcn@latest add <name>`)
   src/routes/            one file per screen
@@ -47,7 +55,10 @@ Backend (from `backend/`):
 | Task | Command |
 | --- | --- |
 | Install | `uv sync` |
-| Run API (port 8765, reload) | `uv run poe dev` |
+| Run API (port 8765, reload, allows Vite origin) | `uv run poe dev` |
+| Run the app as a user would | `uv run offerbound start` |
+| Diagnostics | `uv run offerbound doctor` |
+| New migration after editing models | `uv run offerbound db revision -m "add x"` |
 | Test | `uv run pytest` or `uv run poe test` |
 | Lint | `uv run poe lint` |
 | Format | `uv run poe format` (`uv run poe fix` also applies lint fixes) |
@@ -80,4 +91,8 @@ Run `npm run check` from the root before you call a chunk done.
 - **No live network calls in tests.** Use recorded fixtures (respx/vcrpy) and a `FakeProvider` for the LLM.
 - **Types are strict on both sides.** mypy `strict = true`; TypeScript `strict` plus `noUncheckedIndexedAccess`. Don't add `Any`, `# type: ignore`, or `as unknown as` without a comment explaining why.
 - **Cross-platform always.** Use `pathlib`, no shell-specific syntax in npm or poe scripts, and no tools that need admin rights. CI runs on Linux, macOS, and Windows.
+- **Schema changes** go in `db/models.py` plus a migration from `offerbound db revision`; review the generated file. Migrations never import app code (the autogen hook renders plain `sa.*` types). `test_models_match_migrations` fails if they drift.
+- **Datetimes are timezone-aware UTC** (`offerbound.db.types.utcnow()`); naive datetimes are rejected at write time.
+- **Naming:** `jobs` are job postings; background runs are `tasks`. Long-running commands go through `TaskRunner.submit()` and report with `ctx.progress()`, which streams to the UI as `task.updated` SSE events.
+- **API auth:** every `/api/*` route except `/api/health` needs the per-launch session token. The frontend sends it as `X-Offerbound-Token`; the cookie set by the launch URL only works for GET/HEAD (for EventSource). Host and Origin headers are allowlisted. Never loosen these for convenience.
 - **Design system** (per spec): shadcn/ui on Tailwind, zinc base, indigo-600 accent, light/dark from CSS variables following the OS, WCAG 2.1 AA, respect `prefers-reduced-motion`.

@@ -5,7 +5,11 @@ description = "Free, open source AI job search copilot. Finds, ranks, and applie
 license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.115",
+    "keyring>=25.7.0",
+    "pydantic-settings>=2.16.2",
+    "sqlalchemy>=2.1.6",
     "uvicorn[standard]>=0.32",
 ]
 
@@ -32,7 +36,7 @@ packages = ["src/offerbound"]
 # Cross-platform tasks: `uv run poe <task>` (no Makefile, so Windows works).
 # ---------------------------------------------------------------------------
 [tool.poe.tasks]
-dev = { cmd = "uvicorn offerbound.api.app:app --host 127.0.0.1 --port 8765 --reload", help = "Run the API with autoreload" }
+dev = { cmd = "offerbound start --dev --no-browser", help = "Run the API with autoreload (pair with `npm run dev`)" }
 lint = { cmd = "ruff check .", help = "Lint with ruff" }
 format = { cmd = "ruff format .", help = "Format with ruff" }
 format-check = { cmd = "ruff format --check .", help = "Check formatting" }
