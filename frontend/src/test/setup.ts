@@ -1,12 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { setSessionToken } from "@/api/client";
 
 import { FakeEventSource } from "./fakeEventSource";
 import { server } from "./server";
+
+// Lazy routes compile on first use; Windows CI runners need longer than the 1s default.
+configure({ asyncUtilTimeout: 5000 });
 
 // jsdom gaps that Radix UI and the app rely on. Types claim these exist; jsdom lacks them.
 function polyfill(target: object, key: string, value: unknown): void {

@@ -21,7 +21,7 @@ const DiscoverPage = lazy(() => import("@/features/discover/DiscoverPage"));
 const ApplicationPage = lazy(() => import("@/features/applications/ApplicationPage"));
 const OnboardingPage = lazy(() => import("@/features/setup/OnboardingPage"));
 const placeholders = () => import("@/features/placeholders");
-const InsightsPage = lazy(() => placeholders().then((m) => ({ default: m.InsightsPage })));
+const InsightsPage = lazy(() => import("@/features/insights/InsightsPage"));
 const NotFoundPage = lazy(() => placeholders().then((m) => ({ default: m.NotFoundPage })));
 
 function screen(element: React.ReactNode, fallback: React.ReactNode) {

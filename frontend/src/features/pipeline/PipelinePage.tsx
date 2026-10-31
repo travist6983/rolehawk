@@ -1,15 +1,46 @@
 import { SquareKanbanIcon } from "lucide-react";
 
-import { useLLMStatus } from "@/api/queries";
+import { errorText } from "@/api/errors";
+import { useLLMStatus, usePipeline } from "@/api/queries";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { BoardSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
+
+import { Kanban } from "./Kanban";
 
 export default function PipelinePage() {
   const status = useLLMStatus();
+  const board = usePipeline();
   const connected = status.data?.configured === true;
+  const header = (
+    <PageHeader title="Pipeline" description="Every application, from saved to offer." />
+  );
+  if (board.isPending) return <BoardSkeleton />;
+  if (board.isError) {
+    return (
+      <>
+        {header}
+        <EmptyState
+          icon={SquareKanbanIcon}
+          title="Couldn't load your pipeline"
+          description={errorText(board.error, "The Offerbound backend didn't answer.")}
+        />
+      </>
+    );
+  }
+  if (board.data.total > 0) {
+    return (
+      <>
+        {header}
+        <div className="p-6">
+          <Kanban board={board.data} />
+        </div>
+      </>
+    );
+  }
   return (
     <>
-      <PageHeader title="Pipeline" description="Every application, from saved to offer." />
+      {header}
       <EmptyState
         icon={SquareKanbanIcon}
         title="No applications yet"

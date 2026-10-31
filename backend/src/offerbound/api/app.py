@@ -24,6 +24,7 @@ from offerbound.api.routes import (
     commands,
     documents,
     events,
+    insights,
     jobs,
     llm,
     memory,
@@ -91,6 +92,7 @@ def create_app(
         jobs.router,
         documents.router,
         applications.router,
+        insights.router,
     ):
         app.include_router(router)
     mount_web(app, web_dir or find_web_dir())

@@ -1,7 +1,10 @@
 import type {
   ApplicationDetail,
   ApplyPlan,
+  Board,
+  BoardCard,
   Bundle,
+  Insights,
   CommandInfo,
   CompanyView,
   DocumentSettings,
@@ -539,5 +542,80 @@ export const applicationDetail = (
       created_at: "2026-10-31T12:00:00Z",
     },
   ],
+  ...overrides,
+});
+
+// --- pipeline & insights ------------------------------------------------------------------
+
+export const boardCard = (overrides: Partial<BoardCard> = {}): BoardCard => ({
+  application_id: 7,
+  job_id: 1,
+  title: "Senior Data Analyst",
+  company: "Northwind",
+  location: "Denver, CO",
+  source: "Greenhouse",
+  stage: "applying",
+  score: 86,
+  days_in_stage: 3,
+  applied_at: null,
+  has_documents: true,
+  flags: 0,
+  next_action: "Submit, then mark as applied",
+  ...overrides,
+});
+
+const COLUMNS: [string, string, BoardCard["stage"][]][] = [
+  ["saved", "Saved", ["saved"]],
+  ["applying", "Applying", ["applying"]],
+  ["applied", "Applied", ["applied"]],
+  ["screen", "Screen", ["screen"]],
+  ["interview", "Interview", ["interview"]],
+  ["offer", "Offer", ["offer"]],
+  ["closed", "Closed", ["rejected", "withdrawn", "ghosted"]],
+];
+
+export const board = (cards: BoardCard[] = []): Board => ({
+  columns: COLUMNS.map(([id, label, stages]) => ({
+    id,
+    label,
+    stages,
+    cards: cards.filter((c) => stages.includes(c.stage)),
+  })),
+  total: cards.length,
+});
+
+export const insights = (overrides: Partial<Insights> = {}): Insights => ({
+  generated_at: "2026-10-31T12:00:00Z",
+  totals: {
+    jobs: 2524,
+    applications: 5,
+    active: 4,
+    applied: 3,
+    responses: 2,
+    response_rate: 2 / 3,
+    interviews: 1,
+    offers: 0,
+  },
+  funnel: [
+    { stage: "saved", label: "Saved", count: 5, rate_from_previous: null },
+    { stage: "applying", label: "Applying", count: 4, rate_from_previous: 0.8 },
+    { stage: "applied", label: "Applied", count: 3, rate_from_previous: 0.75 },
+    { stage: "screen", label: "Screen", count: 2, rate_from_previous: 2 / 3 },
+    { stage: "interview", label: "Interview", count: 1, rate_from_previous: 0.5 },
+    { stage: "offer", label: "Offer", count: 0, rate_from_previous: 0 },
+  ],
+  by_source: [
+    { source: "Greenhouse", applied: 2, responses: 2, rate: 1 },
+    { source: "Lever", applied: 1, responses: 0, rate: 0 },
+  ],
+  weekly: [
+    { week_start: "2026-10-19", applied: 1, jobs_found: 400 },
+    { week_start: "2026-10-26", applied: 2, jobs_found: 2124 },
+  ],
+  spend: {
+    month_to_date_usd: 1.5,
+    cap_usd: 20,
+    by_command: [{ command: "apply", cost_usd: 1.2, calls: 6 }],
+  },
   ...overrides,
 });

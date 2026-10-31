@@ -698,3 +698,101 @@ export function applicationFileUrl(
   const query = version ? `?v=${encodeURIComponent(version)}` : "";
   return `/api/applications/${String(id)}/files/${document}.${format}${query}`;
 }
+
+// --- pipeline, insights, reports, reset -----------------------------------------------
+
+export type Board = Schemas["Board"];
+export type BoardColumn = Schemas["Column"];
+export type BoardCard = Schemas["Card"];
+export type Insights = Schemas["Insights"];
+export type ResetScopeView = Schemas["ScopeView"];
+export type ResetResult = Schemas["ResetResult"];
+
+export const pipelineKeys = {
+  board: ["pipeline"] as const,
+  insights: ["insights"] as const,
+  resetScopes: ["reset", "scopes"] as const,
+};
+
+export function usePipeline() {
+  return useQuery({
+    queryKey: pipelineKeys.board,
+    queryFn: () => unwrap(api.GET("/api/pipeline")),
+  });
+}
+
+/** Optimistic: the card moves at once; the server records the stage event. */
+export function useMoveApplication() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, stage }: { id: number; stage: Stage }) =>
+      unwrap(
+        api.PATCH("/api/applications/{application_id}", {
+          params: { path: { application_id: id } },
+          body: { stage },
+        }),
+      ),
+    onMutate: async ({ id, stage }) => {
+      await client.cancelQueries({ queryKey: pipelineKeys.board });
+      const previous = client.getQueryData<Board>(pipelineKeys.board);
+      if (previous) client.setQueryData(pipelineKeys.board, moveCard(previous, id, stage));
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) client.setQueryData(pipelineKeys.board, context.previous);
+    },
+    onSettled: (_data, _error, { id }) => {
+      void client.invalidateQueries({ queryKey: pipelineKeys.board });
+      void client.invalidateQueries({ queryKey: pipelineKeys.insights });
+      void client.invalidateQueries({ queryKey: applicationKeys.detail(id) });
+    },
+  });
+}
+
+export function moveCard(board: Board, id: number, stage: Stage): Board {
+  const card = board.columns.flatMap((c) => c.cards).find((c) => c.application_id === id);
+  if (!card) return board;
+  const moved = { ...card, stage, days_in_stage: 0 };
+  return {
+    ...board,
+    columns: board.columns.map((column) => {
+      const without = column.cards.filter((c) => c.application_id !== id);
+      return column.stages.includes(stage)
+        ? { ...column, cards: [moved, ...without] }
+        : { ...column, cards: without };
+    }),
+  };
+}
+
+export function useInsights() {
+  return useQuery({
+    queryKey: pipelineKeys.insights,
+    queryFn: () => unwrap(api.GET("/api/insights")),
+  });
+}
+
+export function useCreateReport() {
+  return useMutation({ mutationFn: () => unwrap(api.POST("/api/reports")) });
+}
+
+export function reportUrl(filename: string): string {
+  return `/api/reports/${encodeURIComponent(filename)}`;
+}
+
+export function useResetScopes() {
+  return useQuery({
+    queryKey: pipelineKeys.resetScopes,
+    queryFn: () => unwrap(api.GET("/api/reset/scopes")),
+    staleTime: Infinity,
+  });
+}
+
+export function useReset() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Schemas["ResetIn"]) => unwrap(api.POST("/api/reset", { body })),
+    onSuccess: () => {
+      void client.invalidateQueries(); // everything may have changed
+    },
+  });
+}

@@ -2,9 +2,11 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 
 import {
+  board,
   commands,
   company,
   documentSettings,
+  insights,
   interviewState,
   jobPage,
   llmStatus,
@@ -59,6 +61,23 @@ export const handlers = [
   http.get("/api/scrape/last", () => HttpResponse.json(null)),
   http.get("/api/jobs", () => HttpResponse.json(jobPage([]))),
   http.get("/api/documents/settings", () => HttpResponse.json(documentSettings())),
+  http.get("/api/pipeline", () => HttpResponse.json(board())),
+  http.get("/api/insights", () =>
+    HttpResponse.json(
+      insights({
+        totals: { ...insights().totals, applications: 0, active: 0, applied: 0, responses: 0 },
+      }),
+    ),
+  ),
+  http.get("/api/reset/scopes", () =>
+    HttpResponse.json([
+      { id: "profile", label: "Profile only", description: "profile.md and preferences." },
+      { id: "documents", label: "Documents only", description: "Resumes and generated files." },
+      { id: "jobs", label: "Jobs and scores", description: "Scraped jobs and fit scores." },
+      { id: "applications", label: "Application history", description: "Applications." },
+      { id: "everything", label: "Everything", description: "All of the above." },
+    ]),
+  ),
 ];
 
 export const server = setupServer(...handlers);

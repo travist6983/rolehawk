@@ -991,6 +991,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pipeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pipeline
+         * @description Applications by stage. Move one with PATCH /api/applications/{id}.
+         */
+        get: operations["pipeline_api_pipeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Insights */
+        get: operations["insights_api_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Report
+         * @description Writes a self-contained HTML report to the reports folder.
+         */
+        post: operations["create_report_api_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Report */
+        get: operations["download_report_api_reports__filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reset/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reset Scopes */
+        get: operations["reset_scopes_api_reset_scopes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset
+         * @description Backs up the data folder, then deletes the chosen scope.
+         */
+        post: operations["reset_api_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1106,6 +1217,13 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** Board */
+        Board: {
+            /** Columns */
+            columns: components["schemas"]["Column"][];
+            /** Total */
+            total: number;
+        };
         /** Body_upload_document_api_setup_documents_post */
         Body_upload_document_api_setup_documents_post: {
             /** File */
@@ -1150,6 +1268,34 @@ export interface components {
         CancelOut: {
             /** Cancelled */
             cancelled: boolean;
+        };
+        /** Card */
+        Card: {
+            /** Application Id */
+            application_id: number;
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            /** Location */
+            location: string | null;
+            /** Source */
+            source: string;
+            stage: components["schemas"]["Stage"];
+            /** Score */
+            score: number | null;
+            /** Days In Stage */
+            days_in_stage: number;
+            /** Applied At */
+            applied_at: string | null;
+            /** Has Documents */
+            has_documents: boolean;
+            /** Flags */
+            flags: number;
+            /** Next Action */
+            next_action: string | null;
         };
         /** Certification */
         "Certification-Input": {
@@ -1236,6 +1382,17 @@ export interface components {
             value: string;
             /** Label */
             label: string;
+        };
+        /** Column */
+        Column: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Stages */
+            stages: components["schemas"]["Stage"][];
+            /** Cards */
+            cards: components["schemas"]["Card"][];
         };
         /** CommandIn */
         CommandIn: {
@@ -1935,6 +2092,16 @@ export interface components {
             /** Placeholder */
             placeholder: string | null;
         };
+        /** FunnelStep */
+        FunnelStep: {
+            stage: components["schemas"]["Stage"];
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+            /** Rate From Previous */
+            rate_from_previous: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1946,6 +2113,22 @@ export interface components {
             status: string;
             /** Version */
             version: string;
+        };
+        /** Insights */
+        Insights: {
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            totals: components["schemas"]["Totals"];
+            /** Funnel */
+            funnel: components["schemas"]["FunnelStep"][];
+            /** By Source */
+            by_source: components["schemas"]["SourceRate"][];
+            /** Weekly */
+            weekly: components["schemas"]["WeekCount"][];
+            spend: components["schemas"]["Spend"];
         };
         /** InterviewState */
         InterviewState: {
@@ -2503,6 +2686,39 @@ export interface components {
          * @enum {string}
          */
         RemotePreference: "remote" | "hybrid" | "onsite" | "any";
+        /** ReportFile */
+        ReportFile: {
+            /** Filename */
+            filename: string;
+            /** Path */
+            path: string;
+            /** Size */
+            size: number;
+        };
+        /** ResetIn */
+        ResetIn: {
+            scope: components["schemas"]["ResetScope"];
+            /**
+             * Confirm
+             * @description Must be the scope's name, e.g. 'profile'
+             */
+            confirm: string;
+        };
+        /** ResetResult */
+        ResetResult: {
+            scope: components["schemas"]["ResetScope"];
+            /** Backup */
+            backup: string;
+            /** Removed */
+            removed: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * ResetScope
+         * @enum {string}
+         */
+        ResetScope: "profile" | "documents" | "jobs" | "applications" | "everything";
         /**
          * RiskLevel
          * @enum {string}
@@ -2548,6 +2764,14 @@ export interface components {
              * @default true
              */
             saved: boolean;
+        };
+        /** ScopeView */
+        ScopeView: {
+            id: components["schemas"]["ResetScope"];
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
         };
         /** ScrapeIn */
         ScrapeIn: {
@@ -2613,6 +2837,35 @@ export interface components {
         SkipIn: {
             /** Question Id */
             question_id: string;
+        };
+        /** SourceRate */
+        SourceRate: {
+            /** Source */
+            source: string;
+            /** Applied */
+            applied: number;
+            /** Responses */
+            responses: number;
+            /** Rate */
+            rate: number;
+        };
+        /** Spend */
+        Spend: {
+            /** Month To Date Usd */
+            month_to_date_usd: number;
+            /** Cap Usd */
+            cap_usd: number | null;
+            /** By Command */
+            by_command: components["schemas"]["SpendLine"][];
+        };
+        /** SpendLine */
+        SpendLine: {
+            /** Command */
+            command: string;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Calls */
+            calls: number;
         };
         /**
          * Stage
@@ -2703,6 +2956,25 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** Totals */
+        Totals: {
+            /** Jobs */
+            jobs: number;
+            /** Applications */
+            applications: number;
+            /** Active */
+            active: number;
+            /** Applied */
+            applied: number;
+            /** Responses */
+            responses: number;
+            /** Response Rate */
+            response_rate: number | null;
+            /** Interviews */
+            interviews: number;
+            /** Offers */
+            offers: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2732,6 +3004,15 @@ export interface components {
             job_ids?: number[];
             /** Application Ids */
             application_ids?: number[];
+        };
+        /** WeekCount */
+        WeekCount: {
+            /** Week Start */
+            week_start: string;
+            /** Applied */
+            applied: number;
+            /** Jobs Found */
+            jobs_found: number;
         };
     };
     responses: never;
@@ -4594,6 +4875,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AutofillReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_api_pipeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Board"];
+                };
+            };
+        };
+    };
+    insights_api_insights_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
+                };
+            };
+        };
+    };
+    create_report_api_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportFile"];
+                };
+            };
+        };
+    };
+    download_report_api_reports__filename__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_scopes_api_reset_scopes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeView"][];
+                };
+            };
+        };
+    };
+    reset_api_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetResult"];
                 };
             };
             /** @description Validation Error */
