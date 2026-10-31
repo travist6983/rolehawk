@@ -39,6 +39,7 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), SOURCES.md
     fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
+    geo.py               countries from free-text job locations (unknown never filters)
     jobs/                JobStore: Discover listing (latest score per job), save, dismiss
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here

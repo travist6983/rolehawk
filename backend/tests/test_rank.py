@@ -3,6 +3,7 @@ store behind Discover, and the API/commands. The LLM is a FakeProvider."""
 
 from __future__ import annotations
 
+import itertools
 import re
 import time
 from collections.abc import Callable
@@ -38,6 +39,7 @@ from tests.test_api_setup import wait_for_task
 
 pytestmark = pytest.mark.anyio
 
+_UNIQUE = itertools.count()  # not a clock: Windows' monotonic clock ticks every ~15ms
 JOB_ID = re.compile(r"^Job (\d+): (.+?) at ", re.MULTILINE)
 
 Handler = Callable[[LLMRequest, type[BaseModel]], BaseModel]
@@ -79,7 +81,7 @@ def add_jobs(
         jobs = [
             Job(
                 portal_id="greenhouse",
-                external_id=f"{company}-{title}-{location}-{i}-{time.monotonic_ns()}",
+                external_id=f"job-{next(_UNIQUE)}",
                 url=f"https://example.com/{i}",
                 company=company,
                 title=title,
@@ -88,7 +90,7 @@ def add_jobs(
                 salary_text=salary,
                 description=f"We need SQL and dashboards. Posting {i}. " * 10,
                 scraped_at=utcnow(),
-                hash=f"{company}-{title}-{location}-{i}-{time.monotonic_ns()}",
+                hash=f"hash-{next(_UNIQUE)}",
             )
             for i in range(count)
         ]
@@ -168,6 +170,8 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
     )
     keep = add_jobs(runtime, 3)
     add_jobs(runtime, 2, location="Austin, TX")
+    add_jobs(runtime, 2, location="Remote - India", remote=True)
+    add_jobs(runtime, 1, location="Remote, Global", remote=True)  # worldwide: kept
     add_jobs(runtime, 1, salary="$60,000 - $80,000")
     add_jobs(runtime, 1, company="CryptoCo Crypto")
     dismissed, applied, scored = add_jobs(runtime, 3)
@@ -177,11 +181,12 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
         session.add(JobScore(job_id=scored, score=70, reasons=[], must_have_gaps=[], model="m"))
 
     plan = runtime.ranker.plan(RankParams())
-    assert plan.candidates == len(keep)
+    assert plan.candidates == len(keep) + 1
     assert plan.filtered.model_dump() == {
         "already_ranked": 1,
         "applied": 1,
         "dismissed": 1,
+        "country": 2,
         "location": 2,
         "salary": 1,
         "excluded": 1,
@@ -192,7 +197,7 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
     assert plan.exceeds_cap is False
 
     rescore = runtime.ranker.plan(RankParams(rescore=True))
-    assert rescore.candidates == len(keep) + 1
+    assert rescore.candidates == len(keep) + 2
 
 
 # --- scoring ------------------------------------------------------------------------------

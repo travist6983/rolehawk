@@ -374,7 +374,15 @@ export const jobPage = (items: JobRow[], stats: Partial<JobStats> = {}): JobPage
 export const rankPlan = (overrides: Partial<RankPlan> = {}): RankPlan => ({
   candidates: 42,
   remaining: 0,
-  filtered: { already_ranked: 0, applied: 0, dismissed: 0, location: 8, salary: 3, excluded: 0 },
+  filtered: {
+    already_ranked: 0,
+    applied: 0,
+    dismissed: 0,
+    country: 5,
+    location: 8,
+    salary: 3,
+    excluded: 0,
+  },
   batches: 3,
   model: "claude-haiku-5-5",
   estimated_cost_usd: 0.21,

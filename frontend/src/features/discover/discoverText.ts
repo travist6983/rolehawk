@@ -44,6 +44,7 @@ export function isFiltered(filters: JobFilters): boolean {
 }
 
 const SKIP_REASONS: [keyof FilterCounts, string][] = [
+  ["country", "in other countries"],
   ["location", "outside your locations"],
   ["salary", "below your salary floor"],
   ["excluded", "matched an excluded word"],

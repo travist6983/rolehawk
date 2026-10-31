@@ -3483,6 +3483,11 @@
             "title": "Dismissed",
             "default": 0
           },
+          "country": {
+            "type": "integer",
+            "title": "Country",
+            "default": 0
+          },
           "location": {
             "type": "integer",
             "title": "Location",

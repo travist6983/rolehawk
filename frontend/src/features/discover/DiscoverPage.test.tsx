@@ -168,7 +168,7 @@ describe("DiscoverPage", () => {
     expect(dialog).toHaveTextContent("42 jobs in 3 batches");
     expect(dialog).toHaveTextContent("$1.50 spent of your $20.00 cap");
     expect(dialog).toHaveTextContent(
-      "Skipped 11: 8 outside your locations, 3 below your salary floor.",
+      "Skipped 16: 5 in other countries, 8 outside your locations, 3 below your salary floor.",
     );
     await user.click(within(dialog).getByRole("button", { name: "Rank 42 jobs" }));
     await waitFor(() => {
@@ -208,13 +208,14 @@ describe("DiscoverPage", () => {
 describe("discover helpers", () => {
   it("summarizes skipped jobs", () => {
     expect(skippedSummary(rankPlan().filtered)).toBe(
-      "Skipped 11: 8 outside your locations, 3 below your salary floor.",
+      "Skipped 16: 5 in other countries, 8 outside your locations, 3 below your salary floor.",
     );
     expect(
       skippedSummary({
         already_ranked: 0,
         applied: 0,
         dismissed: 0,
+        country: 0,
         location: 0,
         salary: 0,
         excluded: 0,

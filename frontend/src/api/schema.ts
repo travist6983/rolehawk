@@ -1269,6 +1269,11 @@ export interface components {
              */
             dismissed: number;
             /**
+             * Country
+             * @default 0
+             */
+            country: number;
+            /**
              * Location
              * @default 0
              */

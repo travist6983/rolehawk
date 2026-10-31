@@ -1,8 +1,9 @@
 """Hard filters run before any AI scoring, so Claude only sees jobs that could work.
 
 Status filters (dismissed, already applied, already ranked) are SQL. Preference filters
-(location and remote, salary floor, excluded words) need text parsing, so they run in Python
-over the SQL result, and each rejection is counted so the user sees why jobs were skipped."""
+(country, location and remote, salary floor, excluded words) need text parsing, so they run
+in Python over the SQL result, and each rejection is counted so the user sees why jobs were
+skipped."""
 
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from pydantic import BaseModel
 from sqlalchemy import Select, exists, func, select
 from sqlalchemy.orm import Session
 
+from offerbound import geo
 from offerbound.db.models import Application, Job, JobScore, RemotePolicy, SearchTarget
 from offerbound.portals.text import looks_remote
 from offerbound.profile.model import Preferences, SalaryFloor, SalaryPeriod
@@ -27,6 +29,7 @@ class FilterCounts(BaseModel):
     already_ranked: int = 0
     applied: int = 0
     dismissed: int = 0
+    country: int = 0
     location: int = 0
     salary: int = 0
     excluded: int = 0
@@ -38,6 +41,7 @@ class FilterCounts(BaseModel):
 
 @dataclass(frozen=True)
 class TargetRule:
+    country: str
     remote_only: bool
     onsite: bool
     places: tuple[str, ...]  # lowercased first part of each location ("denver")
@@ -76,6 +80,7 @@ def build_rules(targets: Sequence[SearchTarget], prefs: Preferences) -> Rules:
     for t in targets:
         rules.targets.append(
             TargetRule(
+                country=(t.country or "").upper(),
                 remote_only=t.remote_policy is RemotePolicy.REMOTE,
                 onsite=t.remote_policy is RemotePolicy.ONSITE,
                 places=tuple(
@@ -142,6 +147,16 @@ def salary_max(text: str | None, currency: str) -> float | None:
 
 def _is_remote(job: Job) -> bool:
     return job.remote is True or looks_remote(job.location, job.title) is True
+
+
+def country_ok(job: Job, rules: Rules) -> bool:
+    """Drops jobs whose location names only other countries ("Remote - India" for a US
+    search). Unknown or worldwide locations pass, and so does a job in any target's country."""
+    countries = {t.country for t in rules.targets if t.country}
+    if not countries:
+        return True
+    places = geo.detect(job.location)
+    return any(places.allows(c) for c in countries)
 
 
 def location_ok(job: Job, rules: Rules) -> bool:
@@ -222,6 +237,8 @@ def candidates(
     for job in session.scalars(stmt):
         if excluded(job, rules):
             counts.excluded += 1
+        elif not country_ok(job, rules):
+            counts.country += 1
         elif not location_ok(job, rules):
             counts.location += 1
         elif not salary_ok(job, rules):
