@@ -1,7 +1,16 @@
-import { CheckIcon, RadioTowerIcon, TerminalIcon } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router";
+import { CheckIcon, RadioTowerIcon, SearchIcon, TerminalIcon } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
-import { useDocuments, useInterview, useLLMStatus, useProfileOverview } from "@/api/queries";
+import { errorText } from "@/api/errors";
+import {
+  useDocuments,
+  useInterview,
+  useLLMStatus,
+  usePortals,
+  useProfileOverview,
+  useStartScrape,
+} from "@/api/queries";
 import { FormSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -74,21 +83,35 @@ function Stepper({ current, done }: { current: StepId; done: ReadonlySet<StepId>
   );
 }
 
-function SourcesStep({ onFinish }: { onFinish: () => void }) {
+function SourcesStep({ onFinish }: { onFinish: (searching: boolean) => void }) {
   const overview = useProfileOverview();
+  const portals = usePortals();
+  const start = useStartScrape();
   const targets = (overview.data?.search_targets ?? []).filter((t) => t.active);
+  const ready = (portals.data ?? []).filter((p) => p.enabled && p.ready);
+  const companies = (portals.data ?? []).reduce((sum, p) => sum + (p.companies ?? 0), 0);
+  const canSearch = targets.length > 0 && ready.length > 0;
   return (
     <div className="space-y-5">
       <div className="flex gap-3 rounded-lg border bg-card p-4">
         <RadioTowerIcon className="mt-0.5 size-5 text-primary" aria-hidden />
         <div className="text-sm">
-          <p className="font-medium">Job sources are coming in the next update.</p>
+          <p className="font-medium">
+            {portals.isPending
+              ? "Checking job sources…"
+              : `${String(ready.length)} job sources are ready`}
+          </p>
           <p className="text-muted-foreground">
-            Your search targets are saved and will be used as soon as sources are switched on.
+            Public job boards for a starter watchlist of {companies.toLocaleString("en")} companies,
+            plus remote job feeds. Add companies or free Adzuna and USAJOBS keys any time in{" "}
+            <Link to="/sources" className="text-primary-text underline-offset-4 hover:underline">
+              Sources
+            </Link>
+            .
           </p>
         </div>
       </div>
-      {targets.length > 0 && (
+      {targets.length > 0 ? (
         <ul className="space-y-2" aria-label="Search targets">
           {targets.map((t) => (
             <li key={t.id} className="rounded-lg border px-3 py-2 text-sm">
@@ -102,8 +125,36 @@ function SourcesStep({ onFinish }: { onFinish: () => void }) {
             </li>
           ))}
         </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No target job titles yet, so there's nothing to search for. Add them in Profile.
+        </p>
       )}
-      <Button onClick={onFinish}>Finish setup</Button>
+      <div className="flex flex-wrap gap-2">
+        {canSearch && (
+          <Button
+            disabled={start.isPending}
+            onClick={() => {
+              start.mutate(undefined, {
+                onSuccess: () => {
+                  onFinish(true);
+                },
+                onError: (error) => toast.error(errorText(error, "Couldn't start the search")),
+              });
+            }}
+          >
+            <SearchIcon /> Search now
+          </Button>
+        )}
+        <Button
+          variant={canSearch ? "outline" : "default"}
+          onClick={() => {
+            onFinish(false);
+          }}
+        >
+          Finish setup
+        </Button>
+      </div>
     </div>
   );
 }
@@ -182,8 +233,8 @@ export default function OnboardingPage() {
         )}
         {step === "sources" && (
           <SourcesStep
-            onFinish={() => {
-              void navigate("/profile");
+            onFinish={(searching) => {
+              void navigate(searching ? "/sources" : "/profile");
             }}
           />
         )}

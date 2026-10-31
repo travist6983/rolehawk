@@ -117,7 +117,10 @@ async def _run_command(ctx: ToolContext, params: RunCommandInput) -> ToolOutcome
     if isinstance(result, CommandStarted):
         card = {"type": "task", "task_id": result.task_id, "command": spec.name}
         return ToolOutcome(f"Started {spec.name} as task {result.task_id}.", cards=[card])
-    return ToolOutcome(json.dumps(result, default=str))
+    payload = json.dumps(result, default=str)
+    if spec.untrusted_output:
+        return ToolOutcome(untrusted(f"command:{spec.name}", payload), untrusted=True)
+    return ToolOutcome(payload)
 
 
 # --- propose_memory_update --------------------------------------------------------------

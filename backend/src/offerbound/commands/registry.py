@@ -24,6 +24,10 @@ class CommandContext:
         if self.task is not None:
             await self.task.progress(fraction, message)
 
+    @property
+    def task_id(self) -> str | None:
+        return self.task.task_id if self.task is not None else None
+
 
 Handler = Callable[[CommandContext, Any], Awaitable[Any]]
 
@@ -40,6 +44,9 @@ class CommandSpec:
     # False for commands that read local files or are meant for skills/the UI only; chat's
     # run_command neither lists nor runs them.
     chat_allowed: bool = True
+    # True when the result carries third-party text (job titles, descriptions). Chat wraps it
+    # in <untrusted_content>, which blocks write actions for the rest of that turn.
+    untrusted_output: bool = False
 
 
 class UnknownCommandError(LookupError):

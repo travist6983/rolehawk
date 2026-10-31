@@ -1290,6 +1290,868 @@
           }
         }
       }
+    },
+    "/api/portals": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "List Portals",
+        "operationId": "list_portals_api_portals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PortalView"
+                  },
+                  "type": "array",
+                  "title": "Response List Portals Api Portals Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/{portal_id}": {
+      "patch": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Patch Portal",
+        "operationId": "patch_portal_api_portals__portal_id__patch",
+        "parameters": [
+          {
+            "name": "portal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Portal Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portals/{portal_id}/credentials": {
+      "put": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Put Credentials",
+        "description": "API keys go to the OS keychain; non-secret settings (e.g. the USAJOBS email) to the\ndatabase.",
+        "operationId": "put_credentials_api_portals__portal_id__credentials_put",
+        "parameters": [
+          {
+            "name": "portal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Portal Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Delete Credentials",
+        "operationId": "delete_credentials_api_portals__portal_id__credentials_delete",
+        "parameters": [
+          {
+            "name": "portal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Portal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scrape": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Scrape",
+        "description": "Starts a background search; follow progress over /api/events.",
+        "operationId": "scrape_api_scrape_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ScrapeIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRef"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scrape/last": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Last Scrape",
+        "description": "Results of the most recent successful search, or null if none has run.",
+        "operationId": "last_scrape_api_scrape_last_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ScrapeSummary"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Last Scrape Api Scrape Last Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companies": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "List Companies",
+        "operationId": "list_companies_api_companies_get",
+        "parameters": [
+          {
+            "name": "ats",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ats"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyView"
+                  },
+                  "title": "Response List Companies Api Companies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Add Companies",
+        "operationId": "add_companies_api_companies_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompaniesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyView"
+                  },
+                  "title": "Response Add Companies Api Companies Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companies/{company_id}": {
+      "patch": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Patch Company",
+        "operationId": "patch_company_api_companies__company_id__patch",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Delete Company",
+        "operationId": "delete_company_api_companies__company_id__delete",
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companies/check": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Check Company",
+        "description": "Look the company up on its ATS before adding it (one public request).",
+        "operationId": "check_company_api_companies_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyCheck"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List Jobs",
+        "description": "Scraped jobs with their latest fit score (best fit first by default).",
+        "operationId": "list_jobs_api_jobs_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Words in title/company/text",
+              "title": "Q"
+            },
+            "description": "Words in title/company/text"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "ranked",
+                "unranked"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "show",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "saved",
+                "dismissed"
+              ],
+              "type": "string",
+              "description": "active hides dismissed jobs",
+              "default": "active",
+              "title": "Show"
+            },
+            "description": "active hides dismissed jobs"
+          },
+          {
+            "name": "min_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Score"
+            }
+          },
+          {
+            "name": "portal_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Portal Id"
+            }
+          },
+          {
+            "name": "remote",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only jobs marked remote",
+              "default": false,
+              "title": "Remote"
+            },
+            "description": "Only jobs marked remote"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "score",
+                "newest"
+              ],
+              "type": "string",
+              "default": "score",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/save": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Save Jobs",
+        "operationId": "save_jobs_api_jobs_save_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/dismiss": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Dismiss Jobs",
+        "operationId": "dismiss_jobs_api_jobs_dismiss_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rank/plan": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Rank Plan",
+        "description": "What /rank would do and cost. Shown before the user starts it.",
+        "operationId": "rank_plan_api_rank_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RankParams"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rank": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Rank",
+        "description": "Starts ranking in the background; follow progress over /api/events.",
+        "operationId": "rank_api_rank_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RankParams"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRef"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1504,6 +2366,19 @@
         ],
         "title": "Certification"
       },
+      "Changed": {
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "title": "Changed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changed"
+        ],
+        "title": "Changed"
+      },
       "ChatMessageView": {
         "properties": {
           "id": {
@@ -1605,6 +2480,27 @@
         ],
         "title": "ChatSessionView"
       },
+      "CheckIn": {
+        "properties": {
+          "ats": {
+            "type": "string",
+            "title": "Ats"
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ats",
+          "slug"
+        ],
+        "title": "CheckIn"
+      },
       "Choice": {
         "properties": {
           "value": {
@@ -1697,6 +2593,213 @@
         },
         "type": "object",
         "title": "CommandOut"
+      },
+      "CompaniesIn": {
+        "properties": {
+          "ats": {
+            "type": "string",
+            "title": "Ats"
+          },
+          "companies": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyIn"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Companies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ats",
+          "companies"
+        ],
+        "title": "CompaniesIn"
+      },
+      "CompanyCheck": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "jobs": {
+            "type": "integer",
+            "title": "Jobs"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "The name the ATS reports, when it differs"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "jobs",
+          "company",
+          "detail"
+        ],
+        "title": "CompanyCheck"
+      },
+      "CompanyIn": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            "title": "Slug"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "title": "CompanyIn"
+      },
+      "CompanyPatch": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "CompanyPatch"
+      },
+      "CompanyView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ats": {
+            "type": "string",
+            "title": "Ats"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "last_job_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Job Count"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ats",
+          "slug",
+          "name",
+          "industry",
+          "country",
+          "source",
+          "enabled",
+          "last_job_count",
+          "last_error"
+        ],
+        "title": "CompanyView"
       },
       "Completeness": {
         "properties": {
@@ -1841,6 +2944,51 @@
           "links"
         ],
         "title": "Contact"
+      },
+      "CredentialsIn": {
+        "properties": {
+          "secrets": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Secrets"
+          },
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Config"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CredentialsIn"
+      },
+      "DismissIn": {
+        "properties": {
+          "job_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Job Ids"
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_ids"
+        ],
+        "title": "DismissIn"
       },
       "DocumentView": {
         "properties": {
@@ -2318,6 +3466,48 @@
         "type": "object",
         "title": "ExtractedSetup"
       },
+      "FilterCounts": {
+        "properties": {
+          "already_ranked": {
+            "type": "integer",
+            "title": "Already Ranked",
+            "default": 0
+          },
+          "applied": {
+            "type": "integer",
+            "title": "Applied",
+            "default": 0
+          },
+          "dismissed": {
+            "type": "integer",
+            "title": "Dismissed",
+            "default": 0
+          },
+          "country": {
+            "type": "integer",
+            "title": "Country",
+            "default": 0
+          },
+          "location": {
+            "type": "integer",
+            "title": "Location",
+            "default": 0
+          },
+          "salary": {
+            "type": "integer",
+            "title": "Salary",
+            "default": 0
+          },
+          "excluded": {
+            "type": "integer",
+            "title": "Excluded",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "FilterCounts",
+        "description": "Jobs skipped before scoring, by reason."
+      },
       "FormField": {
         "properties": {
           "name": {
@@ -2428,6 +3618,407 @@
           "complete"
         ],
         "title": "InterviewState"
+      },
+      "JobDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "portal_id": {
+            "type": "string",
+            "title": "Portal Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "scraped_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scraped At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "must_have_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Have Gaps"
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          },
+          "score_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Model"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Third-party text from the posting"
+          },
+          "application_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "salary_text",
+          "portal_id",
+          "source",
+          "url",
+          "posted_at",
+          "scraped_at",
+          "score",
+          "reasons",
+          "must_have_gaps",
+          "scored_at",
+          "score_model",
+          "stage",
+          "dismissed",
+          "description",
+          "application_id"
+        ],
+        "title": "JobDetail"
+      },
+      "JobPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JobRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/JobStats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "stats"
+        ],
+        "title": "JobPage"
+      },
+      "JobRow": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "portal_id": {
+            "type": "string",
+            "title": "Portal Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "scraped_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scraped At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "must_have_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Have Gaps"
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          },
+          "score_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Model"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dismissed": {
+            "type": "boolean",
+            "title": "Dismissed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "salary_text",
+          "portal_id",
+          "source",
+          "url",
+          "posted_at",
+          "scraped_at",
+          "score",
+          "reasons",
+          "must_have_gaps",
+          "scored_at",
+          "score_model",
+          "stage",
+          "dismissed"
+        ],
+        "title": "JobRow"
+      },
+      "JobStats": {
+        "properties": {
+          "jobs": {
+            "type": "integer",
+            "title": "Jobs"
+          },
+          "ranked": {
+            "type": "integer",
+            "title": "Ranked"
+          },
+          "unranked": {
+            "type": "integer",
+            "title": "Unranked"
+          },
+          "saved": {
+            "type": "integer",
+            "title": "Saved"
+          },
+          "dismissed": {
+            "type": "integer",
+            "title": "Dismissed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobs",
+          "ranked",
+          "unranked",
+          "saved",
+          "dismissed"
+        ],
+        "title": "JobStats",
+        "description": "Counts over every job that isn't dismissed (dismissed counted separately)."
       },
       "LLMSettingsIn": {
         "properties": {
@@ -2668,6 +4259,231 @@
           "display_name"
         ],
         "title": "ModelChoice"
+      },
+      "PortalKind": {
+        "type": "string",
+        "enum": [
+          "ats",
+          "feed",
+          "scraper",
+          "plugin"
+        ],
+        "title": "PortalKind"
+      },
+      "PortalPatch": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "PortalPatch"
+      },
+      "PortalRun": {
+        "properties": {
+          "portal_id": {
+            "type": "string",
+            "title": "Portal Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "found": {
+            "type": "integer",
+            "title": "Found",
+            "default": 0
+          },
+          "matched": {
+            "type": "integer",
+            "title": "Matched",
+            "default": 0
+          },
+          "new": {
+            "type": "integer",
+            "title": "New",
+            "default": 0
+          },
+          "duplicates": {
+            "type": "integer",
+            "title": "Duplicates",
+            "default": 0
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "portal_id",
+          "name",
+          "status",
+          "found",
+          "matched",
+          "new",
+          "duplicates",
+          "errors",
+          "detail"
+        ],
+        "title": "PortalRun"
+      },
+      "PortalView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PortalKind"
+          },
+          "risk_level": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Countries"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing",
+            "description": "What has to be set up before it can run"
+          },
+          "secret_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Secret Fields"
+          },
+          "config_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Config Fields"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "jobs_found": {
+            "type": "integer",
+            "title": "Jobs Found"
+          },
+          "companies": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Companies"
+          },
+          "docs_url": {
+            "type": "string",
+            "title": "Docs Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "risk_level",
+          "countries",
+          "enabled",
+          "ready",
+          "missing",
+          "secret_fields",
+          "config_fields",
+          "config",
+          "status",
+          "last_run_at",
+          "last_error",
+          "jobs_found",
+          "companies",
+          "docs_url"
+        ],
+        "title": "PortalView"
       },
       "Preferences-Input": {
         "properties": {
@@ -3334,6 +5150,100 @@
         ],
         "title": "Question"
       },
+      "RankParams": {
+        "properties": {
+          "job_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Ids",
+            "description": "Only these jobs (default: all)"
+          },
+          "rescore": {
+            "type": "boolean",
+            "title": "Rescore",
+            "description": "Score jobs again even if already ranked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "RankParams"
+      },
+      "RankPlan": {
+        "properties": {
+          "candidates": {
+            "type": "integer",
+            "title": "Candidates"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining",
+            "description": "Matching jobs beyond this run's limit"
+          },
+          "filtered": {
+            "$ref": "#/components/schemas/FilterCounts"
+          },
+          "batches": {
+            "type": "integer",
+            "title": "Batches"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "estimated_cost_usd": {
+            "type": "number",
+            "title": "Estimated Cost Usd"
+          },
+          "month_to_date_usd": {
+            "type": "number",
+            "title": "Month To Date Usd"
+          },
+          "cap_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Usd"
+          },
+          "exceeds_cap": {
+            "type": "boolean",
+            "title": "Exceeds Cap"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidates",
+          "remaining",
+          "filtered",
+          "batches",
+          "model",
+          "estimated_cost_usd",
+          "month_to_date_usd",
+          "cap_usd",
+          "exceeds_cap",
+          "configured"
+        ],
+        "title": "RankPlan",
+        "description": "What a run would do, shown before it starts."
+      },
       "RemotePolicy": {
         "type": "string",
         "enum": [
@@ -3353,6 +5263,15 @@
           "any"
         ],
         "title": "RemotePreference"
+      },
+      "RiskLevel": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "RiskLevel"
       },
       "RouteView": {
         "properties": {
@@ -3451,6 +5370,101 @@
           "hour"
         ],
         "title": "SalaryPeriod"
+      },
+      "SaveIn": {
+        "properties": {
+          "job_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Job Ids"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_ids"
+        ],
+        "title": "SaveIn"
+      },
+      "ScrapeIn": {
+        "properties": {
+          "portal_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portal Ids"
+          }
+        },
+        "type": "object",
+        "title": "ScrapeIn"
+      },
+      "ScrapeSummary": {
+        "properties": {
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Finished At"
+          },
+          "queries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Queries"
+          },
+          "portals": {
+            "items": {
+              "$ref": "#/components/schemas/PortalRun"
+            },
+            "type": "array",
+            "title": "Portals"
+          },
+          "found": {
+            "type": "integer",
+            "title": "Found"
+          },
+          "new": {
+            "type": "integer",
+            "title": "New"
+          },
+          "duplicates": {
+            "type": "integer",
+            "title": "Duplicates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "started_at",
+          "finished_at",
+          "queries",
+          "portals",
+          "found",
+          "new",
+          "duplicates"
+        ],
+        "title": "ScrapeSummary"
       },
       "SearchTargetView": {
         "properties": {
@@ -3569,6 +5583,21 @@
           "question_id"
         ],
         "title": "SkipIn"
+      },
+      "Stage": {
+        "type": "string",
+        "enum": [
+          "saved",
+          "applying",
+          "applied",
+          "screen",
+          "interview",
+          "offer",
+          "rejected",
+          "withdrawn",
+          "ghosted"
+        ],
+        "title": "Stage"
       },
       "Task": {
         "type": "string",

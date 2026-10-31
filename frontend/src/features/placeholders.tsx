@@ -1,4 +1,4 @@
-import { ChartColumnIcon, CompassIcon, RadioTowerIcon, SearchXIcon } from "lucide-react";
+import { ChartColumnIcon, SearchXIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import { useLLMStatus } from "@/api/queries";
@@ -7,49 +7,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 
 /** Screens whose features ship in later releases. Each teaches what will appear and how. */
-
-export function DiscoverPage() {
-  return (
-    <>
-      <PageHeader title="Discover" description="Jobs ranked by how well they fit you." />
-      <EmptyState
-        icon={CompassIcon}
-        title="No jobs to review yet"
-        description="Once sources run, ranked jobs appear here with fit scores, reasons, and gaps."
-        steps={[
-          {
-            title: "Choose sources",
-            description: "Company boards and feeds for your country.",
-            action: { label: "Sources", to: "/sources" },
-          },
-          {
-            title: "Set targets",
-            description: "Titles, locations, and your salary floor.",
-            action: { label: "Profile", to: "/profile" },
-          },
-          {
-            title: "Rank",
-            description: "See a cost estimate, then score jobs against your profile.",
-            action: { label: "Settings", to: "/settings" },
-          },
-        ]}
-      />
-    </>
-  );
-}
-
-export function SourcesPage() {
-  return (
-    <>
-      <PageHeader title="Sources" description="Where Offerbound looks for jobs." />
-      <EmptyState
-        icon={RadioTowerIcon}
-        title="Job sources are on the way"
-        description="Greenhouse, Lever, Ashby, Workable, remote job feeds, and Adzuna will appear here as cards you can switch on."
-      />
-    </>
-  );
-}
 
 export function InsightsPage() {
   const status = useLLMStatus();

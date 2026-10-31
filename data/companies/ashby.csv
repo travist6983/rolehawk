@@ -1,1 +1,34 @@
 slug,name,industry,country
+airwallex,Airwallex,Fintech,AU
+baseten,Baseten,AI,US
+benchling,Benchling,Life sciences,US
+browserbase,Browserbase,Developer tools,US
+clerk,Clerk,Developer tools,US
+cohere,Cohere,AI,CA
+cursor,Cursor,Developer tools,US
+decagon,Decagon,AI,US
+elevenlabs,ElevenLabs,AI,GB
+harvey,Harvey,AI,US
+hex,Hex,Data,US
+linear,Linear,Software,US
+lovable,Lovable,AI,SE
+modal,Modal,AI,US
+n8n,n8n,Software,DE
+neon,Neon,Developer tools,US
+notion,Notion,Software,US
+openai,OpenAI,AI,US
+pennylane,Pennylane,Fintech,FR
+perplexity,Perplexity,AI,US
+plain,Plain,Software,GB
+posthog,PostHog,Developer tools,GB
+ramp,Ramp,Fintech,US
+replit,Replit,Developer tools,US
+resend,Resend,Developer tools,US
+runway,Runway,AI,US
+sierra,Sierra,AI,US
+snyk,Snyk,Security,GB
+supabase,Supabase,Developer tools,US
+synthesia,Synthesia,AI,GB
+vanta,Vanta,Security,US
+watershed,Watershed,Climate,US
+zapier,Zapier,Software,US

@@ -1,1 +1,60 @@
 slug,name,industry,country
+affirm,Affirm,Fintech,US
+airbnb,Airbnb,Travel,US
+airtable,Airtable,Software,US
+anthropic,Anthropic,AI,US
+asana,Asana,Software,US
+brex,Brex,Fintech,US
+canonical,Canonical,Software,GB
+carta,Carta,Fintech,US
+celonis,Celonis,Software,DE
+checkr,Checkr,HR tech,US
+chime,Chime,Fintech,US
+cloudflare,Cloudflare,Infrastructure,US
+cockroachlabs,Cockroach Labs,Data,US
+coinbase,Coinbase,Crypto,US
+contentful,Contentful,Software,DE
+cultureamp,Culture Amp,HR tech,AU
+databricks,Databricks,Data,US
+datadog,Datadog,Developer tools,US
+discord,Discord,Consumer,US
+doordashusa,DoorDash,Marketplace,US
+dropbox,Dropbox,Software,US
+duolingo,Duolingo,Education,US
+elastic,Elastic,Developer tools,US
+figma,Figma,Design,US
+flexport,Flexport,Logistics,US
+gemini,Gemini,Crypto,US
+gitlab,GitLab,Developer tools,US
+gocardless,GoCardless,Fintech,GB
+grafanalabs,Grafana Labs,Developer tools,US
+gusto,Gusto,HR tech,US
+hubspotjobs,HubSpot,Software,US
+instacart,Instacart,Marketplace,US
+intercom,Intercom,Software,IE
+lattice,Lattice,HR tech,US
+lyft,Lyft,Mobility,US
+mercury,Mercury,Fintech,US
+mongodb,MongoDB,Developer tools,US
+monzo,Monzo,Fintech,GB
+n26,N26,Fintech,DE
+okta,Okta,Security,US
+oura,Oura,Health tech,FI
+pinterest,Pinterest,Consumer,US
+razorpaysoftwareprivatelimited,Razorpay,Fintech,IN
+reddit,Reddit,Consumer,US
+robinhood,Robinhood,Fintech,US
+roblox,Roblox,Gaming,US
+samsara,Samsara,IoT,US
+scaleai,Scale AI,AI,US
+sofi,SoFi,Fintech,US
+squarespace,Squarespace,Software,US
+stripe,Stripe,Fintech,US
+toast,Toast,Restaurant tech,US
+twilio,Twilio,Developer tools,US
+twitch,Twitch,Consumer,US
+typeform,Typeform,Software,ES
+vercel,Vercel,Developer tools,US
+waymo,Waymo,Autonomous vehicles,US
+wolt,Wolt,Marketplace,FI
+zscaler,Zscaler,Security,US

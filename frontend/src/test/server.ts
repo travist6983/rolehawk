@@ -3,9 +3,12 @@ import { setupServer } from "msw/node";
 
 import {
   commands,
+  company,
   interviewState,
+  jobPage,
   llmStatus,
   memory,
+  portals,
   profileOverview,
   TEST_TOKEN,
 } from "./fixtures";
@@ -45,6 +48,15 @@ export const handlers = [
     HttpResponse.json({ detail: "No setup draft" }, { status: 404 }),
   ),
   http.get("/api/setup/documents", () => HttpResponse.json([])),
+  http.get("/api/portals", () => HttpResponse.json(portals())),
+  http.get("/api/companies", () =>
+    HttpResponse.json([
+      company(),
+      company({ id: 2, ats: "lever", slug: "palantir", name: "Palantir", industry: "Software" }),
+    ]),
+  ),
+  http.get("/api/scrape/last", () => HttpResponse.json(null)),
+  http.get("/api/jobs", () => HttpResponse.json(jobPage([]))),
 ];
 
 export const server = setupServer(...handlers);
