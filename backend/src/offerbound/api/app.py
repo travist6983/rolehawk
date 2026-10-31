@@ -18,7 +18,17 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from offerbound import __version__
-from offerbound.api.routes import chat, commands, events, llm, memory, system, tasks
+from offerbound.api.routes import (
+    chat,
+    commands,
+    events,
+    llm,
+    memory,
+    profile,
+    setup,
+    system,
+    tasks,
+)
 from offerbound.api.security import SecurityPolicy, SessionGuard
 from offerbound.api.web import find_web_dir, mount_web
 from offerbound.llm import errors as llm_errors
@@ -71,6 +81,8 @@ def create_app(
         llm.router,
         chat.router,
         memory.router,
+        profile.router,
+        setup.router,
     ):
         app.include_router(router)
     mount_web(app, web_dir or find_web_dir())

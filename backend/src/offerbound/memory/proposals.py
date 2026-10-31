@@ -3,6 +3,7 @@ only `accept()` (a user action) writes to the markdown files."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Literal, Self
 
@@ -82,9 +83,15 @@ def apply_edit(document: str, proposal: ProposalIn | ProposalView) -> str:
 
 
 class MemoryService:
-    def __init__(self, files: MemoryFiles, sessions: sessionmaker[Session]) -> None:
+    def __init__(
+        self,
+        files: MemoryFiles,
+        sessions: sessionmaker[Session],
+        on_change: Callable[[MemoryTarget], None] | None = None,
+    ) -> None:
         self.files = files
         self._sessions = sessions
+        self._on_change = on_change  # keeps derived tables (profile_items, targets) in sync
 
     def snapshot(self) -> MemorySnapshot:
         return MemorySnapshot(
@@ -165,7 +172,10 @@ class MemoryService:
             row.status = MemoryProposalStatus.ACCEPTED
             row.resolved_at = utcnow()
             session.flush()
-            return ProposalView.model_validate(row)
+            result = ProposalView.model_validate(row)
+        if updated != document and self._on_change is not None:
+            self._on_change(view.target)
+        return result
 
     def reject(self, proposal_id: int) -> ProposalView:
         with self._sessions.begin() as session:

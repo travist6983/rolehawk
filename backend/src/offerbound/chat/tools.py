@@ -90,7 +90,9 @@ async def _run_command(ctx: ToolContext, params: RunCommandInput) -> ToolOutcome
     try:
         spec = ctx.runtime.commands.get(params.command)
     except UnknownCommandError:
-        names = ", ".join(c.name for c in ctx.runtime.commands.all())
+        spec = None
+    if spec is None or not spec.chat_allowed:
+        names = ", ".join(c.name for c in ctx.runtime.commands.all() if c.chat_allowed)
         return ToolOutcome(f"Unknown command {params.command!r}. Available: {names}", True)
     try:
         args = json.loads(params.params_json or "{}")

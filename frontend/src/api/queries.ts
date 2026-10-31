@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { api, unwrap, type Schemas } from "./client";
+import { api, ApiError, unwrap, type Schemas } from "./client";
 
 export type LLMStatus = Schemas["LLMStatus"];
 export type TaskView = Schemas["TaskView"];
@@ -131,5 +131,168 @@ export function useRunCommand() {
           body: { params: params ?? {} },
         }),
       ),
+  });
+}
+
+// --- profile & setup ------------------------------------------------------------------
+
+export type ProfileOverview = Schemas["ProfileOverview"];
+// Responses use the "-Output" variants (every field present); request bodies the "-Input" ones.
+export type Profile = Schemas["Profile-Output"];
+export type Preferences = Schemas["Preferences-Output"];
+export type InterviewState = Schemas["InterviewState"];
+export type Question = Schemas["Question"];
+export type DocumentView = Schemas["DocumentView"];
+export type Draft = Schemas["Draft"];
+export type ApplyResult = Schemas["ApplyResult"];
+export type AnswerValue = Schemas["AnswerIn"]["value"];
+
+export const setupKeys = {
+  profile: ["profile"] as const,
+  interview: ["setup", "interview"] as const,
+  documents: ["setup", "documents"] as const,
+  draft: ["setup", "draft"] as const,
+};
+
+export function useProfileOverview() {
+  return useQuery({ queryKey: setupKeys.profile, queryFn: () => unwrap(api.GET("/api/profile")) });
+}
+
+export function useInterview() {
+  return useQuery({
+    queryKey: setupKeys.interview,
+    queryFn: () => unwrap(api.GET("/api/setup/interview")),
+  });
+}
+
+export function useDocuments() {
+  return useQuery({
+    queryKey: setupKeys.documents,
+    queryFn: () => unwrap(api.GET("/api/setup/documents")),
+  });
+}
+
+/** The pending draft, or null when there is none (404). */
+export function useDraft() {
+  return useQuery({
+    queryKey: setupKeys.draft,
+    queryFn: async (): Promise<Draft | null> => {
+      const { data, response } = await api.GET("/api/setup/draft");
+      if (response.status === 404) return null;
+      if (!data) throw new ApiError(response.status, "Couldn't load the draft");
+      return data;
+    },
+  });
+}
+
+/** Profile files changed: refresh everything derived from them. */
+function useInvalidateProfile({ interview = true }: { interview?: boolean } = {}) {
+  const client = useQueryClient();
+  return () => {
+    const keys = [setupKeys.profile, queryKeys.memory, ...(interview ? [setupKeys.interview] : [])];
+    for (const key of keys) void client.invalidateQueries({ queryKey: key });
+  };
+}
+
+export function useUploadDocument() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) =>
+      unwrap(
+        api.POST("/api/setup/documents", {
+          // OpenAPI models binary uploads as strings; the serializer sends the real File.
+          body: { file: file as unknown as string },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append("file", file, file.name); // explicit name survives every runtime
+            return form;
+          },
+        }),
+      ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: setupKeys.documents });
+    },
+  });
+}
+
+export function usePasteText() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) => unwrap(api.POST("/api/setup/documents/text", { body: { text } })),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: setupKeys.documents });
+    },
+  });
+}
+
+export function useStartExtraction() {
+  return useMutation({
+    mutationFn: (documentIds: number[]) =>
+      unwrap(api.POST("/api/setup/extract", { body: { document_ids: documentIds } })),
+  });
+}
+
+export function useApplyDraft() {
+  const client = useQueryClient();
+  const invalidate = useInvalidateProfile();
+  return useMutation({
+    mutationFn: (edited: Schemas["ExtractedSetup"]) =>
+      unwrap(api.POST("/api/setup/draft/apply", { body: edited })),
+    onSuccess: () => {
+      client.setQueryData(setupKeys.draft, null);
+      invalidate();
+    },
+  });
+}
+
+export function useDiscardDraft() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { response } = await api.DELETE("/api/setup/draft");
+      if (!response.ok) throw new ApiError(response.status, "Couldn't discard the draft");
+    },
+    onSuccess: () => {
+      client.setQueryData(setupKeys.draft, null);
+    },
+  });
+}
+
+export function useAnswer() {
+  const client = useQueryClient();
+  const invalidate = useInvalidateProfile({ interview: false }); // the answer returns it
+  return useMutation({
+    mutationFn: ({ questionId, value }: { questionId: string; value: AnswerValue }) =>
+      unwrap(api.POST("/api/setup/interview/answer", { body: { question_id: questionId, value } })),
+    onSuccess: (state) => {
+      client.setQueryData(setupKeys.interview, state);
+      invalidate();
+    },
+  });
+}
+
+export function useSkipQuestion() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      unwrap(api.POST("/api/setup/interview/skip", { body: { question_id: questionId } })),
+    onSuccess: (state) => {
+      client.setQueryData(setupKeys.interview, state);
+    },
+  });
+}
+
+export function useSaveMemoryFile() {
+  const invalidate = useInvalidateProfile();
+  return useMutation({
+    mutationFn: ({
+      target,
+      markdown,
+    }: {
+      target: "profile" | "preferences" | "facts";
+      markdown: string;
+    }) =>
+      unwrap(api.PUT("/api/memory/{target}", { params: { path: { target } }, body: { markdown } })),
+    onSuccess: invalidate,
   });
 }

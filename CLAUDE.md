@@ -31,6 +31,8 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          pricing, task routing, spend meter, LLMService (the only entry point)
     memory/              markdown memory files, proposals (accept/reject), context packs,
                          fact extraction, session summaries + retention
+    profile/             typed profile + preferences, markdown parser/renderer, merge, document
+                         parsing (PDF/DOCX/TXT/LinkedIn ZIP), extraction, gap interview, /setup
     chat/                chat turns (streaming, tool loop), tools, read-only pipeline SQL
     commands/            command registry + built-ins; feature commands register here
     services/            business logic: every command lives here
@@ -75,6 +77,7 @@ Backend (from `backend/`):
 | Diagnostics | `uv run offerbound doctor` |
 | Run a command (what skills call) | `uv run offerbound run context --json` |
 | Store an Anthropic API key in the keychain | `uv run offerbound llm set-key` |
+| Regenerate fixture resumes | `uv run python tests/fixtures/make_fixtures.py` |
 | New migration after editing models | `uv run offerbound db revision -m "add x"` |
 | Test | `uv run pytest` or `uv run poe test` |
 | Lint | `uv run poe lint` |
@@ -107,6 +110,9 @@ Run `npm run check` from the root before you call a chunk done.
 - **No secrets in files.** API keys, the Gmail app password, and the Notion token go in the OS keychain via `keyring`. `config.toml`, logs, fixtures, and test data never contain secrets; logs redact them.
 - **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. The /apply reviewer pass enforces this; don't weaken it.
 - **Nothing changes memory silently.** Fact extraction produces proposed diffs the user accepts or rejects.
+- **profile.md and preferences.md are canonical.** Code reads them through `ProfileService` (parse) and writes through it (render + reindex `profile_items` + sync `search_targets`), or through accepted proposals. The user's own edits are saved verbatim; unknown sections are preserved. Never write those files any other way.
+- **Setup is review-first.** Imported or extracted data becomes a draft the user reviews before it is applied; applying merges (existing facts win) so re-running never duplicates. The gap interview is deterministic (no AI), so setup works without an API key.
+- **Uploads are untrusted input.** Size caps, archive bomb checks, content-sniffed types, and only known LinkedIn CSVs are read. Commands that read local paths set `chat_allowed=False`.
 - **Untrusted text stays untrusted.** Job descriptions, emails, and web pages go in delimited blocks, never in system prompts. Tools triggered while processing them are read-only.
 - **No live network calls in tests.** Use recorded fixtures (respx/vcrpy) and a `FakeProvider` for the LLM.
 - **Types are strict on both sides.** mypy `strict = true`; TypeScript `strict` plus `noUncheckedIndexedAccess`. Don't add `Any`, `# type: ignore`, or `as unknown as` without a comment explaining why.

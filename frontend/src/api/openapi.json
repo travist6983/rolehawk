@@ -862,10 +862,472 @@
           }
         }
       }
+    },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Get Profile",
+        "description": "The parsed view of profile.md and preferences.md, plus derived search targets.",
+        "operationId": "get_profile_api_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/memory/{target}": {
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Put Memory",
+        "description": "The user's own edit to a memory file, saved exactly as written.",
+        "operationId": "put_memory_api_memory__target__put",
+        "parameters": [
+          {
+            "name": "target",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MemoryTarget"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkdownIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemorySnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/documents": {
+      "get": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_api_setup_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentView"
+                  },
+                  "type": "array",
+                  "title": "Response List Documents Api Setup Documents Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Upload Document",
+        "description": "PDF, DOCX, TXT/MD, or a LinkedIn data export ZIP, up to 10 MB.",
+        "operationId": "upload_document_api_setup_documents_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_setup_documents_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/documents/text": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Paste Text",
+        "operationId": "paste_text_api_setup_documents_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/extract": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Extract",
+        "description": "Starts a background task; follow it over /api/events. Its result is the draft.",
+        "operationId": "extract_api_setup_extract_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRef"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/draft": {
+      "get": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_setup_draft_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Discard Draft",
+        "operationId": "discard_draft_api_setup_draft_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/setup/draft/apply": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Apply Draft",
+        "description": "Applies the stored draft, or the edited version the user reviewed.",
+        "operationId": "apply_draft_api_setup_draft_apply_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ExtractedSetup"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/interview": {
+      "get": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Get Interview",
+        "operationId": "get_interview_api_setup_interview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/interview/answer": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Answer",
+        "operationId": "answer_api_setup_interview_answer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/interview/skip": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Skip",
+        "operationId": "skip_api_setup_interview_skip_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/interview/restart": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Restart",
+        "operationId": "restart_api_setup_interview_restart_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewState"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AnswerIn": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "value"
+        ],
+        "title": "AnswerIn"
+      },
       "ApiKeyIn": {
         "properties": {
           "api_key": {
@@ -882,6 +1344,56 @@
         ],
         "title": "ApiKeyIn"
       },
+      "ApplyResult": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Output"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Output"
+          },
+          "added": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Added"
+          },
+          "updated": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Updated"
+          },
+          "completeness": {
+            "$ref": "#/components/schemas/Completeness"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile",
+          "preferences",
+          "added",
+          "updated",
+          "completeness"
+        ],
+        "title": "ApplyResult"
+      },
+      "Body_upload_document_api_setup_documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_setup_documents_post"
+      },
       "CancelOut": {
         "properties": {
           "cancelled": {
@@ -894,6 +1406,103 @@
           "cancelled"
         ],
         "title": "CancelOut"
+      },
+      "Certification-Input": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "Certification"
+      },
+      "Certification-Output": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "issuer",
+          "date",
+          "url"
+        ],
+        "title": "Certification"
       },
       "ChatMessageView": {
         "properties": {
@@ -996,6 +1605,24 @@
         ],
         "title": "ChatSessionView"
       },
+      "Choice": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "Choice"
+      },
       "CommandIn": {
         "properties": {
           "params": {
@@ -1065,6 +1692,361 @@
         },
         "type": "object",
         "title": "CommandOut"
+      },
+      "Completeness": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "missing"
+        ],
+        "title": "Completeness"
+      },
+      "Contact-Input": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Contact"
+      },
+      "Contact-Output": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "phone",
+          "location",
+          "links"
+        ],
+        "title": "Contact"
+      },
+      "DocumentView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "chars": {
+            "type": "integer",
+            "title": "Chars"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "kind",
+          "size",
+          "chars",
+          "created_at"
+        ],
+        "title": "DocumentView"
+      },
+      "Draft": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Output"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Output"
+          },
+          "document_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile",
+          "preferences",
+          "created_at"
+        ],
+        "title": "Draft"
+      },
+      "Education-Input": {
+        "properties": {
+          "institution": {
+            "type": "string",
+            "title": "Institution"
+          },
+          "degree": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degree"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "institution"
+        ],
+        "title": "Education"
+      },
+      "Education-Output": {
+        "properties": {
+          "institution": {
+            "type": "string",
+            "title": "Institution"
+          },
+          "degree": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degree"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "institution",
+          "degree",
+          "field",
+          "start",
+          "end",
+          "notes"
+        ],
+        "title": "Education"
       },
       "EstimateIn": {
         "properties": {
@@ -1152,6 +2134,231 @@
         ],
         "title": "EstimateOut"
       },
+      "Experience-Input": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start",
+            "description": "YYYY or YYYY-MM"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End",
+            "description": "YYYY or YYYY-MM; null when current"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "default": false
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "Experience"
+      },
+      "Experience-Output": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start",
+            "description": "YYYY or YYYY-MM"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End",
+            "description": "YYYY or YYYY-MM; null when current"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "default": false
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "company",
+          "location",
+          "start",
+          "end",
+          "current",
+          "highlights"
+        ],
+        "title": "Experience"
+      },
+      "ExtractIn": {
+        "properties": {
+          "document_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_ids"
+        ],
+        "title": "ExtractIn"
+      },
+      "ExtractedSetup": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Input"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Input"
+          }
+        },
+        "type": "object",
+        "title": "ExtractedSetup"
+      },
+      "FormField": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea"
+            ],
+            "title": "Kind",
+            "default": "text"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeholder"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "label",
+          "kind",
+          "required",
+          "placeholder"
+        ],
+        "title": "FormField"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1182,6 +2389,40 @@
           "version"
         ],
         "title": "HealthOut"
+      },
+      "InterviewState": {
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Question"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answered": {
+            "type": "integer",
+            "title": "Answered"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "answered",
+          "remaining",
+          "complete"
+        ],
+        "title": "InterviewState"
       },
       "LLMSettingsIn": {
         "properties": {
@@ -1284,6 +2525,20 @@
           "month_to_date_usd"
         ],
         "title": "LLMStatus"
+      },
+      "MarkdownIn": {
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "maxLength": 200000,
+            "title": "Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "markdown"
+        ],
+        "title": "MarkdownIn"
       },
       "MemoryProposalStatus": {
         "type": "string",
@@ -1409,6 +2664,448 @@
         ],
         "title": "ModelChoice"
       },
+      "Preferences-Input": {
+        "properties": {
+          "target_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Target Titles"
+          },
+          "seniority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seniority"
+          },
+          "locations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Locations"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RemotePreference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2"
+          },
+          "salary_floor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryFloor-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "work_authorization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Authorization"
+          },
+          "deal_breakers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Deal Breakers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Preferences"
+      },
+      "Preferences-Output": {
+        "properties": {
+          "target_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Target Titles"
+          },
+          "seniority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seniority"
+          },
+          "locations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Locations"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RemotePreference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2"
+          },
+          "salary_floor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryFloor-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "work_authorization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Authorization"
+          },
+          "deal_breakers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Deal Breakers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target_titles",
+          "seniority",
+          "locations",
+          "remote",
+          "country",
+          "salary_floor",
+          "work_authorization",
+          "deal_breakers"
+        ],
+        "title": "Preferences"
+      },
+      "Profile-Input": {
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/Contact-Input"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "experience": {
+            "items": {
+              "$ref": "#/components/schemas/Experience-Input"
+            },
+            "type": "array",
+            "title": "Experience"
+          },
+          "education": {
+            "items": {
+              "$ref": "#/components/schemas/Education-Input"
+            },
+            "type": "array",
+            "title": "Education"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/Project-Input"
+            },
+            "type": "array",
+            "title": "Projects"
+          },
+          "certifications": {
+            "items": {
+              "$ref": "#/components/schemas/Certification-Input"
+            },
+            "type": "array",
+            "title": "Certifications"
+          },
+          "achievements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Achievements"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Languages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Profile"
+      },
+      "Profile-Output": {
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/Contact-Output"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "experience": {
+            "items": {
+              "$ref": "#/components/schemas/Experience-Output"
+            },
+            "type": "array",
+            "title": "Experience"
+          },
+          "education": {
+            "items": {
+              "$ref": "#/components/schemas/Education-Output"
+            },
+            "type": "array",
+            "title": "Education"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/Project-Output"
+            },
+            "type": "array",
+            "title": "Projects"
+          },
+          "certifications": {
+            "items": {
+              "$ref": "#/components/schemas/Certification-Output"
+            },
+            "type": "array",
+            "title": "Certifications"
+          },
+          "achievements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Achievements"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Languages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contact",
+          "headline",
+          "summary",
+          "experience",
+          "education",
+          "skills",
+          "projects",
+          "certifications",
+          "achievements",
+          "languages"
+        ],
+        "title": "Profile"
+      },
+      "ProfileOverview": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Output"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Output"
+          },
+          "completeness": {
+            "$ref": "#/components/schemas/Completeness"
+          },
+          "search_targets": {
+            "items": {
+              "$ref": "#/components/schemas/SearchTargetView"
+            },
+            "type": "array",
+            "title": "Search Targets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile",
+          "preferences",
+          "completeness",
+          "search_targets"
+        ],
+        "title": "ProfileOverview"
+      },
+      "Project-Input": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "Project"
+      },
+      "Project-Output": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "url",
+          "highlights"
+        ],
+        "title": "Project"
+      },
       "ProposalOp": {
         "type": "string",
         "enum": [
@@ -1520,6 +3217,138 @@
         ],
         "title": "ProposalView"
       },
+      "Question": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "help": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "single",
+              "multi",
+              "text",
+              "list",
+              "form"
+            ],
+            "title": "Kind"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "allow_other": {
+            "type": "boolean",
+            "title": "Allow Other",
+            "default": false
+          },
+          "optional": {
+            "type": "boolean",
+            "title": "Optional",
+            "default": true
+          },
+          "skip_label": {
+            "type": "string",
+            "title": "Skip Label",
+            "default": "Skip"
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeholder"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "prompt",
+          "help",
+          "kind",
+          "choices",
+          "allow_other",
+          "optional",
+          "skip_label",
+          "placeholder",
+          "fields",
+          "value"
+        ],
+        "title": "Question"
+      },
+      "RemotePolicy": {
+        "type": "string",
+        "enum": [
+          "onsite",
+          "hybrid",
+          "remote",
+          "any"
+        ],
+        "title": "RemotePolicy"
+      },
+      "RemotePreference": {
+        "type": "string",
+        "enum": [
+          "remote",
+          "hybrid",
+          "onsite",
+          "any"
+        ],
+        "title": "RemotePreference"
+      },
       "RouteView": {
         "properties": {
           "task": {
@@ -1555,6 +3384,132 @@
           "effort"
         ],
         "title": "RouteView"
+      },
+      "SalaryFloor-Input": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency"
+          },
+          "period": {
+            "$ref": "#/components/schemas/SalaryPeriod",
+            "default": "year"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "title": "SalaryFloor"
+      },
+      "SalaryFloor-Output": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency"
+          },
+          "period": {
+            "$ref": "#/components/schemas/SalaryPeriod",
+            "default": "year"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "currency",
+          "period"
+        ],
+        "title": "SalaryFloor"
+      },
+      "SalaryPeriod": {
+        "type": "string",
+        "enum": [
+          "year",
+          "month",
+          "hour"
+        ],
+        "title": "SalaryPeriod"
+      },
+      "SearchTargetView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "seniority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seniority"
+          },
+          "locations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Locations"
+          },
+          "remote_policy": {
+            "$ref": "#/components/schemas/RemotePolicy"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "salary_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Min"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "seniority",
+          "locations",
+          "remote_policy",
+          "country",
+          "salary_min",
+          "active"
+        ],
+        "title": "SearchTargetView"
       },
       "SessionIn": {
         "properties": {
@@ -1597,6 +3552,19 @@
         ],
         "title": "SessionOut"
       },
+      "SkipIn": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id"
+        ],
+        "title": "SkipIn"
+      },
       "Task": {
         "type": "string",
         "enum": [
@@ -1608,6 +3576,19 @@
         ],
         "title": "Task",
         "description": "What a call is for; routing maps each task to a model and effort."
+      },
+      "TaskRef": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "title": "TaskRef"
       },
       "TaskStatus": {
         "type": "string",
@@ -1719,6 +3700,21 @@
           "finished_at"
         ],
         "title": "TaskView"
+      },
+      "TextIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TextIn"
       },
       "ValidationError": {
         "properties": {

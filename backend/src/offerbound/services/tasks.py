@@ -147,7 +147,10 @@ class TaskRunner:
             raise
         except Exception as exc:
             log.exception("task %s failed", task_id)
-            await self._finish(task_id, TaskStatus.FAILED, error=f"{type(exc).__name__}: {exc}")
+            # Errors meant for people (LLM, document, answer errors) carry `user_message`.
+            message = getattr(exc, "user_message", None)
+            error = message if isinstance(message, str) else f"{type(exc).__name__}: {exc}"
+            await self._finish(task_id, TaskStatus.FAILED, error=error)
         else:
             await self._finish(task_id, TaskStatus.SUCCEEDED, result=result, progress=1.0)
 

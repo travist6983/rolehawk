@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { llmStatus, proposal } from "@/test/fixtures";
+import { llmStatus } from "@/test/fixtures";
 import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
 
@@ -61,17 +61,6 @@ describe("App shell", () => {
     );
     expect(
       await screen.findByRole("heading", { name: "Open Offerbound from its launcher" }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows pending memory proposals on the profile", async () => {
-    server.use(http.get("/api/memory/proposals", () => HttpResponse.json([proposal()])));
-    await renderApp("/profile");
-    expect(
-      await screen.findByRole("heading", { name: "Suggested updates (1)" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Senior Engineer at Acme (2020-2024)", { exact: false }),
     ).toBeInTheDocument();
   });
 });

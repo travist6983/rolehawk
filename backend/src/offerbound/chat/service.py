@@ -186,6 +186,7 @@ class ChatService:
         commands = "\n".join(
             f"- {c.name}{'' if c.read_only else ' (needs confirmation)'}: {c.description}"
             for c in self._rt.commands.all()
+            if c.chat_allowed
         )
         return [SystemBlock(CHAT_PROMPT + "\nCommands:\n" + commands), memory_block]
 

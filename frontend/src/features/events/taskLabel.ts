@@ -3,6 +3,7 @@ const TASK_LABELS: Record<string, string> = {
   scrape: "Job search",
   rank: "Ranking",
   apply: "Application drafts",
+  "setup-extract": "Reading your documents",
 };
 
 export function taskLabel(kind: string): string {

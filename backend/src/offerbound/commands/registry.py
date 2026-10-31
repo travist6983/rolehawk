@@ -37,6 +37,9 @@ class CommandSpec:
     read_only: bool = True  # chat may run read-only commands without asking
     background: bool = False  # long-running: runs on the task runner with progress
     release: str = "v1.0"
+    # False for commands that read local files or are meant for skills/the UI only; chat's
+    # run_command neither lists nor runs them.
+    chat_allowed: bool = True
 
 
 class UnknownCommandError(LookupError):

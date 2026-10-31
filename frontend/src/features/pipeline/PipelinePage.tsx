@@ -16,13 +16,11 @@ export default function PipelinePage() {
         description="Three steps get you to your first tailored application."
         steps={[
           {
-            title: connected ? "Build your profile" : "Connect Claude",
+            title: "Build your profile",
             description: connected
-              ? "Upload a resume or answer a short interview."
-              : "Add your Anthropic API key. It stays in your keychain.",
-            action: connected
-              ? { label: "Open profile", to: "/profile" }
-              : { label: "Connect", to: "/settings" },
+              ? "Import a resume or answer a short interview."
+              : "Connect Claude, then import a resume or answer a short interview.",
+            action: { label: "Get started", to: "/onboarding" },
           },
           {
             title: "Find jobs",
