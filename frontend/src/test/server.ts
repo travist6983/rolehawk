@@ -1,7 +1,14 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 
-import { commands, llmStatus, memory, TEST_TOKEN } from "./fixtures";
+import {
+  commands,
+  interviewState,
+  llmStatus,
+  memory,
+  profileOverview,
+  TEST_TOKEN,
+} from "./fixtures";
 
 /** Default API: a connected install with an empty pipeline. Tests override per case. */
 export const handlers = [
@@ -32,6 +39,12 @@ export const handlers = [
   ),
   http.get("/api/memory", () => HttpResponse.json(memory())),
   http.get("/api/memory/proposals", () => HttpResponse.json([])),
+  http.get("/api/profile", () => HttpResponse.json(profileOverview())),
+  http.get("/api/setup/interview", () => HttpResponse.json(interviewState())),
+  http.get("/api/setup/draft", () =>
+    HttpResponse.json({ detail: "No setup draft" }, { status: 404 }),
+  ),
+  http.get("/api/setup/documents", () => HttpResponse.json([])),
 ];
 
 export const server = setupServer(...handlers);

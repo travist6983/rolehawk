@@ -1,4 +1,15 @@
-import type { CommandInfo, LLMStatus, MemorySnapshot, ProposalView, TaskView } from "@/api/queries";
+import type {
+  CommandInfo,
+  InterviewState,
+  LLMStatus,
+  MemorySnapshot,
+  Preferences,
+  Profile,
+  ProfileOverview,
+  ProposalView,
+  Question,
+  TaskView,
+} from "@/api/queries";
 
 export const TEST_TOKEN = "test-token";
 
@@ -99,5 +110,87 @@ export const task = (overrides: Partial<TaskView> = {}): TaskView => ({
   created_at: "2026-10-31T12:00:00Z",
   started_at: "2026-10-31T12:00:01Z",
   finished_at: null,
+  ...overrides,
+});
+
+export const emptyProfile = (): Profile => ({
+  contact: { name: null, email: null, phone: null, location: null, links: [] },
+  headline: null,
+  summary: null,
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  certifications: [],
+  achievements: [],
+  languages: [],
+});
+
+export const emptyPreferences = (): Preferences => ({
+  target_titles: [],
+  seniority: null,
+  locations: [],
+  remote: null,
+  country: null,
+  salary_floor: null,
+  work_authorization: null,
+  deal_breakers: [],
+});
+
+export const sampleProfile = (): Profile => ({
+  ...emptyProfile(),
+  contact: {
+    name: "Ada Example",
+    email: "ada@example.com",
+    phone: null,
+    location: "Austin, TX",
+    links: [],
+  },
+  headline: "Senior Frontend Engineer",
+  experience: [
+    {
+      title: "Senior Frontend Engineer",
+      company: "Northwind Payments",
+      location: "Remote",
+      start: "2021-03",
+      end: null,
+      current: true,
+      highlights: ["Led the checkout redesign, lifting conversion 12%"],
+    },
+  ],
+  skills: ["TypeScript", "React", "Accessibility"],
+});
+
+export const profileOverview = (overrides: Partial<ProfileOverview> = {}): ProfileOverview => ({
+  profile: emptyProfile(),
+  preferences: emptyPreferences(),
+  completeness: { score: 0, missing: ["name", "experience"] },
+  search_targets: [],
+  ...overrides,
+});
+
+export const question = (overrides: Partial<Question> = {}): Question => ({
+  id: "prefs.remote",
+  prompt: "How do you want to work?",
+  help: null,
+  kind: "single",
+  choices: [
+    { value: "remote", label: "Remote only" },
+    { value: "hybrid", label: "Hybrid" },
+  ],
+  allow_other: false,
+  optional: false,
+  skip_label: "Skip",
+  placeholder: null,
+  fields: [],
+  value: null,
+  ...overrides,
+});
+
+export const interviewState = (overrides: Partial<InterviewState> = {}): InterviewState => ({
+  question: question(),
+  answered: 2,
+  remaining: 6,
+  complete: false,
   ...overrides,
 });

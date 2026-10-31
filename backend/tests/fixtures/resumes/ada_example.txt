@@ -1,0 +1,18 @@
+Ada Example
+ada@example.com | +1 555 0100 | Austin, TX | github.com/ada-example
+
+Senior Frontend Engineer
+
+EXPERIENCE
+Senior Frontend Engineer, Northwind Payments (Mar 2021 - Present), Remote
+- Led the checkout redesign, lifting conversion 12%
+- Built a design system used by 6 product teams
+Frontend Engineer, Contoso Health (Jun 2017 - Feb 2021), Austin, TX
+- Migrated the patient portal from AngularJS to React
+- Mentored four junior engineers
+
+EDUCATION
+BSc Computer Science, University of Texas at Austin, 2013 - 2017
+
+SKILLS
+TypeScript, React, Node.js, GraphQL, PostgreSQL, Accessibility

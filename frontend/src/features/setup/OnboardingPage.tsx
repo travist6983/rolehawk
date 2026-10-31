@@ -1,0 +1,159 @@
+import { CheckIcon, RadioTowerIcon, TerminalIcon } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router";
+
+import { useLLMStatus, useProfileOverview } from "@/api/queries";
+import { FormSkeleton } from "@/components/feedback/Skeletons";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { ConnectionCard } from "@/features/settings/ConnectionCard";
+import { cn } from "@/lib/utils";
+
+import { InterviewStep } from "./InterviewStep";
+import { ResumeStep } from "./ResumeStep";
+
+const STEPS = [
+  { id: "connect", label: "Connect Claude" },
+  { id: "resume", label: "Resume" },
+  { id: "interview", label: "Questions" },
+  { id: "sources", label: "Job sources" },
+] as const;
+
+type StepId = (typeof STEPS)[number]["id"];
+
+function isStep(value: string | null): value is StepId {
+  return STEPS.some((s) => s.id === value);
+}
+
+function Stepper({ current }: { current: StepId }) {
+  const index = STEPS.findIndex((s) => s.id === current);
+  return (
+    <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Setup steps">
+      {STEPS.map((step, i) => (
+        <li
+          key={step.id}
+          aria-current={i === index ? "step" : undefined}
+          className={cn(
+            "flex items-center gap-2",
+            i === index ? "font-medium text-foreground" : "text-muted-foreground",
+          )}
+        >
+          <span
+            className={cn(
+              "grid size-6 place-items-center rounded-full border text-xs",
+              i < index && "border-primary bg-primary text-primary-foreground",
+              i === index && "border-primary text-primary",
+            )}
+          >
+            {i < index ? <CheckIcon className="size-3.5" aria-label="done" /> : i + 1}
+          </span>
+          {step.label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function SourcesStep({ onFinish }: { onFinish: () => void }) {
+  const overview = useProfileOverview();
+  const targets = (overview.data?.search_targets ?? []).filter((t) => t.active);
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-3 rounded-lg border bg-card p-4">
+        <RadioTowerIcon className="mt-0.5 size-5 text-primary" aria-hidden />
+        <div className="text-sm">
+          <p className="font-medium">Job sources are coming in the next update.</p>
+          <p className="text-muted-foreground">
+            Your search targets are saved and will be used as soon as sources are switched on.
+          </p>
+        </div>
+      </div>
+      {targets.length > 0 && (
+        <ul className="space-y-2" aria-label="Search targets">
+          {targets.map((t) => (
+            <li key={t.id} className="rounded-lg border px-3 py-2 text-sm">
+              <span className="font-medium">{t.title}</span>
+              <span className="text-muted-foreground">
+                {" · "}
+                {[t.remote_policy, ...t.locations, t.country].filter(Boolean).join(" · ")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Button onClick={onFinish}>Finish setup</Button>
+    </div>
+  );
+}
+
+export default function OnboardingPage() {
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const status = useLLMStatus();
+  const requested = params.get("step");
+
+  if (status.isPending) return <FormSkeleton label="Loading setup" />;
+  const step: StepId = isStep(requested)
+    ? requested
+    : status.data?.configured
+      ? "resume"
+      : "connect";
+  const go = (next: StepId) => {
+    setParams({ step: next });
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Set up your profile"
+        description="About 10 minutes. You can stop and come back any time."
+      />
+      <div className="mx-auto max-w-3xl space-y-8 p-6">
+        <Stepper current={step} />
+        {step === "connect" && (
+          <div className="space-y-4">
+            {status.data && <ConnectionCard status={status.data} />}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={!status.data?.configured}
+                onClick={() => {
+                  go("resume");
+                }}
+              >
+                Continue
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  go("interview");
+                }}
+              >
+                <TerminalIcon /> I'll use Claude Code instead
+              </Button>
+            </div>
+          </div>
+        )}
+        {step === "resume" && (
+          <ResumeStep
+            onNext={() => {
+              go("interview");
+            }}
+          />
+        )}
+        {step === "interview" && (
+          <InterviewStep
+            onDone={() => {
+              go("sources");
+            }}
+          />
+        )}
+        {step === "sources" && (
+          <SourcesStep
+            onFinish={() => {
+              void navigate("/profile");
+            }}
+          />
+        )}
+      </div>
+    </>
+  );
+}

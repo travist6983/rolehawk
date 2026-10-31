@@ -16,6 +16,7 @@ import { AppShell } from "./AppShell";
 const PipelinePage = lazy(() => import("@/features/pipeline/PipelinePage"));
 const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const OnboardingPage = lazy(() => import("@/features/setup/OnboardingPage"));
 const placeholders = () => import("@/features/placeholders");
 const DiscoverPage = lazy(() => placeholders().then((m) => ({ default: m.DiscoverPage })));
 const SourcesPage = lazy(() => placeholders().then((m) => ({ default: m.SourcesPage })));
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="sources" element={screen(<SourcesPage />, <CardGridSkeleton />)} />
         <Route path="insights" element={screen(<InsightsPage />, <ChartSkeleton />)} />
         <Route path="settings" element={screen(<SettingsPage />, <FormSkeleton />)} />
+        <Route path="onboarding" element={screen(<OnboardingPage />, <FormSkeleton />)} />
         <Route path="*" element={screen(<NotFoundPage />, null)} />
       </Route>
     </Routes>

@@ -20,6 +20,8 @@ Built-in commands available today:
 | `propose` | Propose a memory edit; it stays pending until the user accepts it |
 | `spend` | AI spend this month and the cap |
 | `selftest` | Short background task to check progress output |
+| `setup`, `setup-import`, `setup-extract`, `setup-draft`, `setup-apply` | Profile setup from documents (see `setup/SKILL.md`) |
+| `setup-interview`, `setup-answer`, `setup-skip` | The gap interview, one question at a time |
 
 Feature commands register as they ship (see the release table).
 

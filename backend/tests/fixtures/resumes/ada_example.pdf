@@ -1,0 +1,54 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 773 >>
+stream
+BT
+/F1 10 Tf
+14 TL
+50 780 Td
+(Ada Example) Tj T*
+(ada@example.com | +1 555 0100 | Austin, TX | github.com/ada-example) Tj T*
+() Tj T*
+(Senior Frontend Engineer) Tj T*
+() Tj T*
+(EXPERIENCE) Tj T*
+(Senior Frontend Engineer, Northwind Payments \(Mar 2021 - Present\), Remote) Tj T*
+(- Led the checkout redesign, lifting conversion 12%) Tj T*
+(- Built a design system used by 6 product teams) Tj T*
+(Frontend Engineer, Contoso Health \(Jun 2017 - Feb 2021\), Austin, TX) Tj T*
+(- Migrated the patient portal from AngularJS to React) Tj T*
+(- Mentored four junior engineers) Tj T*
+() Tj T*
+(EDUCATION) Tj T*
+(BSc Computer Science, University of Texas at Austin, 2013 - 2017) Tj T*
+() Tj T*
+(SKILLS) Tj T*
+(TypeScript, React, Node.js, GraphQL, PostgreSQL, Accessibility) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001065 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1135
+%%EOF

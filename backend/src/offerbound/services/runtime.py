@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.commands.builtin import register_builtin
 from offerbound.commands.registry import CommandRegistry
+from offerbound.commands.setup import register_setup
 from offerbound.config import Settings, load_settings, write_default_config
 from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
@@ -24,6 +25,9 @@ from offerbound.memory.files import MemoryFiles
 from offerbound.memory.proposals import MemoryService
 from offerbound.memory.sessions import SessionMaintenance
 from offerbound.paths import DataPaths
+from offerbound.profile.service import ProfileService
+from offerbound.profile.setup import SetupService
+from offerbound.services.app_state import AppStateStore
 from offerbound.services.events import EventBus
 from offerbound.services.tasks import TaskRunner
 
@@ -46,6 +50,9 @@ class Runtime:
     memory: MemoryService
     session_maintenance: SessionMaintenance
     commands: CommandRegistry
+    state: AppStateStore
+    profiles: ProfileService
+    setup: SetupService
     backup_path: Path | None = None
     _chat: ChatService | None = field(default=None, init=False, repr=False)
 
@@ -101,9 +108,12 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     files = MemoryFiles(paths)
     commands = CommandRegistry()
     register_builtin(commands)
+    register_setup(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
+    state = AppStateStore(sessions)
+    profiles = ProfileService(files, sessions, lambda: runtime_ref[0].settings)
     runtime = Runtime(
         paths=paths,
         settings=settings,
@@ -113,9 +123,12 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         tasks=tasks,
         providers=holder,
         llm=llm,
-        memory=MemoryService(files, sessions),
+        memory=MemoryService(files, sessions, on_change=profiles.on_memory_changed),
         session_maintenance=SessionMaintenance(llm, files, sessions),
         commands=commands,
+        state=state,
+        profiles=profiles,
+        setup=SetupService(paths, sessions, profiles, state, llm),
         backup_path=backup_path,
     )
     runtime_ref.append(runtime)

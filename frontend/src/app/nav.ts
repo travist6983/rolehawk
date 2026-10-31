@@ -26,11 +26,16 @@ export const NAV_ITEMS: NavItem[] = [
 
 const FALLBACK: NavItem = { to: "/", label: "Offerbound", icon: SquareKanbanIcon, description: "" };
 
+// Screens outside the sidebar that still need a name (e.g. for the chat context chip).
+const OTHER_SCREENS: NavItem[] = [
+  { to: "/onboarding", label: "Profile setup", icon: UserRoundIcon, description: "" },
+];
+
 export function navItemFor(pathname: string): NavItem {
   const exact = NAV_ITEMS.find((item) => item.to === pathname);
   if (exact) return exact;
-  const prefix = NAV_ITEMS.filter((item) => item.to !== "/").find((item) =>
-    pathname.startsWith(item.to),
-  );
+  const prefix = [...NAV_ITEMS, ...OTHER_SCREENS]
+    .filter((item) => item.to !== "/")
+    .find((item) => pathname.startsWith(item.to));
   return prefix ?? FALLBACK;
 }
