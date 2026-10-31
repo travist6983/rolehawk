@@ -104,8 +104,11 @@ jobs:
           OFFERBOUND_RELEASE_URL=http://127.0.0.1:8800 offerbound update
           next=$(python3 -c "import json; print(json.load(open('dist/next/release.json'))['version'])")
           test "$(cat "$HOME/.offerbound/current")" = "$next"
-          offerbound doctor | grep "install: release $next"
+          offerbound doctor > doctor.txt || true   # exits 1 on Linux CI: no keychain service
+          grep "install: release $next" doctor.txt
           OFFERBOUND_RELEASE_URL=http://127.0.0.1:8800 offerbound update | grep "newest release"
+          CLAUDE_CONFIG_DIR="$RUNNER_TEMP/claude" offerbound install-skills
+          test -f "$RUNNER_TEMP/claude/skills/offerbound-setup/SKILL.md"
 
       - name: Install, start, and update (Windows PowerShell 5.1)
         if: runner.os == 'Windows'
@@ -150,6 +153,9 @@ jobs:
           if ($current -ne $next) { throw "expected $next, got $current" }
           $report = offerbound doctor | Out-String
           if ($report -notmatch "install: release $next") { throw "doctor doesn't see the update" }
+          $env:CLAUDE_CONFIG_DIR = Join-Path $env:RUNNER_TEMP "claude"
+          offerbound install-skills
+          if (-not (Test-Path (Join-Path $env:CLAUDE_CONFIG_DIR "skills\offerbound-setup\SKILL.md"))) { throw "skills weren't installed" }
           Write-Host "Install, start, and update all worked."
 
   publish:

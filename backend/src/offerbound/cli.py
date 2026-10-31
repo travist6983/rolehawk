@@ -9,6 +9,7 @@ offerbound db revision -m  autogenerate a migration (developers)
 offerbound backup          zip the data folder into <data>/backups
 offerbound update          install the newest release (backs up, migrates, keeps the old one)
 offerbound install-browser install or repair Chromium (PDF export and autofill)
+offerbound install-skills  add the Offerbound skills to Claude Code (~/.claude/skills)
 """
 
 from __future__ import annotations
@@ -208,6 +209,20 @@ def cmd_install_browser(_args: argparse.Namespace) -> int:
     return result.returncode
 
 
+def cmd_install_skills(_args: argparse.Namespace) -> int:
+    from offerbound.install.skills import bundled_skills_dir, claude_skills_dir, install_skills
+
+    dest = claude_skills_dir()
+    installed = install_skills(bundled_skills_dir(), dest)
+    if not installed:
+        print("No skills found to install.", file=sys.stderr)
+        return 1
+    for folder in installed:
+        print(f"  {folder.name}")
+    print(f"Installed {len(installed)} skills in {dest}. Restart Claude Code to load them.")
+    return 0
+
+
 def _parse_params(pairs: list[str], params_json: str | None) -> dict[str, Any]:
     params: dict[str, Any] = json.loads(params_json) if params_json else {}
     if not isinstance(params, dict):
@@ -354,6 +369,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser(
         "install-browser", help="install or repair Chromium (PDF export and autofill)"
     ).set_defaults(func=cmd_install_browser)
+
+    sub.add_parser(
+        "install-skills", help="add the Offerbound skills to Claude Code (~/.claude/skills)"
+    ).set_defaults(func=cmd_install_skills)
 
     run = sub.add_parser("run", help="run a command against the data folder")
     run.add_argument("name", help="command name, e.g. context, memory, spend, selftest")

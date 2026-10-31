@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { ConnectionCard } from "./ConnectionCard";
+import { DestinationsCard } from "./DestinationsCard";
 import { DocumentsCard } from "./DocumentsCard";
 import { ResetCard } from "./ResetCard";
 
@@ -224,6 +225,7 @@ export default function SettingsPage() {
         <SpendCard key={status.data.monthly_cap_usd ?? "none"} status={status.data} />
         <DocumentsCard />
         <DataCard />
+        <DestinationsCard status={status.data} />
         <ResetCard />
       </div>
     </>

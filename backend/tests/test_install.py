@@ -24,6 +24,7 @@ from offerbound.install.release import (
     extract,
     fetch_info,
 )
+from offerbound.install.skills import bundled_skills_dir, install_skills, released_skills
 from offerbound.install.update import UpdateError, Updater
 
 BASE = "https://releases.test/latest/download"
@@ -283,3 +284,41 @@ def test_cli_update_needs_an_installed_copy(capsys: pytest.CaptureFixture[str]) 
 def test_release_info_round_trips() -> None:
     info = ReleaseInfo(version="1.2.3", sha256="a" * 64, size=10)
     assert ReleaseInfo.model_validate_json(json.dumps(info.model_dump())) == info
+
+
+# --- Claude Code skills -------------------------------------------------------------------
+
+
+def test_only_shipped_skills_are_installed(tmp_path: Path) -> None:
+    names = [name for name, _path in released_skills(bundled_skills_dir())]
+    assert "offerbound-setup" in names
+    assert "offerbound-add-portal" in names
+    assert "offerbound-gmail-sync" not in names  # v1.1: its commands don't exist yet
+
+    dest = tmp_path / "skills"
+    (dest / "someone-elses").mkdir(parents=True)
+    installed = install_skills(bundled_skills_dir(), dest)
+    assert sorted(f.name for f in installed) == sorted(names)
+    assert (dest / "offerbound-setup" / "SKILL.md").read_text(encoding="utf-8").startswith("---")
+    assert (dest / "someone-elses").is_dir()  # other skills untouched
+    assert install_skills(bundled_skills_dir(), dest) == installed  # safe to run again
+
+
+def test_cli_install_skills_respects_claude_config_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
+    assert main(["install-skills"]) == 0
+    assert (tmp_path / "claude" / "skills" / "offerbound-rank" / "SKILL.md").is_file()
+    assert "Restart Claude Code" in capsys.readouterr().out
+
+
+def test_package_version_matches_pyproject() -> None:
+    import tomllib
+
+    from offerbound import __version__
+
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    assert data["project"]["version"] == __version__
+    parse_version(__version__)  # releases are plain X.Y.Z
