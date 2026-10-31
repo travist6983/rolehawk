@@ -52,6 +52,7 @@ def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Me
         if name.startswith("OFFERBOUND_"):
             monkeypatch.delenv(name)
     monkeypatch.setenv("OFFERBOUND_HOME", str(tmp_path / "Offerbound"))
+    monkeypatch.setenv("OFFERBOUND_WEB_DIR", str(tmp_path / "no-frontend"))  # deterministic
     previous = keyring.get_keyring()
     backend = MemoryKeyring()
     keyring.set_keyring(backend)

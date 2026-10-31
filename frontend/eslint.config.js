@@ -5,7 +5,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules"] },
+  { ignores: ["dist", "node_modules", "src/api/schema.ts"] },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked],
@@ -18,7 +18,13 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
+  },
+  {
+    // Context providers export their hook alongside the component; HMR reloads these fully.
+    files: ["src/**/*Provider.tsx", "src/lib/theme.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
   },
   {
     files: ["src/components/ui/**/*.tsx"],

@@ -6,9 +6,10 @@
     "setup": "cd backend && uv sync && cd ../frontend && npm ci",
     "dev:backend": "cd backend && uv run poe dev",
     "dev:frontend": "npm --prefix frontend run dev",
-    "lint": "cd backend && uv run poe lint && uv run poe format-check && cd ../frontend && npm run lint",
+    "lint": "cd backend && uv run poe lint && uv run poe format-check && cd ../frontend && npm run lint && npm run format:check",
     "typecheck": "cd backend && uv run poe typecheck && cd ../frontend && npm run typecheck",
     "test": "cd backend && uv run poe test && cd ../frontend && npm test",
-    "check": "cd backend && uv run poe check && cd ../frontend && npm run check && npm run build"
+    "check": "cd backend && uv run poe check && cd ../frontend && npm run check && npm run build",
+    "gen:api": "cd backend && uv run poe openapi && cd ../frontend && npm run gen:api"
   }
 }

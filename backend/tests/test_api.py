@@ -101,3 +101,33 @@ def test_openapi_lists_routes(client: TestClient) -> None:
     schema = client.get("/openapi.json")
     assert schema.status_code == 200
     assert {"/api/health", "/api/tasks", "/api/events"} <= set(schema.json()["paths"])
+
+
+def test_post_session_sets_cookie(client: TestClient) -> None:
+    response = client.post("/api/session")
+    assert response.status_code == 204
+    assert f"{TOKEN_COOKIE}={TEST_TOKEN}" in response.headers["set-cookie"]
+
+
+def test_spa_serves_built_frontend_with_fallback(paths: DataPaths, fake: FakeProvider) -> None:
+    web = paths.root.parent / "dist"
+    (web / "assets").mkdir(parents=True)
+    (web / "index.html").write_text("<div id=root></div>", encoding="utf-8")
+    (web / "assets" / "app.js").write_text("console.log(1)", encoding="utf-8")
+    app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=(), provider=fake, web_dir=web)
+    with TestClient(app, base_url=BASE_URL) as c:
+        assert c.get("/").text == "<div id=root></div>"
+        assert c.get("/settings").text == "<div id=root></div>"  # client-side route
+        asset = c.get("/assets/app.js")
+        assert asset.text == "console.log(1)"
+        assert "immutable" in asset.headers["cache-control"]
+        assert c.get("/../../etc/passwd").text == "<div id=root></div>"
+        assert c.get("/api/nope").status_code == 401  # API paths never fall through
+        authed = c.get("/api/nope", headers={"X-Offerbound-Token": TEST_TOKEN})
+        assert authed.status_code == 404
+
+
+def test_unbuilt_frontend_explains_itself(client: TestClient) -> None:
+    page = client.get("/")
+    assert page.status_code == 200
+    assert "isn't built yet" in page.text

@@ -54,6 +54,31 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  api-contract:
+    # The frontend's API types are generated from the backend's OpenAPI schema. This fails when
+    # someone changes the API without regenerating them (`npm run gen:api` from the repo root).
+    name: api contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+        working-directory: backend
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run gen:api
+      - name: Generated API files are up to date
+        run: git diff --exit-code -- frontend/src/api/openapi.json frontend/src/api/schema.ts

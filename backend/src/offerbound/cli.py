@@ -220,6 +220,24 @@ def cmd_llm(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_openapi(args: argparse.Namespace) -> int:
+    import tempfile
+    from pathlib import Path
+
+    from offerbound.api.app import create_app
+
+    with tempfile.TemporaryDirectory() as tmp:
+        schema = create_app(paths=DataPaths(Path(tmp)), token="schema-export").openapi()  # noqa: S106
+    text = json.dumps(schema, indent=2, ensure_ascii=False) + "\n"
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8", newline="\n")
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="offerbound", description="Offerbound AI job search copilot"
@@ -265,6 +283,10 @@ def build_parser() -> argparse.ArgumentParser:
     set_key.add_argument("--stdin", action="store_true", help="read the key from stdin")
     llm_sub.add_parser("clear-key", help="remove the stored API key")
     llm.set_defaults(func=cmd_llm)
+
+    openapi = sub.add_parser("openapi", help="export the OpenAPI schema")
+    openapi.add_argument("--out", help="write to this file instead of stdout")
+    openapi.set_defaults(func=cmd_openapi)
     return parser
 
 
