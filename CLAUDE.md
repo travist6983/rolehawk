@@ -42,10 +42,16 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
     api/                 FastAPI app factory, SessionGuard auth middleware, thin routes
     cli.py               `offerbound` command (start, doctor, db, backup, run, llm)
   tests/                 pytest (temp data folder, in-memory keyring, FakeProvider per test)
-frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui
+frontend/                React 18 + Vite + TS strict + Tailwind v4 + shadcn/ui + TanStack Query
+  src/api/               openapi.json + schema.ts (GENERATED), typed client, queries, SSE parser,
+                         session bootstrap
+  src/app/               shell, routes (lazy screens with matching skeletons), nav, session gate
+  src/features/          one folder per feature: chat (drawer, slash menu, card registry),
+                         events (SSE provider, progress tray), memory, settings, profile, ...
   src/components/ui/     shadcn/ui components (add with `npx shadcn@latest add <name>`)
-  src/routes/            one file per screen
-  src/lib/               utilities and API client
+  src/components/        shared app components (empty states, skeletons, layout, ScoreBadge)
+  src/lib/               theme, hotkeys, small pure helpers
+  src/test/              MSW server + handlers, fixtures, FakeEventSource, renderApp()
 skills/<command>/        SKILL.md per command (thin wrappers over the CLI)
 scripts/                 install.sh (Mac/Linux), install.ps1 (Windows)
 data/
@@ -85,10 +91,13 @@ Frontend (from `frontend/`):
 | Test (Vitest) | `npm test` |
 | Lint (ESLint) | `npm run lint` |
 | Type-check | `npm run typecheck` |
+| Format (Prettier + Tailwind class order) | `npm run format` |
 | Build | `npm run build` |
 | Everything CI runs | `npm run check` |
 
-From the repo root, `npm run setup`, `npm test`, `npm run lint`, `npm run typecheck`, and `npm run check` run both halves.
+From the repo root, `npm run setup`, `npm test`, `npm run lint`, `npm run typecheck`, and `npm run check` run both halves. After changing any API route or model, run `npm run gen:api` from the root: it exports the OpenAPI schema and regenerates `frontend/src/api/schema.ts`. CI's api-contract job fails if you forget.
+
+Dev loop: `uv run poe dev` (backend, prints a launch URL with a token) and `npm run dev` (frontend on 5173); open the printed URL.
 
 Run `npm run check` from the root before you call a chunk done.
 
@@ -110,4 +119,8 @@ Run `npm run check` from the root before you call a chunk done.
 - **Model facts live in `llm/models.py`** (pricing, server-side fallback support). Check Anthropic's docs before adding a model; don't guess IDs.
 - **Chat history is append-only text across turns;** within one turn the system prompt and tools stay fixed and assistant content (thinking blocks included) is replayed verbatim. Changing this breaks the API's preserved-thinking check and the prompt cache.
 - **New commands** register a `CommandSpec` (params model, `read_only`, `background`) so the API, chat, and CLI all get them. Mark anything that writes data `read_only=False`; chat then shows a confirmation card instead of running it.
+- **Frontend data access:** call the API only through `api` (openapi-fetch, typed from the generated schema) and TanStack Query hooks in `src/api/queries.ts`; use `unwrap()` for data-or-ApiError. Never hand-write request/response types the schema already has. The session token lives in memory only, never in storage.
+- **Frontend structure:** screens are lazy routes with a matching skeleton; long-running work shows progress from `useEventStream()`; chat cards register through `registerCard()`. Pure helpers live in `.ts` files so component files only export components (Fast Refresh).
+- **React 18 + shadcn:** current shadcn templates target React 19 (`ref` as a prop). Components that receive refs (Button, Input, Textarea, and anything used with Radix `asChild`) must use `forwardRef`.
+- **Frontend tests** use Vitest, Testing Library, and MSW (`src/test/server.ts`); unhandled requests fail the test. Prefer `renderApp(route)` for anything touching routing, session, or the drawer.
 - **Design system** (per spec): shadcn/ui on Tailwind, zinc base, indigo-600 accent, light/dark from CSS variables following the OS, WCAG 2.1 AA, respect `prefers-reduced-motion`.

@@ -1,11 +1,26 @@
-import { Route, Routes } from "react-router";
+import { AppRoutes } from "@/app/routes";
+import { SessionGate } from "@/app/SessionGate";
+import { ChatProvider } from "@/features/chat/ChatProvider";
+import { ChatViewProvider } from "@/features/chat/ChatViewProvider";
+import {
+  EventStreamProvider,
+  type EventSourceFactory,
+} from "@/features/events/EventStreamProvider";
+import { ThemeProvider } from "@/lib/theme";
 
-import { PipelinePage } from "@/routes/pipeline";
-
-export function App() {
+/** App root. Expects a router and a QueryClientProvider above it (see main.tsx). */
+export function App({ eventSourceFactory }: { eventSourceFactory?: EventSourceFactory }) {
   return (
-    <Routes>
-      <Route path="/" element={<PipelinePage />} />
-    </Routes>
+    <ThemeProvider>
+      <SessionGate>
+        <EventStreamProvider factory={eventSourceFactory}>
+          <ChatViewProvider>
+            <ChatProvider>
+              <AppRoutes />
+            </ChatProvider>
+          </ChatViewProvider>
+        </EventStreamProvider>
+      </SessionGate>
+    </ThemeProvider>
   );
 }

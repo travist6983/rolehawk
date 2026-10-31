@@ -46,6 +46,7 @@ fix = { sequence = ["ruff check --fix .", "ruff format ."], default_item_type = 
 typecheck = { cmd = "mypy", help = "Type-check with mypy (strict)" }
 test = { cmd = "pytest", help = "Run tests" }
 check = { sequence = ["lint", "format-check", "typecheck", "test"], help = "Everything CI runs" }
+openapi = { cmd = "offerbound openapi --out ../frontend/src/api/openapi.json", help = "Export the API schema for the frontend client" }
 
 [tool.ruff]
 line-length = 100
