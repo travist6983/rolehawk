@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from rolehawk.install.layout import VERSION_PATTERN
 
-RELEASES = "https://github.com/travist6983/offerbound-ai-job-search/releases/latest/download"
+RELEASES = "https://github.com/travist6983/rolehawk/releases/latest/download"
 ENV_RELEASE_URL = "ROLEHAWK_RELEASE_URL"
 INFO_NAME = "release.json"
 ZIP_NAME = "rolehawk.zip"

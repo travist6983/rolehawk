@@ -1,6 +1,6 @@
 # RoleHawk
 
-[![CI](https://github.com/travist6983/offerbound-ai-job-search/actions/workflows/ci.yml/badge.svg)](https://github.com/travist6983/offerbound-ai-job-search/actions/workflows/ci.yml)
+[![CI](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml/badge.svg)](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A free, open source AI job search copilot that runs on your own computer. It builds your
@@ -17,13 +17,13 @@ One line, about three minutes. No admin rights, no Python or Node to install you
 **macOS / Linux** (Terminal):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/travist6983/offerbound-ai-job-search/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.sh | bash
 ```
 
 **Windows** (PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/travist6983/offerbound-ai-job-search/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex
 ```
 
 When it finishes, RoleHawk opens in your browser with three steps to get started. After
@@ -168,7 +168,7 @@ Start with `rolehawk doctor`. Each line says what's wrong and how to fix it.
 - **Start over**: Settings → Reset deletes chosen data after a backup. Your files in
   `~/RoleHawk/backups` stay.
 
-Still stuck? [Open an issue](https://github.com/travist6983/offerbound-ai-job-search/issues)
+Still stuck? [Open an issue](https://github.com/travist6983/rolehawk/issues)
 with the `rolehawk doctor` output.
 
 ## Uninstall

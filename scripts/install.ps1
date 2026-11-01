@@ -1,6 +1,6 @@
 # RoleHawk installer for Windows (PowerShell 5.1 or later).
 #
-#   irm https://raw.githubusercontent.com/travist6983/offerbound-ai-job-search/main/scripts/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex
 #
 # Everything goes in your user profile; nothing needs admin rights:
 #   %USERPROFILE%\.local\bin\uv.exe          uv, if you don't have it (it brings Python 3.12)
@@ -20,7 +20,7 @@ function Install-RoleHawk {
     $ErrorActionPreference = "Stop"
     $ProgressPreference = "SilentlyContinue"  # the progress bar makes downloads very slow
     $UvVersion = "0.10.7"
-    $Releases = "https://github.com/travist6983/offerbound-ai-job-search/releases/latest/download"
+    $Releases = "https://github.com/travist6983/rolehawk/releases/latest/download"
 
     function Say([string]$Text) { Write-Host $Text -ForegroundColor Cyan }
 

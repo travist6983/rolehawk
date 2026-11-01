@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # RoleHawk installer for macOS and Linux.
 #
-#   curl -fsSL https://raw.githubusercontent.com/travist6983/offerbound-ai-job-search/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.sh | bash
 #
 # Everything goes in your home folder; nothing needs sudo:
 #   ~/.local/bin/uv               uv, if you don't have it (it brings Python 3.12)
@@ -19,7 +19,7 @@
 set -euo pipefail
 
 UV_VERSION="0.10.7"
-RELEASES="https://github.com/travist6983/offerbound-ai-job-search/releases/latest/download"
+RELEASES="https://github.com/travist6983/rolehawk/releases/latest/download"
 
 say() {
   if [ -t 1 ]; then printf '\033[1m%s\033[0m\n' "$*"; else printf '%s\n' "$*"; fi

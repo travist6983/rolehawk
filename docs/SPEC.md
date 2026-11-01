@@ -36,7 +36,7 @@ The product is **RoleHawk**: a memorable brand plus "AI" for search traffic, sin
 | Item | Value |
 | --- | --- |
 | Product name | RoleHawk |
-| GitHub repo slug | offerbound-ai-job-search |
+| GitHub repo slug | rolehawk |
 | Repo description | Free, open source AI job search copilot. Finds, ranks, and applies to jobs with Claude. Runs locally. |
 | GitHub topics | ai, llm, job-search, resume, cover-letter, claude, career, automation |
 | CLI command | rolehawk |
