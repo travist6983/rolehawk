@@ -15,9 +15,9 @@ and moving sources that need a developer key under "Advanced".
   and opens the dashboard in its own window, or signed installers (a notarized macOS `.pkg`
   or `.dmg`, a signed Windows `.msi`) that run the same steps. Signing needs an Apple Developer
   account and a Windows code-signing certificate.
-- [ ] **Walkthrough video and GIFs** for the README: install, connect Claude, import a resume,
-  rank, apply. Record after the UI overhaul; `backend/scripts/seed_demo.py` and
-  `capture_screenshots.py` (kept locally, not committed) make a realistic demo data folder.
+- [ ] **Walkthrough video** for the README: install, connect Claude, import a resume. The
+  feature GIFs and screenshots come from `backend/scripts/demo_data.py` (made-up data, scripted
+  Claude); setup screenshots wait for the simpler Connect Claude step.
 - [ ] **Linux without a keychain.** Saving the API key fails on desktops without a Secret
   Service (some minimal distros, WSL). An encrypted-file fallback with a clear warning would
   remove the last "install this package" step.
