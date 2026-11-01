@@ -7,7 +7,8 @@ import json
 import re
 from collections.abc import Iterator
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
+from urllib.robotparser import RobotFileParser
 
 import httpx2
 from bs4 import BeautifulSoup, Tag
@@ -31,6 +32,7 @@ Definition = RssDefinition | JsonLdDefinition | JsonApiDefinition | HtmlDefiniti
 
 MAX_REDIRECTS = 5
 MAX_BYTES = 5_000_000
+MAX_ROBOTS_BYTES = 500_000  # RFC 9309 asks crawlers to read at least 500 KiB
 MAX_JOBS = 500
 
 
@@ -39,7 +41,8 @@ class EngineError(RuntimeError):
 
 
 class Fetcher:
-    """GET with every hop checked: same domain, public address, size cap, no cookies kept."""
+    """GET with every hop checked: same domain, public address, robots.txt, size cap, no
+    cookies kept."""
 
     def __init__(self, domain: str, *, allow_private: bool = False, timeout_s: float = 20) -> None:
         self.domain = domain
@@ -47,10 +50,38 @@ class Fetcher:
         self.client = httpx2.Client(
             timeout=timeout_s, follow_redirects=False, headers={"User-Agent": USER_AGENT}
         )
+        self._robots: dict[str, RobotFileParser] = {}
+
+    def _allowed(self, url: str) -> bool:
+        """robots.txt per RFC 9309: a missing file (4xx) allows everything; a server error or
+        no answer means stay away. Read once per origin, through the same hop checks."""
+        parts = urlsplit(url)
+        origin = f"{parts.scheme}://{parts.netloc}"
+        rules = self._robots.get(origin)
+        if rules is None:
+            rules = RobotFileParser()
+            robots_url = f"{origin}/robots.txt"
+            check_url(robots_url, self.domain, allow_private=self.allow_private)
+            try:
+                response = self.client.get(robots_url)
+            except httpx2.HTTPError as exc:
+                raise EngineError(f"couldn't read {robots_url}: {exc}") from exc
+            if response.status_code >= 500:
+                raise EngineError(f"{robots_url} answered HTTP {response.status_code}")
+            if response.status_code >= 400 or response.is_redirect:
+                rules.parse([])
+            else:
+                rules.parse(
+                    response.content[:MAX_ROBOTS_BYTES].decode("utf-8", "replace").splitlines()
+                )
+            self._robots[origin] = rules
+        return rules.can_fetch(USER_AGENT, url)
 
     def get(self, url: str) -> httpx2.Response:
         for _ in range(MAX_REDIRECTS + 1):
             check_url(url, self.domain, allow_private=self.allow_private)
+            if not self._allowed(url):
+                raise EngineError(f"the site's robots.txt asks tools like this not to read {url}")
             response = self.client.get(url)
             if response.is_redirect and "location" in response.headers:
                 url = urljoin(url, response.headers["location"])

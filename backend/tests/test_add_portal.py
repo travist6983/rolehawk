@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import cast
 
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -21,6 +22,7 @@ from sqlalchemy import func, select
 from offerbound.db.models import Job, Portal, SearchTarget
 from offerbound.llm.fake import FakeProvider
 from offerbound.llm.types import LLMRequest
+from offerbound.portals.custom import engine as engine_module
 from offerbound.portals.custom.definition import (
     FieldMap,
     HtmlDefinition,
@@ -35,7 +37,7 @@ from offerbound.portals.custom.definition import (
     split_company,
 )
 from offerbound.portals.custom.detect import ats_link, find_job_list
-from offerbound.portals.custom.engine import run_definition
+from offerbound.portals.custom.engine import EngineError, Fetcher, run_definition
 from offerbound.portals.custom.generate import AiDraft
 from offerbound.portals.custom.sandbox import clean_env, run_in_sandbox
 from offerbound.portals.custom.store import parse_plugin, plugin_source
@@ -66,6 +68,9 @@ def site() -> Iterator[str]:
                 self.send_header("Location", "https://example.com/elsewhere")
                 self.end_headers()
                 return None
+            if path == "/robots.txt":
+                body = b"User-agent: *\nDisallow: /private/\n"
+                return self._send(200, body, "text/plain")
             if path == "/slow":
                 time.sleep(3)
                 return self._send(200, b"<html></html>", "text/html")
@@ -124,6 +129,38 @@ def test_redirects_off_the_domain_are_refused(site: str) -> None:
     )
     with pytest.raises(UnsafeUrlError, match="outside"):
         run_definition(definition, allow_private=True)
+
+
+def test_robots_txt_is_respected(site: str) -> None:
+    fetch = Fetcher("127.0.0.1", allow_private=True)
+    try:
+        assert fetch.get(f"{site}/careers-jsonld.html").status_code == 200
+        with pytest.raises(EngineError, match=r"robots\.txt"):
+            fetch.get(f"{site}/private/jobs.html")
+    finally:
+        fetch.close()
+
+
+def test_robots_txt_server_errors_mean_stay_away(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A mock transport, so skip the DNS-based address check (covered above).
+    monkeypatch.setattr(engine_module, "check_url", lambda *_a, **_k: None)
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if request.url.path == "/robots.txt":
+            return httpx2.Response(503)
+        return httpx2.Response(200, text="<html></html>")
+
+    fetch = Fetcher("jobs.example")
+    fetch.client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    with pytest.raises(EngineError, match="503"):
+        fetch.get("https://jobs.example/careers")
+
+    def missing(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(404 if request.url.path == "/robots.txt" else 200, text="ok")
+
+    fetch = Fetcher("jobs.example")
+    fetch.client = httpx2.Client(transport=httpx2.MockTransport(missing))
+    assert fetch.get("https://jobs.example/careers").text == "ok"  # no robots.txt: allowed
 
 
 # --- detection ----------------------------------------------------------------------------
