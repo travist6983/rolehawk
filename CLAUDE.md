@@ -89,6 +89,7 @@ data/
   companies/             ATS company watchlists, one CSV per ATS (verified live; see README)
   country_sources.toml   per-country feeds, currency, salary period
 docs/SPEC.md             product spec and build plan
+docs/BACKLOG.md          agreed ideas not yet scheduled (pick one off, delete when shipped)
 .github/workflows/ci.yml lint + typecheck + tests on ubuntu, macos, windows
 .github/workflows/release.yml  build the ZIP, smoke-test install + start + update on all three
                          OSes (installer/release changes and v* tags), publish on tags

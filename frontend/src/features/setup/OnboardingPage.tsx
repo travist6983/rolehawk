@@ -1,4 +1,4 @@
-import { CheckIcon, RadioTowerIcon, SearchIcon, TerminalIcon } from "lucide-react";
+import { CheckIcon, RadioTowerIcon, SearchIcon } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -14,9 +14,9 @@ import {
 import { FormSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ConnectionCard } from "@/features/settings/ConnectionCard";
 import { cn } from "@/lib/utils";
 
+import { ConnectClaudeStep } from "./ConnectClaudeStep";
 import { InterviewStep } from "./InterviewStep";
 import { ResumeStep } from "./ResumeStep";
 
@@ -103,7 +103,7 @@ function SourcesStep({ onFinish }: { onFinish: (searching: boolean) => void }) {
           </p>
           <p className="text-muted-foreground">
             Public job boards for a starter watchlist of {companies.toLocaleString("en")} companies,
-            plus remote job feeds. Add companies or free Adzuna and USAJOBS keys any time in{" "}
+            plus remote job feeds. Nothing to sign up for. Add companies any time in{" "}
             <Link to="/sources" className="text-primary-text underline-offset-4 hover:underline">
               Sources
             </Link>
@@ -194,28 +194,16 @@ export default function OnboardingPage() {
             ])
           }
         />
-        {step === "connect" && (
-          <div className="space-y-4">
-            {status.data && <ConnectionCard status={status.data} />}
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                disabled={!status.data?.configured}
-                onClick={() => {
-                  go("resume");
-                }}
-              >
-                Continue
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  go("interview");
-                }}
-              >
-                <TerminalIcon /> I'll use Claude Code instead
-              </Button>
-            </div>
-          </div>
+        {step === "connect" && status.data && (
+          <ConnectClaudeStep
+            status={status.data}
+            onContinue={() => {
+              go("resume");
+            }}
+            onUseClaudeCode={() => {
+              go("interview");
+            }}
+          />
         )}
         {step === "resume" && (
           <ResumeStep

@@ -123,7 +123,7 @@ class Adzuna:
     )  # fmt: skip
     risk_level = RiskLevel.LOW
     requires: tuple[str, ...] = ("secret:adzuna_app_id", "secret:adzuna_app_key")
-    default_enabled = True
+    default_enabled = False  # needs a developer key: switched on when one is saved
     host = "api.adzuna.com"
     min_interval_s = 1.0
     docs_url = "https://developer.adzuna.com/docs/search"
@@ -191,7 +191,7 @@ class USAJobs:
     countries: tuple[str, ...] = ("US",)
     risk_level = RiskLevel.LOW
     requires: tuple[str, ...] = ("secret:usajobs_api_key", "config:email")
-    default_enabled = True
+    default_enabled = False  # needs a developer key: switched on when one is saved
     host = "data.usajobs.gov"
     min_interval_s = 1.0
     docs_url = "https://developer.usajobs.gov/api-reference/get-api-search"

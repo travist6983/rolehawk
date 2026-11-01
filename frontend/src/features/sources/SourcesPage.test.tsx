@@ -60,6 +60,18 @@ describe("SourcesPage", () => {
     expect(card("USAJOBS")).toHaveTextContent("US only");
   });
 
+  it("keeps sources that need a developer key under Advanced until one is set up", async () => {
+    await renderApp("/sources");
+    const feeds = await screen.findByRole("region", { name: "Job feeds" });
+    const advanced = within(feeds).getByText("Advanced: more sources that need a developer key");
+    const details = advanced.closest("details");
+    expect(details).not.toHaveAttribute("open");
+    expect(details).toHaveTextContent("Adzuna");
+    expect(details).toHaveTextContent("USAJOBS");
+    expect(details).not.toHaveTextContent("Remote OK");
+    expect(feeds).toHaveTextContent("Searched by job title. Nothing to set up.");
+  });
+
   it("switches a source off", async () => {
     let body: unknown = null;
     server.use(

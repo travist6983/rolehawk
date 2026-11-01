@@ -40,6 +40,10 @@ export default function SourcesPage() {
 
   const boards = portals.data.filter((p) => p.kind === "ats");
   const feeds = portals.data.filter((p) => p.kind !== "ats" && !p.custom);
+  // Sources that need a developer key stay out of the way unless the user has set one up.
+  const openFeeds = feeds.filter((p) => p.secret_fields.length === 0);
+  const keyedFeeds = feeds.filter((p) => p.secret_fields.length > 0);
+  const keyedInUse = keyedFeeds.some((p) => p.ready || p.enabled);
   const custom = portals.data.filter((p) => p.custom);
   const manageCompanies = (ats: string) => {
     setFilter(ats);
@@ -80,14 +84,32 @@ export default function SourcesPage() {
               Job feeds
             </h2>
             <p className="text-sm text-muted-foreground">
-              Searched by job title. Adzuna and USAJOBS need a free API key, kept in your keychain.
+              Searched by job title. Nothing to set up.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {feeds.map((portal) => (
+            {openFeeds.map((portal) => (
               <PortalCard key={portal.id} portal={portal} />
             ))}
           </div>
+          {keyedFeeds.length > 0 && (
+            <details className="group rounded-lg border p-4" open={keyedInUse}>
+              <summary className="cursor-pointer text-sm font-medium">
+                Advanced: more sources that need a developer key
+              </summary>
+              <p className="mt-2 max-w-prose text-sm text-muted-foreground">
+                Optional. These add more jobs (Adzuna covers the UK, Germany, Australia, India, and
+                more; USAJOBS lists US federal jobs), but each asks you to register on its developer
+                site for a free key. Keys are kept in your computer's keychain, and a source
+                switches on when its key is saved.
+              </p>
+              <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {keyedFeeds.map((portal) => (
+                  <PortalCard key={portal.id} portal={portal} />
+                ))}
+              </div>
+            </details>
+          )}
         </section>
 
         <section aria-labelledby="custom-heading" className="space-y-3">
