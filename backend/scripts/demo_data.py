@@ -175,6 +175,7 @@ class DemoJob:
     must: tuple[str, ...] = ("React", "TypeScript")
     nice: tuple[str, ...] = ("Design systems",)
     dismissed: bool = False
+    ranked: bool = True
 
 
 JOBS: list[DemoJob] = [
@@ -408,13 +409,14 @@ JOBS: list[DemoJob] = [
     ),
     DemoJob(
         "Mapleford Health",
-        "Senior Frontend Engineer",
+        "Senior Frontend Engineer, Patient App",
         "Remote (US)",
         "greenhouse",
-        0,
-        "",
-        (),
+        86,
+        "$170,000 to $190,000",
+        ("Accessibility matters for patients", "Remote, above your salary floor"),
         posted_days=0,
+        ranked=False,  # left for a live "Rank new jobs" in the demo
     ),
 ]
 
@@ -737,7 +739,7 @@ async def seed(home: Path) -> None:
     runtime.profiles.save_preferences(PREFERENCES)
     ids = add_jobs(runtime)
 
-    scored = [JOBS.index(j) for j in JOBS if j.score]
+    scored = [JOBS.index(j) for j in JOBS if j.ranked]
     with runtime.sessions() as session:
         jobs = {j.id: j for j in session.scalars(select(Job).where(Job.id.in_(ids.values())))}
     fits = [fit(ids[JOBS[i].company], JOBS[i]) for i in scored]
