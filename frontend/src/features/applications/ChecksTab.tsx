@@ -131,8 +131,8 @@ export function ChecksTab({ bundle }: { bundle: Bundle }) {
           </>
         ) : (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CircleDashedIcon aria-hidden className="size-4" /> Not checked yet. Save or rewrite to
-            run it.
+            <CircleDashedIcon aria-hidden className="size-4" /> Not checked yet. It runs the next
+            time the files are made: after an edit is saved, or a section is rewritten.
           </p>
         )}
       </section>
