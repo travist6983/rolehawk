@@ -126,6 +126,28 @@ describe("DiscoverPage", () => {
     );
   });
 
+  it("shows deadlines and old postings", async () => {
+    const soon = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    server.use(
+      http.get("/api/jobs", () =>
+        HttpResponse.json(
+          jobPage([
+            jobRow({ closes_at: soon, deadline: "soon" }),
+            jobRow({ id: 2, title: "Data Analyst", stale_days: 75 }),
+          ]),
+        ),
+      ),
+      http.get("/api/jobs/2", () =>
+        HttpResponse.json(jobDetail({ id: 2, title: "Data Analyst", stale_days: 75 })),
+      ),
+    );
+    const { user } = await renderApp("/discover");
+    expect(await screen.findByText("Closes in 2 days")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Data Analyst" }));
+    const sheet = await screen.findByRole("dialog");
+    expect(sheet).toHaveTextContent("Posted 3 months ago. Some postings stay open for months");
+  });
+
   it("warns about parts of a posting aimed at AI tools", async () => {
     withJobs();
     server.use(
@@ -274,6 +296,7 @@ describe("discover helpers", () => {
         already_ranked: 0,
         applied: 0,
         dismissed: 0,
+        closed: 0,
         country: 0,
         location: 0,
         salary: 0,

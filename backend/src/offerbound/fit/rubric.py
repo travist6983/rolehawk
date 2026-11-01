@@ -12,6 +12,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from offerbound.llm.prompting import TRUTHFULNESS_RULES, UNTRUSTED_RULES
+from offerbound.portals.text import parse_date
 
 RUBRIC_VERSION = "2026-10-31.2"
 
@@ -55,6 +56,9 @@ deal breaker.
 
 `deal_breaker`: the deal breaker from their preferences this job hits, in their words, or
 empty. Report it; don't lower the parts for it.
+
+`deadline`: the application deadline the posting states, as YYYY-MM-DD, or empty. Only a
+stated date ("apply by 15 November 2026"); never guess one from "ASAP" or the posting date.
 
 `reasons`: up to 3 short reasons, most important first, written to the job seeker ("Your 6
 years of React match their senior frontend role"). Mix strengths and concerns.
@@ -105,6 +109,7 @@ class JobFit(BaseModel):
     career: int = Field(description="0 to 100: their goals, and work that energizes them")
     logistics: int = Field(description="0 to 100: location or remote, salary, schedule")
     deal_breaker: str = Field(description="The deal breaker it hits, in their words; or empty")
+    deadline: str = Field(default="", description="Stated deadline as YYYY-MM-DD, or empty")
     reasons: list[str] = Field(description="Up to 3 short reasons, most important first")
     must_have_gaps: list[str] = Field(
         description="Required items the profile doesn't show; empty if none"
@@ -145,6 +150,7 @@ class JobFit(BaseModel):
             career=part(self.career),
             logistics=part(self.logistics),
             deal_breaker=" ".join(self.deal_breaker.split())[:200],
+            deadline=closes.isoformat() if (closes := parse_date(self.deadline)) else "",
             reasons=[r.strip() for r in self.reasons if r.strip()][:3],
             must_have_gaps=[g.strip() for g in self.must_have_gaps if g.strip()][:8],
         )

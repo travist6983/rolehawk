@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Sequence
+from datetime import date
 
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -260,6 +261,9 @@ class Ranker:
     def _store(self, fits: list[JobFit], model: str, task_id: str | None) -> None:
         with self._sessions.begin() as session:
             for fit in fits:
+                job = session.get(Job, fit.job_id)
+                if job is not None and job.closes_at is None and fit.deadline:
+                    job.closes_at = date.fromisoformat(fit.deadline)  # the source's date wins
                 session.add(
                     JobScore(
                         job_id=fit.job_id,

@@ -12,11 +12,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel
-from sqlalchemy import Select, exists, func, select
+from sqlalchemy import ColumnElement, Select, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from offerbound import geo
 from offerbound.db.models import Application, Job, JobScore, RemotePolicy, SearchTarget
+from offerbound.db.types import utcnow
 from offerbound.portals.text import looks_remote
 from offerbound.profile.model import Preferences, SalaryFloor, SalaryPeriod
 
@@ -29,6 +30,7 @@ class FilterCounts(BaseModel):
     already_ranked: int = 0
     applied: int = 0
     dismissed: int = 0
+    closed: int = 0  # the deadline has passed
     country: int = 0
     location: int = 0
     salary: int = 0
@@ -204,13 +206,18 @@ def _status_counts(session: Session, base: Select[Job], rescore: bool) -> Filter
 
     applied = exists().where(Application.job_id == Job.id)
     scored = exists().where(JobScore.job_id == Job.id)
+    live = Job.dismissed_at.is_(None)
     return FilterCounts(
         dismissed=count(base.where(Job.dismissed_at.is_not(None))),
-        applied=count(base.where(Job.dismissed_at.is_(None), applied)),
-        already_ranked=0
-        if rescore
-        else count(base.where(Job.dismissed_at.is_(None), ~applied, scored)),
+        applied=count(base.where(live, applied)),
+        closed=count(base.where(live, ~applied, ~_open())),
+        already_ranked=0 if rescore else count(base.where(live, ~applied, _open(), scored)),
     )
+
+
+def _open() -> ColumnElement[bool]:
+    """No deadline, or one that hasn't passed."""
+    return or_(Job.closes_at.is_(None), Job.closes_at >= utcnow().date())
 
 
 def candidates(
@@ -228,7 +235,7 @@ def candidates(
     counts = _status_counts(session, base, rescore)
 
     stmt = base.where(
-        Job.dismissed_at.is_(None), ~exists().where(Application.job_id == Job.id)
+        Job.dismissed_at.is_(None), ~exists().where(Application.job_id == Job.id), _open()
     ).order_by(Job.scraped_at.desc(), Job.id.desc())
     if not rescore:
         stmt = stmt.where(~exists().where(JobScore.job_id == Job.id))

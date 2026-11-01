@@ -1464,6 +1464,8 @@ export interface components {
             has_documents: boolean;
             /** Flags */
             flags: number;
+            /** Closes At */
+            closes_at: string | null;
             /** Next Action */
             next_action: string | null;
         };
@@ -2212,6 +2214,11 @@ export interface components {
              */
             dismissed: number;
             /**
+             * Closed
+             * @default 0
+             */
+            closed: number;
+            /**
              * Country
              * @default 0
              */
@@ -2552,6 +2559,21 @@ export interface components {
             /** Dismissed */
             dismissed: boolean;
             /**
+             * Closes At
+             * @description The application deadline, when known
+             */
+            closes_at: string | null;
+            /**
+             * Deadline
+             * @description soon: closes within 7 days; closed: the deadline passed
+             */
+            deadline: ("soon" | "closed") | null;
+            /**
+             * Stale Days
+             * @description Days since posting, when older than 30 days (still may be open)
+             */
+            stale_days: number | null;
+            /**
              * Integrity
              * @description clean, cleaned (hidden text removed), or warning
              * @enum {string}
@@ -2620,6 +2642,21 @@ export interface components {
             /** Dismissed */
             dismissed: boolean;
             /**
+             * Closes At
+             * @description The application deadline, when known
+             */
+            closes_at: string | null;
+            /**
+             * Deadline
+             * @description soon: closes within 7 days; closed: the deadline passed
+             */
+            deadline: ("soon" | "closed") | null;
+            /**
+             * Stale Days
+             * @description Days since posting, when older than 30 days (still may be open)
+             */
+            stale_days: number | null;
+            /**
              * Integrity
              * @description clean, cleaned (hidden text removed), or warning
              * @enum {string}
@@ -2641,6 +2678,11 @@ export interface components {
             saved: number;
             /** Dismissed */
             dismissed: number;
+            /**
+             * Closed
+             * @description Not dismissed, but the deadline has passed
+             */
+            closed: number;
         };
         /** JsonApiDefinition */
         JsonApiDefinition: {
@@ -2830,6 +2872,8 @@ export interface components {
             description: string;
             /** Posted At */
             posted_at?: string | null;
+            /** Closes At */
+            closes_at?: string | null;
             integrity?: components["schemas"]["PostingIntegrity"] | null;
         };
         /** PlanIn */
@@ -5155,8 +5199,8 @@ export interface operations {
                 /** @description Words in title/company/text */
                 q?: string | null;
                 status?: "all" | "ranked" | "unranked";
-                /** @description active hides dismissed jobs */
-                show?: "active" | "saved" | "dismissed";
+                /** @description active hides dismissed jobs and jobs whose deadline has passed */
+                show?: "active" | "saved" | "dismissed" | "closed";
                 min_score?: number | null;
                 portal_id?: string | null;
                 /** @description Only jobs marked remote */

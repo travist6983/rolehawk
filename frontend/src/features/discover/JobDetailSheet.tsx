@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-import { safeUrl, whereText } from "./discoverText";
+import { deadlineText, safeUrl, staleText, whereText } from "./discoverText";
 import { FitBreakdown, FitGates } from "./FitDetails";
 import { IntegrityNotice } from "./IntegrityNotice";
 
@@ -211,7 +212,18 @@ export function JobDetailSheet({
                 {data.salary_text && <span>{data.salary_text}</span>}
                 <span>via {data.source}</span>
                 <span>posted {timeAgo(data.posted_at ?? data.scraped_at)}</span>
+                {deadlineText(data) && (
+                  <span className={cn(data.deadline && "font-medium text-caution")}>
+                    {deadlineText(data)}
+                  </span>
+                )}
               </p>
+              {data.stale_days !== null && (
+                <p className="text-xs text-caution">
+                  {staleText(data)}. Some postings stay open for months; check it's still live
+                  before applying.
+                </p>
+              )}
             </SheetHeader>
             <div className="space-y-5 px-4 pb-6">
               <Actions job={data} onApply={onApply} />

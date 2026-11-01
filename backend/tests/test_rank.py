@@ -187,6 +187,7 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
         "already_ranked": 1,
         "applied": 1,
         "dismissed": 1,
+        "closed": 0,
         "country": 2,
         "location": 2,
         "salary": 1,
@@ -347,6 +348,7 @@ async def test_job_listing_sorts_filters_and_counts(runtime: Runtime) -> None:
         "unranked": 2,
         "saved": 0,
         "dismissed": 0,
+        "closed": 0,
     }
 
     assert [j.id for j in runtime.jobs.list(JobQuery(min_score=50)).items] == [high]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from offerbound.portals.integrity import clean_posting
 
@@ -50,6 +50,23 @@ def salary_range(
     amount = f"{lo}-{hi}" if lo and hi and lo != hi else (lo or hi or "")
     parts = [currency.upper() if currency else None, amount, f"per {period}" if period else None]
     return " ".join(p for p in parts if p)
+
+
+def parse_date(value: object) -> date | None:
+    """An application deadline from a source or a model: ISO dates or datetimes, epoch
+    times, RFC 822. Free text ("ASAP", "rolling") and implausible years are None, never a
+    guess (a wrong deadline would hide an open job)."""
+    if isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value.strip()):
+        try:
+            parsed = date.fromisoformat(value.strip())
+        except ValueError:
+            return None
+    else:
+        moment = parse_datetime(value)
+        if moment is None:
+            return None
+        parsed = moment.date()
+    return parsed if 2000 <= parsed.year <= 2100 else None
 
 
 def parse_datetime(value: object) -> datetime | None:

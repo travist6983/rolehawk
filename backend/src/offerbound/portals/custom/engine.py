@@ -25,7 +25,7 @@ from offerbound.portals.custom.definition import (
 from offerbound.portals.feeds import _safe_xml
 from offerbound.portals.http import USER_AGENT
 from offerbound.portals.integrity import clean_posting
-from offerbound.portals.text import html_to_text, looks_remote, parse_datetime
+from offerbound.portals.text import html_to_text, looks_remote, parse_date, parse_datetime
 
 Definition = RssDefinition | JsonLdDefinition | JsonApiDefinition | HtmlDefinition
 
@@ -104,6 +104,7 @@ def _job(
     location: Any = None,
     description: Any = None,
     posted_at: Any = None,
+    closes_at: Any = None,
     base: str,
 ) -> NormalizedJob | None:
     title_text, link = _text(title), _text(url)
@@ -125,6 +126,7 @@ def _job(
         description=desc.text,
         integrity=desc.integrity,
         posted_at=parse_datetime(posted_at) if isinstance(posted_at, str | int | float) else None,
+        closes_at=parse_date(closes_at) if isinstance(closes_at, str) else None,
     )
 
 
@@ -192,6 +194,7 @@ def _from_posting(
         location=location,
         description=posting.get("description"),
         posted_at=posting.get("datePosted"),
+        closes_at=posting.get("validThrough"),
         base=page_url,
     )
 

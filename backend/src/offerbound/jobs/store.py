@@ -4,11 +4,11 @@ detail, save to the pipeline, dismiss."""
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Select, delete, false, func, select, text, update
+from sqlalchemy import Select, delete, false, func, or_, select, text, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.db.fts import to_match_query
@@ -26,6 +26,16 @@ from offerbound.fit.rubric import Breakdown, Gates
 from offerbound.portals.integrity import IntegrityView, Verdict
 
 MAX_PAGE = 500
+CLOSING_SOON_DAYS = 7
+STALE_DAYS = 30  # older postings get a note, never hidden: some stay open for months
+
+
+def deadline_status(closes_at: date | None, today: date) -> Literal["soon", "closed"] | None:
+    if closes_at is None:
+        return None
+    if closes_at < today:
+        return "closed"
+    return "soon" if (closes_at - today).days <= CLOSING_SOON_DAYS else None
 
 
 class JobQuery(BaseModel):
@@ -33,8 +43,9 @@ class JobQuery(BaseModel):
 
     q: str | None = Field(default=None, max_length=200, description="Words in title/company/text")
     status: Literal["all", "ranked", "unranked"] = "all"
-    show: Literal["active", "saved", "dismissed"] = Field(
-        default="active", description="active hides dismissed jobs"
+    show: Literal["active", "saved", "dismissed", "closed"] = Field(
+        default="active",
+        description="active hides dismissed jobs and jobs whose deadline has passed",
     )
     min_score: int | None = Field(default=None, ge=0, le=100)
     portal_id: str | None = None
@@ -67,6 +78,13 @@ class JobRow(BaseModel):
     gates: Gates | None = Field(description="Eligibility and language gates, deal breaker")
     stage: Stage | None
     dismissed: bool
+    closes_at: date | None = Field(description="The application deadline, when known")
+    deadline: Literal["soon", "closed"] | None = Field(
+        description=f"soon: closes within {CLOSING_SOON_DAYS} days; closed: the deadline passed"
+    )
+    stale_days: int | None = Field(
+        description=f"Days since posting, when older than {STALE_DAYS} days (still may be open)"
+    )
     integrity: Verdict = Field(description="clean, cleaned (hidden text removed), or warning")
 
 
@@ -86,6 +104,7 @@ class JobStats(BaseModel):
     unranked: int
     saved: int
     dismissed: int
+    closed: int = Field(description="Not dismissed, but the deadline has passed")
 
 
 class JobPage(BaseModel):
@@ -153,6 +172,9 @@ class JobStore:
             values
         )
         report = IntegrityView.of(job.integrity)
+        today = utcnow().date()
+        posted = job.posted_at.date() if job.posted_at else None
+        age = (today - posted).days if posted else None
         return {
             "id": job.id,
             "title": job.title,
@@ -174,6 +196,9 @@ class JobStore:
             "gates": Gates.model_validate(gates) if gates else None,
             "stage": stage,
             "dismissed": job.dismissed_at is not None,
+            "closes_at": job.closes_at,
+            "deadline": deadline_status(job.closes_at, today),
+            "stale_days": age if age is not None and age > STALE_DAYS else None,
             "integrity": report.verdict if report else "clean",
             "integrity_report": report,
             "description": job.description,
@@ -182,10 +207,15 @@ class JobStore:
 
     def list(self, query: JobQuery) -> JobPage:
         stmt, score = self._base()
+        today = utcnow().date()
         if query.show == "dismissed":
             stmt = stmt.where(Job.dismissed_at.is_not(None))
         else:
             stmt = stmt.where(Job.dismissed_at.is_(None))
+        if query.show == "closed":
+            stmt = stmt.where(Job.closes_at < today)
+        elif query.show == "active":
+            stmt = stmt.where(or_(Job.closes_at.is_(None), Job.closes_at >= today))
         if query.show == "saved":
             stmt = stmt.where(Application.id.is_not(None))
         if query.status == "ranked":
@@ -208,7 +238,10 @@ class JobStore:
 
         newest = (func.coalesce(Job.posted_at, Job.scraped_at).desc(), Job.id.desc())
         if query.sort == "score":
-            stmt = stmt.order_by(score.c.score.desc().nulls_last(), *newest)
+            # Ties go to the job that closes soonest.
+            stmt = stmt.order_by(
+                score.c.score.desc().nulls_last(), Job.closes_at.asc().nulls_last(), *newest
+            )
         else:
             stmt = stmt.order_by(*newest)
 
@@ -240,7 +273,15 @@ class JobStore:
         )
         dismissed = session.scalar(select(func.count()).select_from(Job).where(~active)) or 0
         return JobStats(
-            jobs=jobs, ranked=ranked, unranked=jobs - ranked, saved=saved, dismissed=dismissed
+            jobs=jobs,
+            ranked=ranked,
+            unranked=jobs - ranked,
+            saved=saved,
+            dismissed=dismissed,
+            closed=session.scalar(
+                select(func.count()).select_from(Job).where(active, Job.closes_at < utcnow().date())
+            )
+            or 0,
         )
 
     def get(self, job_id: int) -> JobDetail:

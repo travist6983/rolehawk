@@ -327,6 +327,7 @@ class Scraper:
                     if job.description:
                         existing.description = job.description
                         existing.integrity = _integrity(job)
+                    existing.closes_at = job.closes_at or existing.closes_at
                     duplicates += 1
                     continue
                 digest = job_hash(job.company, job.title, job.location)
@@ -345,6 +346,7 @@ class Scraper:
                         salary_text=job.salary_text,
                         description=job.description,
                         posted_at=job.posted_at,
+                        closes_at=job.closes_at,
                         scraped_at=now,
                         hash=digest,
                         integrity=_integrity(job),

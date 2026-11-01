@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { gateNote, whereText } from "./discoverText";
+import { deadlineText, gateNote, staleText, whereText } from "./discoverText";
 
 const ROW_HEIGHT = 60;
 const LOAD_MORE_WITHIN = 30; // rows from the end
@@ -204,7 +204,22 @@ export function JobTable({
                   {job.source}
                 </td>
                 <td className="hidden pr-3 text-xs text-muted-foreground sm:table-cell">
-                  {timeAgo(job.posted_at ?? job.scraped_at)}
+                  {job.deadline ? (
+                    <span className={job.deadline === "soon" ? "font-medium text-caution" : ""}>
+                      {deadlineText(job)}
+                    </span>
+                  ) : (
+                    <span
+                      className={job.stale_days !== null ? "text-caution" : undefined}
+                      title={
+                        job.stale_days !== null
+                          ? `${staleText(job) ?? ""}. Some stay open for months; check before applying.`
+                          : undefined
+                      }
+                    >
+                      {timeAgo(job.posted_at ?? job.scraped_at)}
+                    </span>
+                  )}
                 </td>
               </tr>
             );

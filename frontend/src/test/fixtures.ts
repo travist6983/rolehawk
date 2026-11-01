@@ -362,6 +362,9 @@ export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
   },
   stage: null,
   dismissed: false,
+  closes_at: null,
+  deadline: null,
+  stale_days: null,
   integrity: "clean",
   ...overrides,
 });
@@ -380,6 +383,7 @@ export const jobStats = (overrides: Partial<JobStats> = {}): JobStats => ({
   unranked: 0,
   saved: 0,
   dismissed: 0,
+  closed: 0,
   ...overrides,
 });
 
@@ -396,6 +400,7 @@ export const rankPlan = (overrides: Partial<RankPlan> = {}): RankPlan => ({
     already_ranked: 0,
     applied: 0,
     dismissed: 0,
+    closed: 0,
     country: 5,
     location: 8,
     salary: 3,
@@ -607,6 +612,7 @@ export const boardCard = (overrides: Partial<BoardCard> = {}): BoardCard => ({
   applied_at: null,
   has_documents: true,
   flags: 0,
+  closes_at: null,
   next_action: "Submit, then mark as applied",
   ...overrides,
 });

@@ -2016,14 +2016,15 @@
               "enum": [
                 "active",
                 "saved",
-                "dismissed"
+                "dismissed",
+                "closed"
               ],
               "type": "string",
-              "description": "active hides dismissed jobs",
+              "description": "active hides dismissed jobs and jobs whose deadline has passed",
               "default": "active",
               "title": "Show"
             },
-            "description": "active hides dismissed jobs"
+            "description": "active hides dismissed jobs and jobs whose deadline has passed"
           },
           {
             "name": "min_score",
@@ -3827,6 +3828,18 @@
             "type": "integer",
             "title": "Flags"
           },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
           "next_action": {
             "anyOf": [
               {
@@ -3853,6 +3866,7 @@
           "applied_at",
           "has_documents",
           "flags",
+          "closes_at",
           "next_action"
         ],
         "title": "Card"
@@ -6245,6 +6259,11 @@
             "title": "Dismissed",
             "default": 0
           },
+          "closed": {
+            "type": "integer",
+            "title": "Closed",
+            "default": 0
+          },
           "country": {
             "type": "integer",
             "title": "Country",
@@ -7097,6 +7116,47 @@
             "type": "boolean",
             "title": "Dismissed"
           },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At",
+            "description": "The application deadline, when known"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "soon",
+                  "closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline",
+            "description": "soon: closes within 7 days; closed: the deadline passed"
+          },
+          "stale_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Days",
+            "description": "Days since posting, when older than 30 days (still may be open)"
+          },
           "integrity": {
             "type": "string",
             "enum": [
@@ -7157,6 +7217,9 @@
           "gates",
           "stage",
           "dismissed",
+          "closes_at",
+          "deadline",
+          "stale_days",
           "integrity",
           "description",
           "application_id",
@@ -7349,6 +7412,47 @@
             "type": "boolean",
             "title": "Dismissed"
           },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At",
+            "description": "The application deadline, when known"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "soon",
+                  "closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline",
+            "description": "soon: closes within 7 days; closed: the deadline passed"
+          },
+          "stale_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Days",
+            "description": "Days since posting, when older than 30 days (still may be open)"
+          },
           "integrity": {
             "type": "string",
             "enum": [
@@ -7382,6 +7486,9 @@
           "gates",
           "stage",
           "dismissed",
+          "closes_at",
+          "deadline",
+          "stale_days",
           "integrity"
         ],
         "title": "JobRow"
@@ -7407,6 +7514,11 @@
           "dismissed": {
             "type": "integer",
             "title": "Dismissed"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed",
+            "description": "Not dismissed, but the deadline has passed"
           }
         },
         "type": "object",
@@ -7415,7 +7527,8 @@
           "ranked",
           "unranked",
           "saved",
-          "dismissed"
+          "dismissed",
+          "closed"
         ],
         "title": "JobStats",
         "description": "Counts over every job that isn't dismissed (dismissed counted separately)."
@@ -7885,6 +7998,18 @@
               }
             ],
             "title": "Posted At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
           },
           "integrity": {
             "anyOf": [

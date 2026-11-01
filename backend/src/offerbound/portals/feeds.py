@@ -13,6 +13,7 @@ from offerbound.portals.integrity import clean_posting
 from offerbound.portals.text import (
     html_to_text,
     looks_remote,
+    parse_date,
     parse_datetime,
     salary_range,
 )
@@ -244,4 +245,5 @@ class USAJobs:
             ),
             description=details.get("JobSummary") or job.get("QualificationSummary") or "",
             posted_at=parse_datetime(job.get("PublicationStartDate")),
+            closes_at=parse_date(job.get("ApplicationCloseDate")),
         )

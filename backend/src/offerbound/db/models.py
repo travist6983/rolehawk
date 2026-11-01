@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -11,6 +11,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     CheckConstraint,
+    Date,
     Float,
     ForeignKey,
     Integer,
@@ -202,6 +203,8 @@ class Job(Base):
     salary_text: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text, default="")
     posted_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # The application deadline: from the source, or read from the posting when it's ranked.
+    closes_at: Mapped[date | None] = mapped_column(Date, index=True)
     scraped_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     hash: Mapped[str] = mapped_column(String(64), unique=True)
     # Hidden from Discover and never ranked again (the user said "not for me").
