@@ -181,12 +181,33 @@ export interface paths {
         get?: never;
         /**
          * Put Key
-         * @description Validates the key with one cheap call, then stores it in the OS keychain.
+         * @description Tests the key with one tiny real call; stores it in the OS keychain if Anthropic
+         *     recognized it. A rejected key comes back with `saved: false` and the reason.
          */
         put: operations["put_key_api_llm_key_put"];
         post?: never;
         /** Delete Key */
         delete: operations["delete_key_api_llm_key_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/key/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Key Test
+         * @description One tiny real call (cheapest model, one output token) with plain words for the result.
+         */
+        post: operations["post_key_test_api_llm_key_test_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3047,6 +3068,42 @@ export interface components {
              */
             max_pages: number;
         };
+        /** KeyConnect */
+        KeyConnect: {
+            /** Saved */
+            saved: boolean;
+            test: components["schemas"]["KeyTest"];
+            status: components["schemas"]["LLMStatus"];
+        };
+        /**
+         * KeyTest
+         * @description The result of one tiny real call, in words a non-developer can act on.
+         */
+        KeyTest: {
+            /** Ok */
+            ok: boolean;
+            /** Problem */
+            problem: ("bad_key" | "permission" | "no_credit" | "account_limit" | "rate_limit" | "overloaded" | "network" | "not_configured" | "unknown") | null;
+            /**
+             * Key Accepted
+             * @default false
+             */
+            key_accepted: boolean;
+            /** Title */
+            title: string;
+            /** Fix */
+            fix: string;
+            /** Fix Link */
+            fix_link?: ("keys" | "billing") | null;
+        };
+        /**
+         * KeyTestIn
+         * @description Test this key without saving it; leave it out to test the stored key.
+         */
+        KeyTestIn: {
+            /** Api Key */
+            api_key?: string | null;
+        };
         /**
          * LLMSettingsIn
          * @description Partial update; send null for monthly_cap_usd to remove the cap.
@@ -3077,6 +3134,7 @@ export interface components {
             monthly_cap_usd: number | null;
             /** Month To Date Usd */
             month_to_date_usd: number;
+            typical_cost: components["schemas"]["TypicalCost"];
         };
         /** MarkdownIn */
         MarkdownIn: {
@@ -4000,6 +4058,15 @@ export interface components {
             /** Offers */
             offers: number;
         };
+        /** TypicalCost */
+        TypicalCost: {
+            active: components["schemas"]["WorkloadView"];
+            light: components["schemas"]["WorkloadView"];
+            /** Writing Model */
+            writing_model: string;
+            /** Ranking Model */
+            ranking_model: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -4038,6 +4105,17 @@ export interface components {
             applied: number;
             /** Jobs Found */
             jobs_found: number;
+        };
+        /** WorkloadView */
+        WorkloadView: {
+            /** Jobs Ranked Per Week */
+            jobs_ranked_per_week: number;
+            /** Applications Per Week */
+            applications_per_week: number;
+            /** Chat Messages Per Week */
+            chat_messages_per_week: number;
+            /** Monthly Usd */
+            monthly_usd: number;
         };
     };
     responses: never;
@@ -4314,7 +4392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LLMStatus"];
+                    "application/json": components["schemas"]["KeyConnect"];
                 };
             };
             /** @description Validation Error */
@@ -4344,6 +4422,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LLMStatus"];
+                };
+            };
+        };
+    };
+    post_key_test_api_llm_key_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyTestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyTest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

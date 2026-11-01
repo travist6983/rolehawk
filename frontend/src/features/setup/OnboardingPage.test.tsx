@@ -4,9 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { FakeEventSource } from "@/test/fakeEventSource";
 import {
+  badKey,
   emptyPreferences,
   interviewState,
+  keyConnect,
+  keyTest,
   llmStatus,
+  noCredit,
   profileOverview,
   question,
   sampleProfile,
@@ -49,7 +53,7 @@ describe("Onboarding", () => {
       http.put("/api/llm/key", async ({ request }) => {
         key = await request.json();
         configured = true;
-        return HttpResponse.json(llmStatus({ configured: true, key_source: "keychain" }));
+        return HttpResponse.json(keyConnect());
       }),
       http.patch("/api/llm/settings", async ({ request }) => {
         settings = await request.json();
@@ -57,6 +61,8 @@ describe("Onboarding", () => {
       }),
     );
     const { user } = await renderApp("/onboarding");
+    expect(await screen.findByText(/Typical cost: about \$18 a month/)).toBeInTheDocument();
+    expect(screen.getByText(/Writing and chat use Claude Opus 5.5/)).toBeInTheDocument();
     const steps = await screen.findByRole("list", { name: "Steps to connect Claude" });
     expect(within(steps).getByRole("link", { name: /Open API keys/ })).toHaveAttribute(
       "href",
@@ -72,7 +78,7 @@ describe("Onboarding", () => {
     );
     await user.click(screen.getByRole("radio", { name: "$50 a month" }));
     await user.type(screen.getByLabelText("Your API key"), "sk-ant-test-1234567890");
-    await user.click(screen.getByRole("button", { name: /Connect/ }));
+    await user.click(screen.getByRole("button", { name: /Connect and test/ }));
     await waitFor(() => {
       expect(key).toEqual({ api_key: "sk-ant-test-1234567890" });
     });
@@ -82,6 +88,88 @@ describe("Onboarding", () => {
     await waitFor(() => {
       expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Resume");
     });
+  });
+
+  it("shows pictures of the Claude Platform, marked as illustrations", async () => {
+    server.use(
+      http.get("/api/llm/status", () =>
+        HttpResponse.json(llmStatus({ configured: false, key_source: "none" })),
+      ),
+    );
+    const { user } = await renderApp("/onboarding");
+    const steps = await screen.findByRole("list", { name: "Steps to connect Claude" });
+    expect(within(steps).queryByRole("figure")).not.toBeInTheDocument();
+    const toggles = within(steps).getAllByRole("button", { name: "Show me what this looks like" });
+    expect(toggles).toHaveLength(3);
+    const [, , keysToggle] = toggles;
+    if (!keysToggle) throw new Error("missing toggle");
+    await user.click(keysToggle);
+    const figure = within(steps).getByRole("figure");
+    expect(figure).toHaveTextContent(/Create key opens a short form/);
+    expect(figure).toHaveTextContent(/Illustration only/);
+    expect(within(steps).getByRole("button", { name: "Hide the picture" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("keeps a rejected key out and says how to fix it", async () => {
+    server.use(
+      http.get("/api/llm/status", () =>
+        HttpResponse.json(llmStatus({ configured: false, key_source: "none" })),
+      ),
+      http.put("/api/llm/key", () => HttpResponse.json(keyConnect(badKey()))),
+    );
+    const { user } = await renderApp("/onboarding");
+    await user.type(await screen.findByLabelText("Your API key"), "sk-ant-wrong-1234567890");
+    await user.click(screen.getByRole("button", { name: /Connect and test/ }));
+    const result = await screen.findByRole("status", { name: "Key test" });
+    expect(result).toHaveTextContent("Anthropic didn't accept this key");
+    expect(within(result).getByRole("link", { name: /Open API keys/ })).toHaveAttribute(
+      "href",
+      "https://platform.claude.com/settings/keys",
+    );
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Connect Claude");
+    expect(screen.getByLabelText("Your API key")).toHaveValue("sk-ant-wrong-1234567890");
+  });
+
+  it("saves a key with no credit, points to Billing, and tests again", async () => {
+    let configured = false;
+    let tests = 0;
+    server.use(
+      http.get("/api/llm/status", () =>
+        HttpResponse.json(llmStatus(configured ? {} : { configured: false, key_source: "none" })),
+      ),
+      http.put("/api/llm/key", () => {
+        configured = true;
+        return HttpResponse.json(keyConnect(noCredit()));
+      }),
+      http.patch("/api/llm/settings", () => HttpResponse.json(llmStatus({ monthly_cap_usd: 25 }))),
+      http.post("/api/llm/key/test", async ({ request }) => {
+        tests += 1;
+        expect(await request.json()).toEqual({});
+        return HttpResponse.json(keyTest());
+      }),
+    );
+    const { user } = await renderApp("/onboarding");
+    await user.type(await screen.findByLabelText("Your API key"), "sk-ant-test-1234567890");
+    await user.click(screen.getByRole("button", { name: /Connect and test/ }));
+    const result = await screen.findByRole("status", { name: "Key test" });
+    expect(result).toHaveTextContent("Your key works, but the account has no credit");
+    expect(within(result).getByRole("link", { name: /Open Billing/ })).toHaveAttribute(
+      "href",
+      "https://platform.claude.com/settings/billing",
+    );
+    expect(await screen.findByText("Claude is connected.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue anyway" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Test again/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("status", { name: "Key test" })).toHaveTextContent("Your key works");
+    });
+    expect(tests).toBe(1);
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Resume");
   });
 
   it("answers single-choice questions with one click and shows the next question", async () => {

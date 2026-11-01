@@ -26,6 +26,8 @@ import type {
   ScrapeSummary,
   SearchTargetView,
   TaskView,
+  KeyConnect,
+  KeyTest,
 } from "@/api/queries";
 
 export const TEST_TOKEN = "test-token";
@@ -45,7 +47,58 @@ export const llmStatus = (overrides: Partial<LLMStatus> = {}): LLMStatus => ({
   ],
   monthly_cap_usd: null,
   month_to_date_usd: 1.25,
+  typical_cost: {
+    active: {
+      jobs_ranked_per_week: 200,
+      applications_per_week: 10,
+      chat_messages_per_week: 20,
+      monthly_usd: 18.14,
+    },
+    light: {
+      jobs_ranked_per_week: 50,
+      applications_per_week: 2,
+      chat_messages_per_week: 5,
+      monthly_usd: 3.87,
+    },
+    writing_model: "Claude Opus 5.5",
+    ranking_model: "Claude Haiku 5.5",
+  },
   ...overrides,
+});
+
+export const keyTest = (overrides: Partial<KeyTest> = {}): KeyTest => ({
+  ok: true,
+  problem: null,
+  key_accepted: true,
+  title: "Your key works",
+  fix: "Claude answered a test message, so ranking jobs and writing applications are ready.",
+  fix_link: null,
+  ...overrides,
+});
+
+export const noCredit = (): KeyTest =>
+  keyTest({
+    ok: false,
+    problem: "no_credit",
+    title: "Your key works, but the account has no credit",
+    fix: "Open Billing and buy some credit, then test again.",
+    fix_link: "billing",
+  });
+
+export const badKey = (): KeyTest =>
+  keyTest({
+    ok: false,
+    problem: "bad_key",
+    key_accepted: false,
+    title: "Anthropic didn't accept this key",
+    fix: "Check you copied the whole key, starting with sk-ant-.",
+    fix_link: "keys",
+  });
+
+export const keyConnect = (test: KeyTest = keyTest()): KeyConnect => ({
+  saved: test.key_accepted,
+  test,
+  status: llmStatus(test.key_accepted ? {} : { configured: false, key_source: "none" }),
 });
 
 export const commands: CommandInfo[] = [

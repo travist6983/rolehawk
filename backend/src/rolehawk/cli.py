@@ -291,8 +291,12 @@ async def _llm(action: str, key: str | None) -> tuple[int, Any]:
     runtime = open_runtime(DataPaths.default())
     try:
         if action == "set-key" and key:
-            status = await llm_settings.set_api_key(runtime, key)
-        elif action == "clear-key":
+            result = await llm_settings.set_api_key(runtime, key)
+            return (0 if result.saved else 3), result.model_dump(mode="json")
+        if action == "test-key":
+            test = await llm_settings.check_api_key(runtime)
+            return (0 if test.ok else 3), test.model_dump(mode="json")
+        if action == "clear-key":
             status = await llm_settings.clear_api_key(runtime)
         else:
             status = llm_settings.status(runtime)
@@ -387,6 +391,7 @@ def build_parser() -> argparse.ArgumentParser:
     set_key = llm_sub.add_parser("set-key", help="validate and store an API key in the keychain")
     set_key.add_argument("--stdin", action="store_true", help="read the key from stdin")
     llm_sub.add_parser("clear-key", help="remove the stored API key")
+    llm_sub.add_parser("test-key", help="send one tiny real message with the stored key")
     llm.set_defaults(func=cmd_llm)
 
     openapi = sub.add_parser("openapi", help="export the OpenAPI schema")

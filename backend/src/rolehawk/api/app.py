@@ -105,6 +105,8 @@ _LLM_STATUS: list[tuple[type[llm_errors.LLMError], int]] = [
     (llm_errors.LLMAuthError, 400),
     (llm_errors.LLMNotConfiguredError, 409),
     (llm_errors.SpendCapExceededError, 402),
+    (llm_errors.LLMBillingError, 402),
+    (llm_errors.LLMAccountLimitError, 402),
     (llm_errors.LLMUnavailableError, 503),
     (llm_errors.LLMRefusalError, 422),
 ]

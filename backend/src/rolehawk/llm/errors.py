@@ -15,10 +15,50 @@ class LLMAuthError(LLMNotConfiguredError):
     user_message = "Anthropic rejected the API key. Check it in Settings."
 
 
+class LLMPermissionError(LLMAuthError):
+    """403: the key is real but not allowed to call the model (a restricted workspace)."""
+
+    user_message = (
+        "This API key isn't allowed to use Claude. Create a new key on the Claude Platform."
+    )
+
+
+class LLMBillingError(LLMError):
+    """The account has no credit or a payment problem (402, or a 400 about the balance)."""
+
+    user_message = (
+        "Your Claude account is out of credit. Add credit under Billing on the Claude Platform, "
+        "then try again."
+    )
+
+
+class LLMAccountLimitError(LLMError):
+    """The spend limit set in the Claude Console, or the account tier's cap, was reached."""
+
+    user_message = (
+        "Your Claude account reached the spend limit set on the Claude Platform. Raise it under "
+        "Billing, then try again."
+    )
+
+
 class LLMUnavailableError(LLMError):
     """Transient: rate limits, overload, network. The SDK has already retried."""
 
     user_message = "Claude is busy or unreachable right now. Try again in a minute."
+
+
+class LLMRateLimitError(LLMUnavailableError):
+    user_message = (
+        "Anthropic is limiting how fast your account can send requests. Try again in a minute."
+    )
+
+
+class LLMOverloadedError(LLMUnavailableError):
+    user_message = "Claude is busy right now. Try again in a few minutes."
+
+
+class LLMConnectionError(LLMUnavailableError):
+    user_message = "Couldn't reach Anthropic. Check your internet connection and try again."
 
 
 class LLMRefusalError(LLMError):

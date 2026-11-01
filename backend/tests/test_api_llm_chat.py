@@ -1,9 +1,19 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 from rolehawk import keychain
 from rolehawk.keychain import SecretName
+from rolehawk.llm.errors import (
+    LLMAccountLimitError,
+    LLMBillingError,
+    LLMConnectionError,
+    LLMError,
+    LLMOverloadedError,
+    LLMPermissionError,
+    LLMRateLimitError,
+)
 from rolehawk.llm.fake import FakeProvider, FakeReply
 from rolehawk.paths import DataPaths
 
@@ -45,18 +55,92 @@ def test_api_key_goes_to_keychain_never_config(
     client: TestClient, paths: DataPaths, fake: FakeProvider
 ) -> None:
     key = "sk-ant-api03-supersecretvalue"
-    assert client.put("/api/llm/key", json={"api_key": key}).status_code == 200
+    response = client.put("/api/llm/key", json={"api_key": key})
+    assert response.status_code == 200
+    assert response.json()["saved"] is True
+    assert response.json()["test"]["ok"] is True
     assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == key
     assert key not in paths.config_file.read_text(encoding="utf-8")
 
     fake.auth_ok = False
     response = client.put("/api/llm/key", json={"api_key": "sk-ant-api03-badbadbadbad"})
-    assert response.status_code == 400
-    assert response.json()["kind"] == "LLMAuthError"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["saved"] is False
+    assert body["test"]["problem"] == "bad_key"
+    assert body["test"]["fix_link"] == "keys"
     assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == key  # unchanged
 
     assert client.delete("/api/llm/key").status_code == 200
     assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) is None
+
+
+def test_key_without_credit_is_saved_with_a_billing_fix(
+    client: TestClient, fake: FakeProvider
+) -> None:
+    fake.check_error = LLMBillingError("credit balance is too low")
+    key = "sk-ant-api03-nocreditkey"
+    body = client.put("/api/llm/key", json={"api_key": key}).json()
+    assert body["saved"] is True
+    assert body["test"] == {
+        "ok": False,
+        "problem": "no_credit",
+        "key_accepted": True,
+        "title": "Your key works, but the account has no credit",
+        "fix": body["test"]["fix"],
+        "fix_link": "billing",
+    }
+    assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == key
+
+
+@pytest.mark.parametrize(
+    ("error", "problem", "saved"),
+    [
+        (LLMPermissionError("403"), "permission", False),
+        (LLMAccountLimitError("limit"), "account_limit", True),
+        (LLMRateLimitError("429"), "rate_limit", True),
+        (LLMOverloadedError("529"), "overloaded", True),
+        (LLMConnectionError("offline"), "network", False),
+        (LLMError("odd"), "unknown", False),
+    ],
+)
+def test_each_key_problem_has_plain_words(
+    client: TestClient, fake: FakeProvider, error: LLMError, problem: str, saved: bool
+) -> None:
+    fake.check_error = error
+    body = client.put("/api/llm/key", json={"api_key": "sk-ant-api03-somekey"}).json()
+    assert body["test"]["problem"] == problem
+    assert body["saved"] is saved
+    for text in (body["test"]["title"], body["test"]["fix"]):
+        assert text
+        assert "\u2014" not in text
+        assert "\u2013" not in text
+
+
+def test_key_test_endpoint_checks_stored_or_candidate_key_and_meters_it(
+    client: TestClient, fake: FakeProvider
+) -> None:
+    before = fake.checks
+    result = client.post("/api/llm/key/test", json={}).json()
+    assert result["ok"] is True
+    assert result["title"] == "Your key works"
+    assert fake.checks == before + 1
+    spent = client.get("/api/llm/status").json()["month_to_date_usd"]
+    assert 0 < spent < 0.0001  # one tiny Haiku call
+
+    fake.check_error = LLMBillingError("402")
+    candidate = client.post("/api/llm/key/test", json={"api_key": "sk-ant-api03-candidate"})
+    assert candidate.json()["problem"] == "no_credit"
+    assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) is None  # testing never saves
+    assert client.post("/api/llm/key/test", json={"api_key": "short"}).status_code == 422
+
+
+def test_status_includes_typical_monthly_cost(client: TestClient) -> None:
+    cost = client.get("/api/llm/status").json()["typical_cost"]
+    assert cost["writing_model"] == "Claude Opus 5.5"
+    assert cost["ranking_model"] == "Claude Haiku 5.5"
+    assert cost["active"]["applications_per_week"] == 10
+    assert cost["light"]["monthly_usd"] < cost["active"]["monthly_usd"]
 
 
 def test_estimate_and_models(client: TestClient) -> None:

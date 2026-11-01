@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { llmStatus } from "@/test/fixtures";
+import { keyConnect, llmStatus, noCredit } from "@/test/fixtures";
 import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
 
@@ -78,7 +78,7 @@ describe("Settings", () => {
       ),
       http.put("/api/llm/key", async ({ request }) => {
         sentKey = ((await request.json()) as { api_key: string }).api_key;
-        return HttpResponse.json(llmStatus());
+        return HttpResponse.json(keyConnect());
       }),
     );
     const { user } = await renderApp("/settings");
@@ -90,6 +90,16 @@ describe("Settings", () => {
     expect(await screen.findByText("Connected")).toBeInTheDocument();
     expect(sentKey).toBe("sk-ant-api03-test-key");
     expect(screen.getByLabelText("Replace API key")).toHaveValue("");
+  });
+
+  it("tests the stored key and explains a problem with a fix link", async () => {
+    server.use(http.post("/api/llm/key/test", () => HttpResponse.json(noCredit())));
+    const { user } = await renderApp("/settings");
+    expect(await screen.findByText(/Typical cost: about \$18 a month/)).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /Test key/ }));
+    const result = await screen.findByRole("status", { name: "Key test" });
+    expect(result).toHaveTextContent("Your key works, but the account has no credit");
+    expect(within(result).getByRole("link", { name: /Open Billing/ })).toBeInTheDocument();
   });
 
   it("shows routing and toggles smart routing", async () => {

@@ -9,13 +9,19 @@ from rolehawk.api.deps import RuntimeDep
 from rolehawk.llm import models as catalog
 from rolehawk.llm.types import ModelChoice, Task
 from rolehawk.services import llm_settings
-from rolehawk.services.llm_settings import LLMStatus
+from rolehawk.services.llm_settings import KeyConnect, KeyTest, LLMStatus
 
 router = APIRouter(prefix="/api/llm", tags=["llm"])
 
 
 class ApiKeyIn(BaseModel):
     api_key: SecretStr = Field(min_length=10)
+
+
+class KeyTestIn(BaseModel):
+    """Test this key without saving it; leave it out to test the stored key."""
+
+    api_key: SecretStr | None = Field(default=None, min_length=10)
 
 
 class LLMSettingsIn(BaseModel):
@@ -51,9 +57,17 @@ async def get_status(runtime: RuntimeDep) -> LLMStatus:
 
 
 @router.put("/key")
-async def put_key(body: ApiKeyIn, runtime: RuntimeDep) -> LLMStatus:
-    """Validates the key with one cheap call, then stores it in the OS keychain."""
+async def put_key(body: ApiKeyIn, runtime: RuntimeDep) -> KeyConnect:
+    """Tests the key with one tiny real call; stores it in the OS keychain if Anthropic
+    recognized it. A rejected key comes back with `saved: false` and the reason."""
     return await llm_settings.set_api_key(runtime, body.api_key.get_secret_value())
+
+
+@router.post("/key/test")
+async def post_key_test(body: KeyTestIn, runtime: RuntimeDep) -> KeyTest:
+    """One tiny real call (cheapest model, one output token) with plain words for the result."""
+    key = body.api_key.get_secret_value() if body.api_key is not None else None
+    return await llm_settings.check_api_key(runtime, key)
 
 
 @router.delete("/key")

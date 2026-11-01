@@ -10,6 +10,9 @@ export type CommandInfo = Schemas["CommandInfo"];
 export type ProposalView = Schemas["ProposalView"];
 export type MemorySnapshot = Schemas["MemorySnapshot"];
 export type ModelChoice = Schemas["ModelChoice"];
+export type KeyTest = Schemas["KeyTest"];
+export type KeyConnect = Schemas["KeyConnect"];
+export type TypicalCost = Schemas["TypicalCost"];
 export type ChatMessageView = Schemas["ChatMessageView"];
 
 export const queryKeys = {
@@ -81,11 +84,30 @@ function useInvalidateLLM() {
   };
 }
 
+/** Tests the key with one tiny real call and saves it if Anthropic recognized it. */
 export function useSetApiKey() {
-  const onSuccess = useInvalidateLLM();
+  const onStatus = useInvalidateLLM();
   return useMutation({
     mutationFn: (apiKey: string) => unwrap(api.PUT("/api/llm/key", { body: { api_key: apiKey } })),
-    onSuccess,
+    onSuccess: (result: KeyConnect) => {
+      onStatus(result.status);
+    },
+  });
+}
+
+/** One tiny real call with the stored key (or a candidate key, which is never saved). */
+export function useTestApiKey() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (apiKey?: string) =>
+      unwrap(
+        api.POST("/api/llm/key/test", {
+          body: apiKey === undefined ? {} : { api_key: apiKey },
+        }),
+      ),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.llmStatus });
+    },
   });
 }
 

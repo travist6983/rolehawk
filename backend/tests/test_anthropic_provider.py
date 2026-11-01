@@ -10,11 +10,19 @@ from pydantic import BaseModel
 
 from rolehawk.llm.anthropic_provider import FALLBACK_BETA, AnthropicProvider, resolve_api_key
 from rolehawk.llm.errors import (
+    LLMAccountLimitError,
     LLMAuthError,
+    LLMBillingError,
+    LLMConnectionError,
+    LLMError,
+    LLMOverloadedError,
+    LLMPermissionError,
+    LLMRateLimitError,
     LLMRefusalError,
     LLMTruncatedError,
     LLMUnavailableError,
 )
+from rolehawk.llm.models import PROBE_MODEL
 from rolehawk.llm.types import (
     LLMRequest,
     Message,
@@ -180,6 +188,67 @@ async def test_http_errors_are_mapped(status: int, error: type[Exception]) -> No
     provider, _ = _provider(lambda r: httpx2.Response(status, json=payload))
     with pytest.raises(error):
         await provider.complete(_request())
+
+
+def _error(status: int, kind: str, message: str, **extra: Any) -> Handler:
+    payload = {"type": "error", "error": {"type": kind, "message": message, **extra}}
+    return lambda _r: httpx2.Response(status, json=payload)
+
+
+@pytest.mark.parametrize(
+    ("handler", "error"),
+    [
+        (_error(401, "authentication_error", "invalid x-api-key"), LLMAuthError),
+        (_error(403, "permission_error", "not allowed"), LLMPermissionError),
+        (_error(402, "billing_error", "check your payment details"), LLMBillingError),
+        (
+            _error(400, "invalid_request_error", "Your credit balance is too low"),
+            LLMBillingError,
+        ),
+        (
+            _error(
+                400, "invalid_request_error", "You have reached your specified API usage limits"
+            ),
+            LLMAccountLimitError,
+        ),
+        (
+            _error(429, "rate_limit_error", "cap", error_code="enforced_spend_limit_reached"),
+            LLMAccountLimitError,
+        ),
+        (_error(429, "rate_limit_error", "slow down"), LLMRateLimitError),
+        (_error(529, "overloaded_error", "busy"), LLMOverloadedError),
+        (_error(500, "api_error", "oops"), LLMOverloadedError),
+        (_error(404, "not_found_error", "no such model"), LLMError),
+    ],
+)
+async def test_key_check_sorts_errors_into_explainable_kinds(
+    handler: Handler, error: type[Exception]
+) -> None:
+    provider, _ = _provider(handler)
+    with pytest.raises(error) as caught:
+        await provider.check()
+    assert type(caught.value) is error
+
+
+async def test_key_check_network_failure() -> None:
+    def fail(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("no route", request=request)
+
+    provider, _ = _provider(fail)
+    with pytest.raises(LLMConnectionError):
+        await provider.check()
+
+
+async def test_key_check_is_one_token_on_the_cheapest_model() -> None:
+    provider, recorder = _provider(
+        lambda _r: httpx2.Response(200, json=_message([{"type": "text", "text": "H"}]))
+    )
+    usage = await provider.check()
+    assert usage.input_tokens == 10
+    assert recorder.requests[-1].url.path == "/v1/messages"
+    assert recorder.body["model"] == PROBE_MODEL == "claude-haiku-5-5"
+    assert recorder.body["max_tokens"] == 1
+    assert recorder.body["thinking"] == {"type": "disabled"}
 
 
 class Verdict(BaseModel):

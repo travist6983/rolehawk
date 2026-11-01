@@ -3,7 +3,9 @@ from __future__ import annotations
 import threading
 
 from rolehawk.llm.anthropic_provider import AnthropicProvider, KeySource, resolve_api_key
+from rolehawk.llm.errors import LLMNotConfiguredError
 from rolehawk.llm.provider import LLMProvider
+from rolehawk.llm.types import Usage
 from rolehawk.logging_setup import register_secret
 
 
@@ -44,12 +46,19 @@ class ProviderHolder:
                 self._load()
             return self._source
 
-    async def validate_key(self, key: str) -> None:
-        """Make one cheap authenticated call with a candidate key before storing it."""
+    async def probe_key(self, key: str | None = None) -> Usage:
+        """One tiny real call with `key`, or with the stored key when None. No retries, so a
+        problem is reported in seconds. Raises rolehawk.llm.errors types."""
         if self._override is not None:
-            await self._override.check()
-            return
-        await AnthropicProvider(key, max_retries=1, timeout=20.0).check()
+            return await self._override.check()
+        if key is None:
+            key, _source = resolve_api_key()
+            if key is None:
+                raise LLMNotConfiguredError("no Anthropic API key configured")
+        return await AnthropicProvider(key, max_retries=0, timeout=20.0).check()
+
+    def provider_name(self) -> str:
+        return self._override.name if self._override is not None else AnthropicProvider.name
 
     def invalidate(self) -> None:
         """Call after the stored key changes."""

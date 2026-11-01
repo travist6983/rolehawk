@@ -1,7 +1,8 @@
 import {
   CheckCircle2Icon,
-  CircleDollarSignIcon,
+  ChevronDownIcon,
   ExternalLinkIcon,
+  FlaskConicalIcon,
   KeyRoundIcon,
   TerminalIcon,
 } from "lucide-react";
@@ -9,7 +10,13 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import { errorText } from "@/api/errors";
-import { useSetApiKey, useUpdateLLMSettings, type LLMStatus } from "@/api/queries";
+import {
+  useSetApiKey,
+  useTestApiKey,
+  useUpdateLLMSettings,
+  type KeyTest,
+  type LLMStatus,
+} from "@/api/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,20 +29,28 @@ import {
   DEFAULT_CAP,
   capLabel,
 } from "@/features/settings/claudeLinks";
+import { KeyTestResult } from "@/features/settings/KeyTestResult";
+import { TypicalCostNote } from "@/features/settings/TypicalCostNote";
 import { cn } from "@/lib/utils";
 import { PRODUCT_NAME } from "@/lib/brand";
+
+import { ConsoleIllustration, type ConsolePage } from "./ConsoleIllustration";
 
 function Step({
   n,
   title,
   link,
+  illustration,
   children,
 }: {
   n: number;
   title: string;
   link?: { href: string; label: string };
+  illustration?: ConsolePage;
   children?: React.ReactNode;
 }) {
+  const [showing, setShowing] = useState(false);
+  const drawingId = useId();
   return (
     <li className="flex gap-3">
       <span
@@ -57,6 +72,31 @@ function Step({
             {link.label} <ExternalLinkIcon className="size-3.5" aria-hidden />
           </a>
         )}
+        {illustration && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              aria-expanded={showing}
+              aria-controls={drawingId}
+              onClick={() => {
+                setShowing((value) => !value);
+              }}
+              className="flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <ChevronDownIcon
+                aria-hidden
+                className={cn(
+                  "size-3.5 transition-transform motion-reduce:transition-none",
+                  showing && "rotate-180",
+                )}
+              />
+              {showing ? "Hide the picture" : "Show me what this looks like"}
+            </button>
+            <div id={drawingId} hidden={!showing}>
+              {showing && <ConsoleIllustration page={illustration} />}
+            </div>
+          </div>
+        )}
       </div>
     </li>
   );
@@ -66,19 +106,32 @@ function Step({
 export function ConnectClaudeStep({
   status,
   onContinue,
+  onStay,
   onUseClaudeCode,
 }: {
   status: LLMStatus;
   onContinue: () => void;
+  /** Keep setup on this step even after the key is saved. */
+  onStay: () => void;
   onUseClaudeCode: () => void;
 }) {
   const [key, setKey] = useState("");
   const [cap, setCap] = useState<number | null>(
     status.monthly_cap_usd === null ? DEFAULT_CAP : status.monthly_cap_usd,
   );
+  // The latest test result, from Connect or from Test again.
+  const [result, setResult] = useState<KeyTest | null>(null);
   const setApiKey = useSetApiKey();
+  const testKey = useTestApiKey();
   const updateSettings = useUpdateLLMSettings();
   const keyId = useId();
+
+  const runTest = () => {
+    testKey.mutate(undefined, {
+      onSuccess: setResult,
+      onError: (error) => toast.error(errorText(error, "Couldn't run the test. Try again.")),
+    });
+  };
 
   if (status.configured) {
     return (
@@ -96,25 +149,45 @@ export function ConnectClaudeStep({
             </div>
           </CardContent>
         </Card>
-        <Button onClick={onContinue}>Continue</Button>
+        {result && <KeyTestResult result={result} />}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onContinue}>
+            {result && !result.ok ? "Continue anyway" : "Continue"}
+          </Button>
+          <Button variant="outline" onClick={runTest} disabled={testKey.isPending}>
+            <FlaskConicalIcon />{" "}
+            {testKey.isPending ? "Testing…" : result ? "Test again" : "Test key"}
+          </Button>
+        </div>
       </div>
     );
   }
 
   const save = () => {
+    setResult(null);
+    // Saving marks Claude as connected, which would move setup on before the test result
+    // shows; pin this step first so a problem's fix stays on screen.
+    onStay();
     setApiKey.mutate(key.trim(), {
-      onSuccess: () => {
+      onSuccess: ({ saved, test }) => {
+        if (!saved) {
+          setResult(test);
+          return;
+        }
         setKey("");
         if (cap !== status.monthly_cap_usd) {
           updateSettings.mutate({ monthly_cap_usd: cap });
         }
-        toast.success("Claude is connected");
-        onContinue();
+        if (test.ok) {
+          toast.success("Claude is connected and working");
+          onContinue();
+        } else {
+          // Saved, but the account can't run requests yet: the connected view shows the fix.
+          setResult(test);
+        }
       },
       onError: (error) =>
-        toast.error(
-          errorText(error, "That key didn't work. Check you copied all of it, then try again."),
-        ),
+        toast.error(errorText(error, "Couldn't check the key. Try again in a moment.")),
     });
   };
 
@@ -131,53 +204,63 @@ export function ConnectClaudeStep({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-3 rounded-lg bg-muted/50 p-3 text-sm">
-            <CircleDollarSignIcon
-              aria-hidden
-              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-            />
-            <p>
-              <span className="font-medium">About $12 to $25 a month</span> for an active search
-              (ranking 50 jobs and writing 10 applications a week), $3 to $6 for light use. Every
-              big task shows its cost before it runs. A Claude Pro or Max subscription can't be used
-              by other apps, so this is billed separately on the Claude Platform.
-            </p>
-          </div>
+          <TypicalCostNote cost={status.typical_cost} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Get your key (about 5 minutes)</CardTitle>
+          <CardDescription>
+            You'll use Anthropic's Claude Platform, the website where developers manage Claude. You
+            don't need to be a developer: it's four short steps, and each link opens the right page
+            in a new tab.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <ol className="space-y-4 text-sm" aria-label="Steps to connect Claude">
+          <ol className="space-y-5 text-sm" aria-label="Steps to connect Claude">
             <Step
               n={1}
               title="Create a Claude Platform account"
               link={{ href: CLAUDE_PLATFORM_URL, label: "Open the Claude Platform" }}
+              illustration="signup"
             >
               <p className="text-muted-foreground">
-                It's free to sign up, and separate from claude.ai (you can use the same email).
+                Sign up with Google or your email; it's free. This is separate from a claude.ai
+                subscription, though you can use the same email. If it asks for an organization
+                name, your own name is fine.
               </p>
             </Step>
             <Step
               n={2}
               title="Add some credit"
               link={{ href: CLAUDE_BILLING_URL, label: "Open Billing" }}
+              illustration="billing"
             >
               <p className="text-muted-foreground">
-                Buy a small amount of credit to start; $10 to $20 covers a few weeks of typical use.
+                Choose <span className="font-medium text-foreground">Buy credits</span> and add $10
+                to $20 with a card; that covers a few weeks of typical use. If you see an option to
+                reload credit automatically, you can leave it off, so you're never charged more than
+                you added.
+              </p>
+              <p className="text-muted-foreground">
+                For extra peace of mind, scroll to{" "}
+                <span className="font-medium text-foreground">Spend limits</span> on the same page
+                and choose <span className="font-medium text-foreground">Set limit</span>. That caps
+                your whole account, whatever uses it.
               </p>
             </Step>
             <Step
               n={3}
               title="Create a key and copy it"
               link={{ href: CLAUDE_KEYS_URL, label: "Open API keys" }}
+              illustration="keys"
             >
               <p className="text-muted-foreground">
-                Choose Create key, name it &ldquo;{PRODUCT_NAME}&rdquo;, and copy it. It starts with{" "}
-                <code className="rounded bg-muted px-1">sk-ant-</code> and is shown only once.
+                Choose <span className="font-medium text-foreground">Create key</span>, name it
+                &ldquo;{PRODUCT_NAME}&rdquo;, keep the Default workspace, and copy the key. It
+                starts with <code className="rounded bg-muted px-1">sk-ant-</code> and is shown only
+                once. If you lose it, just make another one.
               </p>
             </Step>
             <Step n={4} title="Paste it here and choose a monthly limit">
@@ -228,13 +311,18 @@ export function ConnectClaudeStep({
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    New AI work stops when the month's spending reaches the limit. You can change it
-                    any time in Settings.
+                    {PRODUCT_NAME} stops new AI work when the month's spending reaches this limit.
+                    You can change it any time in Settings.
                   </p>
                 </fieldset>
+                {result && <KeyTestResult result={result} />}
                 <Button type="submit" disabled={key.trim().length < 10 || setApiKey.isPending}>
-                  <KeyRoundIcon /> {setApiKey.isPending ? "Checking the key…" : "Connect"}
+                  <KeyRoundIcon /> {setApiKey.isPending ? "Testing the key…" : "Connect and test"}
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  Connecting sends Claude one tiny test message, which costs a tiny fraction of a
+                  cent, so you know straight away that everything works.
+                </p>
               </form>
             </Step>
           </ol>

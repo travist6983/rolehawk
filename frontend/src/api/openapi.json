@@ -359,7 +359,7 @@
           "llm"
         ],
         "summary": "Put Key",
-        "description": "Validates the key with one cheap call, then stores it in the OS keychain.",
+        "description": "Tests the key with one tiny real call; stores it in the OS keychain if Anthropic\nrecognized it. A rejected key comes back with `saved: false` and the reason.",
         "operationId": "put_key_api_llm_key_put",
         "requestBody": {
           "content": {
@@ -377,7 +377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMStatus"
+                  "$ref": "#/components/schemas/KeyConnect"
                 }
               }
             }
@@ -407,6 +407,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LLMStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/llm/key/test": {
+      "post": {
+        "tags": [
+          "llm"
+        ],
+        "summary": "Post Key Test",
+        "description": "One tiny real call (cheapest model, one output token) with plain words for the result.",
+        "operationId": "post_key_test_api_llm_key_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyTestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyTest"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -8398,6 +8440,115 @@
         "title": "JsonLdDefinition",
         "description": "JobPosting structured data, on the page itself or on job pages it links to."
       },
+      "KeyConnect": {
+        "properties": {
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "test": {
+            "$ref": "#/components/schemas/KeyTest"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LLMStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "saved",
+          "test",
+          "status"
+        ],
+        "title": "KeyConnect"
+      },
+      "KeyTest": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "bad_key",
+                  "permission",
+                  "no_credit",
+                  "account_limit",
+                  "rate_limit",
+                  "overloaded",
+                  "network",
+                  "not_configured",
+                  "unknown"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "key_accepted": {
+            "type": "boolean",
+            "title": "Key Accepted",
+            "default": false
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "fix": {
+            "type": "string",
+            "title": "Fix"
+          },
+          "fix_link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "keys",
+                  "billing"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "problem",
+          "title",
+          "fix"
+        ],
+        "title": "KeyTest",
+        "description": "The result of one tiny real call, in words a non-developer can act on."
+      },
+      "KeyTestIn": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 10,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "title": "KeyTestIn",
+        "description": "Test this key without saving it; leave it out to test the stored key."
+      },
       "LLMSettingsIn": {
         "properties": {
           "model": {
@@ -8485,6 +8636,9 @@
           "month_to_date_usd": {
             "type": "number",
             "title": "Month To Date Usd"
+          },
+          "typical_cost": {
+            "$ref": "#/components/schemas/TypicalCost"
           }
         },
         "type": "object",
@@ -8496,7 +8650,8 @@
           "smart_routing",
           "routes",
           "monthly_cap_usd",
-          "month_to_date_usd"
+          "month_to_date_usd",
+          "typical_cost"
         ],
         "title": "LLMStatus"
       },
@@ -11183,6 +11338,32 @@
         ],
         "title": "Totals"
       },
+      "TypicalCost": {
+        "properties": {
+          "active": {
+            "$ref": "#/components/schemas/WorkloadView"
+          },
+          "light": {
+            "$ref": "#/components/schemas/WorkloadView"
+          },
+          "writing_model": {
+            "type": "string",
+            "title": "Writing Model"
+          },
+          "ranking_model": {
+            "type": "string",
+            "title": "Ranking Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active",
+          "light",
+          "writing_model",
+          "ranking_model"
+        ],
+        "title": "TypicalCost"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -11290,6 +11471,34 @@
           "jobs_found"
         ],
         "title": "WeekCount"
+      },
+      "WorkloadView": {
+        "properties": {
+          "jobs_ranked_per_week": {
+            "type": "integer",
+            "title": "Jobs Ranked Per Week"
+          },
+          "applications_per_week": {
+            "type": "integer",
+            "title": "Applications Per Week"
+          },
+          "chat_messages_per_week": {
+            "type": "integer",
+            "title": "Chat Messages Per Week"
+          },
+          "monthly_usd": {
+            "type": "number",
+            "title": "Monthly Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobs_ranked_per_week",
+          "applications_per_week",
+          "chat_messages_per_week",
+          "monthly_usd"
+        ],
+        "title": "WorkloadView"
       }
     }
   }
