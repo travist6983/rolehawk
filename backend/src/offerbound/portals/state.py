@@ -248,7 +248,10 @@ class PortalStore:
                 if row is None:
                     raise KeyError(portal_id)
                 row.config = {**row.config, **{k: v.strip() for k, v in config.items()}}
-        return self.view(portal_id)
+        view = self.view(portal_id)
+        if view.ready and not view.enabled:  # saving a key means "use this source"
+            view = self.set_enabled(portal_id, True)
+        return view
 
     def clear_credentials(self, portal_id: str) -> PortalView:
         for _field, name in SECRET_FIELDS.get(portal_id, []):

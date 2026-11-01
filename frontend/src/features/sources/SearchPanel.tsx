@@ -168,9 +168,12 @@ export function SearchPanel({ portals }: { portals: PortalView[] }) {
                 Results by source
               </summary>
               <ul className="divide-y border-t">
-                {summary.portals.map((run) => (
-                  <RunRow key={run.portal_id} run={run} />
-                ))}
+                {/* Sources the user switched off aren't news; everything else is listed. */}
+                {summary.portals
+                  .filter((run) => !(run.status === "skipped" && run.detail === "off"))
+                  .map((run) => (
+                    <RunRow key={run.portal_id} run={run} />
+                  ))}
               </ul>
             </details>
           </div>

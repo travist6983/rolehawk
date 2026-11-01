@@ -103,7 +103,7 @@ function SourcesStep({ onFinish }: { onFinish: (searching: boolean) => void }) {
           </p>
           <p className="text-muted-foreground">
             Public job boards for a starter watchlist of {companies.toLocaleString("en")} companies,
-            plus remote job feeds. Add companies or free Adzuna and USAJOBS keys any time in{" "}
+            plus remote job feeds. Nothing to sign up for. Add companies any time in{" "}
             <Link to="/sources" className="text-primary-text underline-offset-4 hover:underline">
               Sources
             </Link>

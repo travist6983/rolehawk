@@ -237,6 +237,8 @@ async def test_sources_that_cannot_run_are_skipped_with_a_reason(
 ) -> None:
     add_targets(sessions, "Data Analyst", country="GB")
     store.set_enabled("remoteok", False)
+    for portal_id in ("usajobs", "adzuna"):  # off until a key is saved; switched on here
+        store.set_enabled(portal_id, True)
 
     summary = await make_scraper(sessions, web).run(Progress())
     runs = by_portal(summary)
@@ -251,6 +253,23 @@ async def test_sources_that_cannot_run_are_skipped_with_a_reason(
     # Asking for a source by name runs it even when it's switched off.
     named = await make_scraper(sessions, web).run(Progress(), ["remoteok"])
     assert [(r.portal_id, r.status) for r in named.portals] == [("remoteok", "ok")]
+
+
+def test_sources_that_need_a_developer_key_start_off_and_switch_on_with_one(
+    store: PortalStore,
+) -> None:
+    views = {v.id: v for v in store.views()}
+    assert (views["adzuna"].enabled, views["usajobs"].enabled) == (False, False)
+    assert views["remoteok"].enabled
+
+    half = store.set_credentials("usajobs", {"api_key": "usa-key"}, {})
+    assert half.enabled is False  # still needs the email
+    done = store.set_credentials("usajobs", {}, {"email": "me@example.com"})
+    assert (done.ready, done.enabled) == (True, True)
+
+    assert store.set_enabled("usajobs", False).enabled is False  # switching off sticks
+    again = store.set_credentials("usajobs", {}, {"email": "me@example.com"})
+    assert again.enabled  # saving a key again means "use it"
 
 
 async def test_no_search_targets_is_a_clear_error(
