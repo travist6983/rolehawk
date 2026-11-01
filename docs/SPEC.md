@@ -69,6 +69,15 @@ Thirteen decisions are locked; four carry guardrails because the author chose th
 
 **Advisor dissent on record.** LinkedIn scraping risks users' accounts, and auto-submit risks spam signals that hurt the repo as a portfolio piece. Both are built behind the guardrails above rather than as defaults.
 
+**Added 2026-10-31: lessons from ai-job-search.** A review of that framework's workflow added
+ten things, all shipped in v1.0: a posting integrity check (hidden text, invisible characters,
+lines aimed at AI tools), ASCII date ranges, house writing style, an ATS text-layer and
+keyword check, a quality review (stretches, generic lines, skipped requirements),
+eligibility and language gates with a four-part score, deadlines and stale postings,
+follow-ups with a stale sweep (pulled forward from /outcome), setup conflicts the user
+resolves, and calibration from results (preference proposals). Custom sources also respect
+robots.txt.
+
 **Added after review: browser agent.** Use a Claude-driven browser wherever scripted automation can't finish a task, as tier 4 behind APIs, structured data, and scripted Playwright, with recipes that convert agent runs into scripts. See Browser agent fallback.
 
 ## Architecture
@@ -174,7 +183,8 @@ Every command is available three ways: a button in the dashboard, a slash comman
 
 **/outcome** (v1.1)
 
-- Records result and feedback, archives the exact documents sent, drafts a follow-up or thank-you note in three tones (warm, concise, assertive).
+- Records result and feedback, archives the exact documents sent, drafts a thank-you note after an interview.
+- Follow-ups on quiet applications and the stale sweep shipped early (v1.0, `apply/followup.py`, the `followup` skill); /outcome builds on them.
 
 **/gmail-sync** (v1.1)
 
