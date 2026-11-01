@@ -329,7 +329,8 @@ class _Cleaner(HTMLParser):
         self.scanned.append(data)
 
     def close(self) -> None:
-        super().close()
+        # Not HTMLParser.close(): newer CPython releases flush an unfinished tag at the end
+        # of the input as text (truncated postings end mid-tag), which would leak markup.
         for _tag, mode in reversed(self._stack):  # unclosed tags at the end
             self._leave(mode)
         self._stack = []
@@ -343,7 +344,7 @@ def _tidy(text: str) -> str:
 
 def _excerpt(text: str, limit: int = MAX_EXCERPT) -> str:
     flat = " ".join(text.split())
-    return flat if len(flat) <= limit else flat[: limit - 1].rstrip() + "…"
+    return flat if len(flat) <= limit else flat[: limit - 1].rstrip() + "\u2026"
 
 
 _URL = re.compile(r"https?://[^\s<>\"')\]]+")
@@ -353,10 +354,10 @@ _URL = re.compile(r"https?://[^\s<>\"')\]]+")
 
 _TAG_RUN = re.compile("[\U000e0000-\U000e007f]+")
 _FLAG = re.compile("\U0001f3f4[\U000e0030-\U000e0039\U000e0061-\U000e007a]+\U000e007f")
-_SELECTOR_RUN = re.compile("[︀-️\U000e0100-\U000e01ef]{4,}")
-_BIDI = re.compile("[‪-‮⁦-⁩]")
-_JOINER_IN_WORD = re.compile("(?<=[A-Za-z])[​-‍⁠﻿]+(?=[A-Za-z])")
-_HARMLESS = re.compile("[­؜᠎​‎‏⁠-⁤﻿]")
+_SELECTOR_RUN = re.compile("[\ufe00-\ufe0f\U000e0100-\U000e01ef]{4,}")
+_BIDI = re.compile("[\u202a-\u202e\u2066-\u2069]")
+_JOINER_IN_WORD = re.compile("(?<=[A-Za-z])[\u200b-\u200d\u2060\ufeff]+(?=[A-Za-z])")
+_HARMLESS = re.compile("[\u00ad\u061c\u180e\u200b\u200e\u200f\u2060-\u2064\ufeff]")
 
 
 @dataclass
@@ -400,7 +401,7 @@ def _strip_invisible(text: str) -> tuple[str, _InvisibleStats]:
         run = m.group()
         stats.suspicious += len(run)
         decoded = _decode_selectors(run)
-        if decoded.strip() and "�" not in decoded:
+        if decoded.strip() and "\ufffd" not in decoded:
             stats.decoded.append(decoded.strip())
         if "variation selectors carrying data" not in stats.tampering:
             stats.tampering.append("variation selectors carrying data")
