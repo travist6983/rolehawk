@@ -1,48 +1,39 @@
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { useTheme, type ResolvedTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useTheme, type ThemePreference } from "@/lib/theme";
-
-const OPTIONS: { value: ThemePreference; label: string; icon: typeof SunIcon }[] = [
-  { value: "system", label: "System", icon: MonitorIcon },
-  { value: "light", label: "Light", icon: SunIcon },
-  { value: "dark", label: "Dark", icon: MoonIcon },
+const OPTIONS: { value: ResolvedTheme; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
 ];
 
+/** The design's Light / Dark switch. Until one is picked, the app follows the OS. */
 export function ThemeToggle() {
-  const { preference, resolved, setPreference } = useTheme();
-  const Icon = resolved === "dark" ? MoonIcon : SunIcon;
+  const { resolved, setPreference } = useTheme();
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Theme: ${preference}`}>
-          <Icon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top">
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={preference}
-          onValueChange={(value) => {
-            setPreference(value as ThemePreference);
-          }}
-        >
-          {OPTIONS.map(({ value, label, icon: OptionIcon }) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              <OptionIcon className="size-4" aria-hidden />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <span
+      role="group"
+      aria-label="Theme"
+      className="flex gap-0.5 rounded-full bg-sidebar-active p-0.5"
+    >
+      {OPTIONS.map(({ value, label }) => {
+        const on = resolved === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => {
+              setPreference(value);
+            }}
+            className={cn(
+              "cursor-pointer rounded-full px-[7px] py-[3px] text-[12.5px] font-medium",
+              on ? "bg-sidebar-foreground text-sidebar" : "text-sidebar-muted",
+            )}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </span>
   );
 }

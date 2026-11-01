@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { CLAUDE_KEYS_URL } from "./claudeLinks";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export function ConnectionCard({ status }: { status: LLMStatus }) {
   const [key, setKey] = useState("");
@@ -33,7 +34,7 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
           )}
         </CardTitle>
         <CardDescription>
-          Offerbound uses your own Anthropic API key. It's stored in your operating system's
+          {PRODUCT_NAME} uses your own Anthropic API key. It's stored in your operating system's
           keychain, never in a file.
         </CardDescription>
       </CardHeader>
@@ -106,8 +107,8 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
           <p>
             <span className="font-medium">Using Claude Code?</span>{" "}
             <span className="text-muted-foreground">
-              Run any command from your terminal with the Offerbound skills; Claude Code does the
-              work in your own session, so no key is needed here.
+              Run any command from your terminal with the {PRODUCT_NAME} skills; Claude Code does
+              the work in your own session, so no key is needed here.
             </span>
           </p>
         </div>

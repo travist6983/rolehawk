@@ -29,7 +29,11 @@ export const MIN_SCORES = [
   { value: "60", label: "60 and up", score: 60 },
   { value: "70", label: "70 and up", score: 70 },
   { value: "80", label: "80 and up", score: 80 },
+  { value: "85", label: "85 and up", score: 85 },
 ] as const;
+
+/** The design's "Strong fits only" filter. */
+export const STRONG_FIT = 85;
 
 export const DEFAULT_FILTERS: JobFilters = { status: "all", show: "active", sort: "score" };
 

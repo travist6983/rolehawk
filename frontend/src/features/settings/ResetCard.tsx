@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 type Scope = ResetResult["scope"];
 
@@ -45,7 +46,7 @@ export function ResetCard() {
       <CardHeader>
         <CardTitle>Reset</CardTitle>
         <CardDescription>
-          Start over, in part or in full. Offerbound zips a backup of your data folder first, so
+          Start over, in part or in full. {PRODUCT_NAME} zips a backup of your data folder first, so
           nothing is lost for good. Settings and API keys always stay.
         </CardDescription>
       </CardHeader>

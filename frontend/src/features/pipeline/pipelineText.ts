@@ -43,3 +43,33 @@ export function followUpText(card: Pick<BoardCard, "follow_ups">): string {
   const which = card.follow_ups === 0 ? "first" : "second and last";
   return `This would be your ${which} follow-up (at most two is the norm).`;
 }
+
+/** Cards whose next step is the user's (everything but waiting on the employer). */
+export function waitsOnYou(card: Pick<BoardCard, "stage" | "next_action">): boolean {
+  if (CLOSED_STAGES.includes(card.stage) || !card.next_action) return false;
+  return card.next_action !== "Wait for a reply";
+}
+
+/** "3 cards are waiting on you." */
+export function waitingText(count: number): string {
+  if (count === 0) return "Nothing is waiting on you.";
+  return count === 1 ? "1 card is waiting on you." : `${String(count)} cards are waiting on you.`;
+}
+
+/** The design groups the board into three phases. Columns not listed fall into the last. */
+export const PHASES = [
+  { name: "Your move", note: "Before you apply", columns: ["saved", "applying"] },
+  {
+    name: "In flight",
+    note: "Waiting on them, mostly",
+    columns: ["applied", "screen", "interview"],
+  },
+  { name: "Outcome", note: "", columns: ["offer", "closed"] },
+] as const;
+
+/** "Good morning" / "Good afternoon" / "Good evening". */
+export function greeting(now: Date = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  return hour < 18 ? "Good afternoon" : "Good evening";
+}

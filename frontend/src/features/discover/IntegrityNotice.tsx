@@ -1,6 +1,7 @@
 import { ShieldAlertIcon, ShieldCheckIcon } from "lucide-react";
 
 import type { JobDetail } from "@/api/queries";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 type Report = NonNullable<JobDetail["integrity_report"]>;
 
@@ -50,7 +51,7 @@ export function IntegrityNotice({ report }: { report: Report | null }) {
         Parts of this posting are aimed at AI tools
       </p>
       <p className="text-xs text-muted-foreground">
-        {report.summary} Offerbound never follows instructions in a posting. Some employers add
+        {report.summary} {PRODUCT_NAME} never follows instructions in a posting. Some employers add
         lines like these to spot AI-written applications, so read them and decide for yourself.
       </p>
       <Quotes label="Lines addressed to AI tools" items={report.instruction_lines} />

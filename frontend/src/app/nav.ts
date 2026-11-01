@@ -7,6 +7,7 @@ import {
   UserRoundIcon,
   type LucideIcon,
 } from "lucide-react";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export interface NavItem {
   to: string;
@@ -24,7 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/settings", label: "Settings", icon: SettingsIcon, description: "Claude, models, data" },
 ];
 
-const FALLBACK: NavItem = { to: "/", label: "Offerbound", icon: SquareKanbanIcon, description: "" };
+const FALLBACK: NavItem = { to: "/", label: PRODUCT_NAME, icon: SquareKanbanIcon, description: "" };
 
 // Screens outside the sidebar that still need a name (e.g. for the chat context chip).
 const OTHER_SCREENS: NavItem[] = [

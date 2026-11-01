@@ -17,6 +17,7 @@ import { chatReducer, initialChatState, type ChatAction, type ChatState } from "
 import { useChatView } from "./ChatViewProvider";
 import { parseSlashCommand } from "./slash";
 import type { ChatCard, ChatItem, ChatView } from "./types";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 const SESSION_KEY = "offerbound.chatSession";
 
@@ -215,7 +216,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (controller.signal.aborted) {
           apply({ type: "finish", id: assistantId, status: "stopped" });
         } else {
-          const message = error instanceof ApiError ? error.message : "Couldn't reach Offerbound.";
+          const message =
+            error instanceof ApiError ? error.message : `Couldn't reach ${PRODUCT_NAME}.`;
           apply({ type: "finish", id: assistantId, status: "error", error: message });
         }
       } finally {

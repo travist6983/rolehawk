@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { sourceSummary } from "./settingsText";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 function Row({
   name,
@@ -37,7 +38,7 @@ export function DestinationsCard({ status }: { status: LLMStatus }) {
       <CardHeader>
         <CardTitle id={titleId}>Where your data goes</CardTitle>
         <CardDescription>
-          Offerbound only talks to these. No analytics, no tracking, no account.
+          {PRODUCT_NAME} only talks to these. No analytics, no tracking, no account.
         </CardDescription>
       </CardHeader>
       <CardContent>

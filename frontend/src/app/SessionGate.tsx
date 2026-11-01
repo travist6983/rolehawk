@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { onUnauthorized } from "@/api/client";
 import { bootstrapSession, type SessionStatus } from "@/api/session";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 function Unauthorized() {
   return (
@@ -10,10 +11,10 @@ function Unauthorized() {
       <span className="grid size-12 place-items-center rounded-xl bg-primary text-primary-foreground">
         <BriefcaseIcon className="size-6" aria-hidden />
       </span>
-      <h1 className="text-xl font-semibold">Open Offerbound from its launcher</h1>
+      <h1 className="text-xl font-semibold">Open {PRODUCT_NAME} from its launcher</h1>
       <p className="text-sm text-muted-foreground">
-        This page needs the private link Offerbound opens when it starts. If you restarted the app,
-        use the new link it opened, or start it again:
+        This page needs the private link {PRODUCT_NAME} opens when it starts. If you restarted the
+        app, use the new link it opened, or start it again:
       </p>
       <code className="inline-flex items-center gap-2 rounded-md bg-muted px-3 py-2 font-mono text-sm">
         <TerminalIcon className="size-4" aria-hidden /> offerbound
@@ -50,7 +51,7 @@ export function SessionGate({ children }: { children: React.ReactNode }) {
         role="status"
         className="grid min-h-dvh place-items-center text-sm text-muted-foreground"
       >
-        Starting Offerbound…
+        Starting {PRODUCT_NAME}…
       </div>
     );
   }

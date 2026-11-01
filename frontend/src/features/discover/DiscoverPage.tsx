@@ -35,9 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useEventStream } from "@/features/events/EventStreamProvider";
 import { plural } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 import {
   DEFAULT_FILTERS,
@@ -46,10 +46,12 @@ import {
   selectionText,
   SHOW_OPTIONS,
   showValue,
+  STRONG_FIT,
 } from "./discoverText";
 import { JobDetailSheet } from "./JobDetailSheet";
 import { JobTable } from "./JobTable";
 import { RankDialog } from "./RankDialog";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -83,7 +85,6 @@ function Filters({
     score: `${id}-score`,
     source: `${id}-source`,
     sort: `${id}-sort`,
-    remote: `${id}-remote`,
   };
   const latest = useRef({ filters, onChange });
   useEffect(() => {
@@ -214,19 +215,54 @@ function Filters({
           </SelectContent>
         </Select>
       </div>
-      <div className="flex h-9 items-center gap-2">
-        <Switch
-          id={ids.remote}
-          checked={filters.remote ?? false}
-          onCheckedChange={(remote) => {
+      <div className="flex h-9 flex-wrap items-center gap-2">
+        <FilterPill
+          pressed={filters.min_score === STRONG_FIT}
+          onToggle={(on) => {
+            onChange({ ...filters, min_score: on ? STRONG_FIT : null });
+          }}
+        >
+          Strong fits only
+        </FilterPill>
+        <FilterPill
+          pressed={filters.remote ?? false}
+          onToggle={(remote) => {
             onChange({ ...filters, remote });
           }}
-        />
-        <Label htmlFor={ids.remote} className="text-sm font-normal">
+        >
           Remote only
-        </Label>
+        </FilterPill>
       </div>
     </div>
+  );
+}
+
+/** The design's toggle pill: ink when on, a card with a hairline when off. */
+function FilterPill({
+  pressed,
+  onToggle,
+  children,
+}: {
+  pressed: boolean;
+  onToggle: (pressed: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={() => {
+        onToggle(!pressed);
+      }}
+      className={cn(
+        "h-9 cursor-pointer rounded-full px-[13px] text-sm font-medium transition-colors",
+        pressed
+          ? "bg-foreground text-background shadow-[0_0_0_1px_var(--foreground)]"
+          : "bg-card text-foreground shadow-[0_0_0_1px_var(--border)] hover:bg-accent",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -249,7 +285,7 @@ function BulkBar({
     <div
       role="toolbar"
       aria-label="Selected jobs"
-      className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2"
+      className="flex flex-wrap items-center gap-2 rounded-lg bg-card px-3 py-2 shadow-card"
     >
       <span className="mr-auto text-sm font-medium" aria-live="polite">
         {selectionText(ids.length)}
@@ -339,7 +375,16 @@ export default function DiscoverPage() {
   const header = (
     <PageHeader
       title="Discover"
-      description="Jobs ranked by how well they fit you."
+      description={
+        stats && stats.jobs > 0 ? (
+          <>
+            Ranked against your profile.{" "}
+            <b className="font-semibold text-foreground">{plural(stats.jobs, "job")}</b> to review.
+          </>
+        ) : (
+          "Jobs ranked by how well they fit you."
+        )
+      }
       actions={
         stats && stats.unranked > 0 && !running ? (
           <Button
@@ -361,7 +406,7 @@ export default function DiscoverPage() {
         <EmptyState
           icon={SearchXIcon}
           title="Couldn't load jobs"
-          description={errorText(jobs.error, "The Offerbound backend didn't answer.")}
+          description={errorText(jobs.error, `The ${PRODUCT_NAME} backend didn't answer.`)}
         />
       </>
     );
@@ -401,11 +446,11 @@ export default function DiscoverPage() {
   return (
     <>
       {header}
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 px-5 pb-7 md:px-8">
         <Filters filters={filters} onChange={changeFilters} />
         <div aria-live="polite" className="space-y-2 empty:hidden">
           {running && (
-            <div className="space-y-1.5 rounded-lg border p-3">
+            <div className="space-y-1.5 rounded-lg bg-card p-3 shadow-card">
               <Progress
                 value={Math.round((running.progress ?? 0) * 100)}
                 aria-label="Ranking progress"

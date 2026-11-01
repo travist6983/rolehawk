@@ -1,4 +1,4 @@
-import { AlertCircleIcon, CheckIcon, Loader2Icon, SparklesIcon } from "lucide-react";
+import { AlertCircleIcon, CheckIcon, Loader2Icon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -30,9 +30,8 @@ function ToolChip({ tool }: { tool: ToolActivity }) {
 function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-      <SparklesIcon className="size-8 text-primary" aria-hidden />
       <div>
-        <p className="font-medium">Ask about your search</p>
+        <p className="font-serif text-xl font-medium italic">Ask about your search</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Claude can see your profile and pipeline. Type <kbd className="font-mono">/</kbd> for
           commands.
@@ -44,6 +43,7 @@ function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
             key={text}
             size="sm"
             variant="outline"
+            className="font-medium text-foreground-2"
             onClick={() => {
               onPick(text);
             }}
@@ -75,11 +75,11 @@ export function MessageList({
 
   const streaming = last?.kind === "assistant" && last.status === "streaming";
   return (
-    <div className="flex-1 space-y-4 overflow-y-auto p-4" role="log" aria-label="Conversation">
+    <div className="flex-1 space-y-3.5 overflow-y-auto p-5" role="log" aria-label="Conversation">
       {items.map((item) =>
         item.kind === "user" ? (
           <div key={item.id} className="flex justify-end">
-            <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm whitespace-pre-wrap text-primary-foreground">
+            <p className="max-w-[88%] rounded-xl bg-sidebar px-3.5 py-2.5 text-[15px] leading-normal whitespace-pre-wrap text-sidebar-foreground">
               {item.text}
             </p>
           </div>
@@ -93,7 +93,7 @@ export function MessageList({
               </div>
             )}
             {(item.text || item.status === "streaming") && (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              <p className="max-w-[88%] rounded-xl bg-card px-3.5 py-3 text-[15px] leading-normal whitespace-pre-wrap shadow-[0_0_0_1px_var(--border)]">
                 {item.text}
                 {item.status === "streaming" && (
                   <span

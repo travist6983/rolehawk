@@ -28,7 +28,7 @@ async function openApply() {
   const view = await renderApp("/discover");
   await view.user.click(await screen.findByRole("button", { name: "Senior Data Analyst" }));
   const sheet = await screen.findByRole("dialog");
-  await view.user.click(await within(sheet).findByRole("button", { name: "Apply" }));
+  await view.user.click(await within(sheet).findByRole("button", { name: "Write application" }));
   const dialog = await screen.findByRole("dialog", { name: "Apply to this job" });
   return { ...view, dialog };
 }
@@ -315,7 +315,7 @@ describe("Application page", () => {
     await waitFor(() => {
       expect(patched).toEqual({ stage: "applied" });
     });
-    expect(await screen.findByText(/applied just now/)).toBeVisible();
+    expect(await screen.findByText(/Applied just now/)).toBeVisible();
   });
 
   it("shows the job and timeline tabs", async () => {

@@ -7,6 +7,7 @@ import { useSaveMemoryFile } from "@/api/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 type Target = "profile" | "preferences" | "facts";
 
@@ -64,7 +65,7 @@ export function MemoryFileEditor({
             }}
           >
             <label htmlFor={editorId} className="text-xs text-muted-foreground">
-              Markdown. Keep the ## headings so Offerbound can read each section.
+              Markdown. Keep the ## headings so {PRODUCT_NAME} can read each section.
             </label>
             <Textarea
               id={editorId}

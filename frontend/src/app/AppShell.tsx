@@ -18,7 +18,7 @@ export function AppShell() {
           Skip to content
         </a>
         <Sidebar />
-        <div className="md:pl-56">
+        <div className="md:pl-[220px]">
           <MobileHeader />
           <main id="main" tabIndex={-1} className="pb-24 outline-none">
             <Outlet />
@@ -26,7 +26,7 @@ export function AppShell() {
         </div>
         <ChatDrawer />
         <ProgressTray />
-        <Toaster position="top-right" />
+        <Toaster position="bottom-center" />
       </div>
     </TooltipProvider>
   );

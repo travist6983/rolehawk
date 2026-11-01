@@ -1,85 +1,110 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+@import "@fontsource-variable/public-sans/wght.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 
 /* Theme: the `dark` class on <html> is set from the saved preference or the OS
    (see index.html and src/lib/theme.ts). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design tokens per docs/SPEC.md "Design system": zinc base, indigo-600 accent,
-   semantic colors only for stage and score. */
+/* Design tokens from the Claude design (Offerbound.dc.html): warm paper, espresso sidebar,
+   terracotta accent; Newsreader for display, Public Sans for text, IBM Plex Mono for keys.
+   The shadcn names map onto the design's: --bg, --card, --fg, --fg2, --mu, --ln, --pr, ... */
 :root {
   --radius: 0.5rem;
-  --background: var(--color-white);
-  --foreground: var(--color-zinc-950);
-  --card: var(--color-white);
-  --card-foreground: var(--color-zinc-950);
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-zinc-950);
-  --muted: var(--color-zinc-100);
-  --muted-foreground: var(--color-zinc-600);
-  --border: var(--color-zinc-200);
-  --input: var(--color-zinc-300);
-  --ring: var(--color-indigo-600);
-  --primary: var(--color-indigo-600);
-  --primary-foreground: var(--color-white);
-  /* Accent used as text color (links, active nav, step labels): AA against every surface. */
-  --primary-text: var(--color-indigo-700);
-  --secondary: var(--color-zinc-100);
-  --secondary-foreground: var(--color-zinc-900);
-  --accent: var(--color-zinc-100);
-  --accent-foreground: var(--color-zinc-900);
-  --destructive: var(--color-red-600);
-  --sidebar: var(--color-zinc-50);
-  --score-high: var(--color-green-700);
-  --score-mid: var(--color-amber-700);
-  --score-low: var(--color-zinc-600);
+  --background: oklch(0.965 0.014 80);
+  --foreground: oklch(0.23 0.014 55);
+  --card: oklch(0.99 0.006 80);
+  --card-foreground: oklch(0.23 0.014 55);
+  --popover: oklch(0.99 0.006 80);
+  --popover-foreground: oklch(0.23 0.014 55);
+  /* Second text level (eyebrows, descriptions): darker than muted. */
+  --foreground-2: oklch(0.36 0.016 55);
+  --muted: oklch(0.945 0.016 78);
+  --muted-foreground: oklch(0.46 0.018 55);
+  --border: oklch(0.87 0.018 75);
+  --input: oklch(0.87 0.018 75);
+  --ring: oklch(0.52 0.13 40);
+  --primary: oklch(0.52 0.13 40);
+  --primary-foreground: oklch(0.985 0.008 60);
+  /* Accent used as text color (links, active steps, next actions): AA against every surface. */
+  --primary-text: oklch(0.52 0.13 40);
+  --secondary: oklch(0.945 0.016 78);
+  --secondary-foreground: oklch(0.23 0.014 55);
+  --accent: oklch(0.94 0.016 78);
+  --accent-foreground: oklch(0.23 0.014 55);
+  --destructive: oklch(0.5 0.15 28);
+  /* The sidebar is espresso in both themes. */
+  --sidebar: oklch(0.25 0.014 55);
+  --sidebar-foreground: oklch(0.95 0.012 80);
+  --sidebar-muted: oklch(0.85 0.012 80);
+  --sidebar-active: oklch(0.33 0.016 55);
+  --sidebar-badge: oklch(0.8 0.1 50);
+  --sidebar-live: oklch(0.8 0.1 150);
+  /* "Line to check" highlight and panel. */
+  --flag: oklch(0.93 0.06 90);
+  --flag-foreground: oklch(0.3 0.05 80);
+  --shadow-color: oklch(0.4 0.03 55 / 0.07);
+  --score-high: oklch(0.5 0.1 150);
+  --score-mid: oklch(0.5 0.1 75);
+  --score-low: oklch(0.46 0.018 55);
   /* Caution (posting warnings, flagged checks, closing soon): text and borders, AA on cards. */
-  --caution: var(--color-amber-700);
-  /* Charts: one series in the accent (validated: contrast >= 3:1 on the card surface). */
-  --chart-1: var(--color-indigo-600);
-  --chart-grid: var(--color-zinc-200);
+  --caution: oklch(0.5 0.1 75);
+  /* Charts: one series in the ink color (contrast >= 3:1 on the card surface). */
+  --chart-1: oklch(0.23 0.014 55);
+  --chart-grid: oklch(0.87 0.018 75);
 }
 
 .dark {
-  --background: var(--color-zinc-950);
-  --foreground: var(--color-zinc-50);
-  --card: var(--color-zinc-900);
-  --card-foreground: var(--color-zinc-50);
-  --popover: var(--color-zinc-900);
-  --popover-foreground: var(--color-zinc-50);
-  --muted: var(--color-zinc-800);
-  --muted-foreground: var(--color-zinc-400);
-  --border: var(--color-zinc-800);
-  --input: var(--color-zinc-700);
-  --ring: var(--color-indigo-400);
-  --primary: var(--color-indigo-500);
-  --primary-foreground: var(--color-white);
-  --primary-text: var(--color-indigo-300);
-  --secondary: var(--color-zinc-800);
-  --secondary-foreground: var(--color-zinc-50);
-  --accent: var(--color-zinc-800);
-  --accent-foreground: var(--color-zinc-50);
-  --destructive: var(--color-red-500);
-  --sidebar: var(--color-zinc-900);
-  --score-high: var(--color-green-400);
-  --score-mid: var(--color-amber-400);
-  --score-low: var(--color-zinc-400);
-  --caution: var(--color-amber-400);
-  --chart-1: var(--color-indigo-500);
-  --chart-grid: var(--color-zinc-800);
+  --background: oklch(0.2 0.012 55);
+  --foreground: oklch(0.93 0.012 80);
+  --card: oklch(0.245 0.013 55);
+  --card-foreground: oklch(0.93 0.012 80);
+  --popover: oklch(0.245 0.013 55);
+  --popover-foreground: oklch(0.93 0.012 80);
+  --foreground-2: oklch(0.82 0.012 78);
+  --muted: oklch(0.27 0.013 55);
+  --muted-foreground: oklch(0.73 0.015 70);
+  --border: oklch(0.33 0.014 55);
+  --input: oklch(0.33 0.014 55);
+  --ring: oklch(0.74 0.11 45);
+  --primary: oklch(0.74 0.11 45);
+  --primary-foreground: oklch(0.2 0.03 45);
+  --primary-text: oklch(0.74 0.11 45);
+  --secondary: oklch(0.27 0.013 55);
+  --secondary-foreground: oklch(0.93 0.012 80);
+  --accent: oklch(0.27 0.013 55);
+  --accent-foreground: oklch(0.93 0.012 80);
+  --destructive: oklch(0.7 0.14 28);
+  --sidebar: oklch(0.155 0.01 55);
+  --sidebar-foreground: oklch(0.94 0.012 80);
+  --sidebar-muted: oklch(0.8 0.012 78);
+  --sidebar-active: oklch(0.26 0.013 55);
+  --flag: oklch(0.38 0.06 80);
+  --flag-foreground: oklch(0.94 0.04 90);
+  --shadow-color: oklch(0 0 0 / 0.3);
+  --score-high: oklch(0.78 0.1 150);
+  --score-mid: oklch(0.8 0.1 80);
+  --score-low: oklch(0.73 0.015 70);
+  --caution: oklch(0.8 0.1 80);
+  --chart-1: oklch(0.93 0.012 80);
+  --chart-grid: oklch(0.33 0.014 55);
 }
 
 @theme inline {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-sans: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-2: var(--foreground-2);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -98,10 +123,20 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-badge: var(--sidebar-badge);
+  --color-sidebar-live: var(--sidebar-live);
+  --color-flag: var(--flag);
+  --color-flag-foreground: var(--flag-foreground);
   --color-score-high: var(--score-high);
   --color-score-mid: var(--score-mid);
   --color-score-low: var(--score-low);
   --color-caution: var(--caution);
+  /* The design's card lift: a hairline ring plus a soft warm shadow. */
+  --shadow-card: 0 0 0 1px var(--border), 0 3px 8px var(--shadow-color);
+  --shadow-card-hover: 0 0 0 1px var(--muted-foreground), 0 4px 12px var(--shadow-color);
 }
 
 @layer base {

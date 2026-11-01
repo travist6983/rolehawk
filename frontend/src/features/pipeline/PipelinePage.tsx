@@ -1,4 +1,5 @@
 import { ArchiveIcon, SquareKanbanIcon } from "lucide-react";
+import { Link } from "react-router";
 import { useState } from "react";
 
 import { errorText } from "@/api/errors";
@@ -9,7 +10,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 
 import { Kanban } from "./Kanban";
+import { greeting, waitingText, waitsOnYou } from "./pipelineText";
 import { StaleDialog } from "./StaleDialog";
+import { PRODUCT_NAME } from "@/lib/brand";
+import { isMac } from "@/lib/hotkeys";
 
 export default function PipelinePage() {
   const status = useLLMStatus();
@@ -18,21 +22,41 @@ export default function PipelinePage() {
   const [sweeping, setSweeping] = useState(false);
   const connected = status.data?.configured === true;
   const quiet = stale.data ?? [];
+  const cards = board.data?.columns.flatMap((c) => c.cards) ?? [];
+  const waiting = cards.filter(waitsOnYou).length;
   const header = (
     <PageHeader
       title="Pipeline"
-      description="Every application, from saved to offer."
+      description={
+        board.data && board.data.total > 0 ? (
+          <>
+            {greeting()}. <b className="font-semibold text-foreground">{waitingText(waiting)}</b>
+          </>
+        ) : (
+          "Every application, from saved to offer."
+        )
+      }
       actions={
-        quiet.length > 0 ? (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSweeping(true);
-            }}
-          >
-            <ArchiveIcon /> No reply in 60+ days ({quiet.length})
+        <>
+          {board.data && board.data.total > 0 && (
+            <span className="hidden text-[13.5px] font-medium text-muted-foreground lg:inline">
+              Drag a card, or focus it and press {isMac() ? "⌥" : "Alt"} ← →
+            </span>
+          )}
+          {quiet.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSweeping(true);
+              }}
+            >
+              <ArchiveIcon /> No reply in 60+ days ({quiet.length})
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/discover">Add a job</Link>
           </Button>
-        ) : undefined
+        </>
       }
     />
   );
@@ -44,7 +68,7 @@ export default function PipelinePage() {
         <EmptyState
           icon={SquareKanbanIcon}
           title="Couldn't load your pipeline"
-          description={errorText(board.error, "The Offerbound backend didn't answer.")}
+          description={errorText(board.error, `The ${PRODUCT_NAME} backend didn't answer.`)}
         />
       </>
     );
@@ -53,7 +77,7 @@ export default function PipelinePage() {
     return (
       <>
         {header}
-        <div className="p-6">
+        <div className="px-5 pb-7 md:px-8">
           <Kanban board={board.data} />
         </div>
         {sweeping && (

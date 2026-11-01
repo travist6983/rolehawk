@@ -57,7 +57,13 @@ describe("Pipeline board", () => {
     withBoard();
     await renderApp("/");
     const pipeline = await screen.findByRole("list", { name: "Pipeline" });
-    const headings = within(pipeline).getAllByRole("heading", { level: 2 });
+    const phases = within(pipeline).getAllByRole("heading", { level: 2 });
+    expect(phases.map((h) => h.textContent)).toEqual([
+      "Your moveBefore you apply",
+      "In flightWaiting on them, mostly",
+      "Outcome",
+    ]);
+    const headings = within(pipeline).getAllByRole("heading", { level: 3 });
     expect(headings.map((h) => h.textContent)).toEqual([
       "Saved1",
       "Applying1",
