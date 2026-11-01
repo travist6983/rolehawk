@@ -8,8 +8,8 @@ dashboard in one repository. Everything below works on macOS, Linux, and Windows
 You need [uv](https://docs.astral.sh/uv/), Node 22, and git.
 
 ```bash
-git clone https://github.com/travist6983/offerbound-ai-job-search.git
-cd offerbound-ai-job-search
+git clone https://github.com/travist6983/rolehawk.git
+cd rolehawk
 npm run setup                                        # uv sync + npm ci
 cd backend && uv run playwright install chromium     # PDF export and autofill
 ```
