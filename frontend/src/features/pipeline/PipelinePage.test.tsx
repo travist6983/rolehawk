@@ -151,6 +151,104 @@ describe("Pipeline board", () => {
 });
 
 describe("pipeline helpers", () => {
+  it("drafts a follow-up from what was sent and logs it once sent", async () => {
+    const due = boardCard({
+      application_id: 8,
+      title: "Data Engineer",
+      company: "Globex",
+      stage: "applied",
+      days_in_stage: 14,
+      follow_up_due: true,
+      next_action: "Send a follow-up",
+    });
+    let drafted: unknown = null;
+    let logged: unknown = null;
+    server.use(
+      http.get("/api/pipeline", () => HttpResponse.json(board([due]))),
+      http.post("/api/applications/8/followups/draft", async ({ request }) => {
+        drafted = await request.json();
+        return HttpResponse.json({
+          channel: "linkedin",
+          subject: null,
+          body: "Hi Globex team, I'm still keen on the Data Engineer role. Any news on timing?",
+          issues: ["40% isn't in the documents you sent"],
+        });
+      }),
+      http.post("/api/applications/8/followups", async ({ request }) => {
+        logged = await request.json();
+        return HttpResponse.json(
+          {
+            id: 1,
+            application_id: 8,
+            channel: "linkedin",
+            subject: null,
+            body: "x",
+            sent_at: "2026-10-31T12:00:00Z",
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    const { user } = await renderApp("/");
+    await user.click(await screen.findByRole("button", { name: "Draft a follow-up" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Offerbound never sends anything");
+    await user.click(within(dialog).getByRole("radio", { name: "LinkedIn" }));
+    await user.click(within(dialog).getByRole("button", { name: "Write a draft" }));
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText("Message")).toHaveValue(
+        "Hi Globex team, I'm still keen on the Data Engineer role. Any news on timing?",
+      );
+    });
+    expect(drafted).toEqual({ channel: "linkedin" });
+    expect(within(dialog).queryByLabelText("Subject")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("list", { name: "Check before sending" })).toHaveTextContent(
+      "40% isn't in the documents you sent",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "I sent it" }));
+    await waitFor(() => {
+      expect(logged).toEqual({
+        channel: "linkedin",
+        subject: null,
+        body: "Hi Globex team, I'm still keen on the Data Engineer role. Any news on timing?",
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes long-quiet applications as no response", async () => {
+    withBoard();
+    let closed: unknown = null;
+    const quiet = {
+      application_id: 8,
+      job_id: 2,
+      title: "Data Engineer",
+      company: "Globex",
+      stage: "applied" as const,
+      applied_at: "2026-08-01T00:00:00Z",
+      quiet_days: 91,
+      follow_ups: 2,
+      last_follow_up_at: "2026-08-20T00:00:00Z",
+    };
+    server.use(
+      http.get("/api/followups/stale", () => HttpResponse.json([quiet])),
+      http.post("/api/followups/close-stale", async ({ request }) => {
+        closed = await request.json();
+        return HttpResponse.json({ closed: 1 });
+      }),
+    );
+    const { user } = await renderApp("/");
+    await user.click(await screen.findByRole("button", { name: "No reply in 60+ days (1)" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Globex · no reply in 91 days · 2 follow-ups");
+    await user.click(within(dialog).getByRole("button", { name: "Close 1 as no response" }));
+    await waitFor(() => {
+      expect(closed).toEqual({ application_ids: [8] });
+    });
+  });
+
   it("moves cards between columns", () => {
     const moved = moveCard(board(cards), 9, "rejected");
     const closed = moved.columns.find((c) => c.id === "closed");

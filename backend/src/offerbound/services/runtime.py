@@ -11,11 +11,14 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.apply.autofill import Autofiller
+from offerbound.apply.followup import FollowUpService
 from offerbound.apply.service import ApplyService
 from offerbound.commands.add_portal import register_add_portal
 from offerbound.commands.apply import register_apply
 from offerbound.commands.builtin import register_builtin
+from offerbound.commands.calibration import register_calibration
 from offerbound.commands.documents import register_documents
+from offerbound.commands.followup import register_followup
 from offerbound.commands.insights import register_insights
 from offerbound.commands.rank import register_rank
 from offerbound.commands.registry import CommandRegistry
@@ -26,6 +29,7 @@ from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
 from offerbound.fit.ranker import Ranker
 from offerbound.insights.board import BoardService
+from offerbound.insights.calibration import CalibrationService
 from offerbound.insights.service import ReportService
 from offerbound.insights.stats import InsightsService
 from offerbound.jobs.store import JobStore
@@ -43,6 +47,7 @@ from offerbound.portals.scrape import Scraper
 from offerbound.portals.state import PortalStore
 from offerbound.profile.service import ProfileService
 from offerbound.profile.setup import SetupService
+from offerbound.rendering.model import CoverLetter, CvDocument
 from offerbound.rendering.service import DocumentService
 from offerbound.services.app_state import AppStateStore
 from offerbound.services.events import EventBus
@@ -78,9 +83,11 @@ class Runtime:
     ranker: Ranker
     documents: DocumentService
     applications: ApplyService
+    followups: FollowUpService
     autofill: Autofiller
     board: BoardService
     insights: InsightsService
+    calibration: CalibrationService
     reports: ReportService
     reset: ResetService
     backup_path: Path | None = None
@@ -146,6 +153,8 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_documents(commands)
     register_apply(commands)
     register_insights(commands)
+    register_followup(commands)
+    register_calibration(commands)
     register_add_portal(commands)
 
     runtime_ref: list[Runtime] = []
@@ -163,6 +172,11 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         sessions, lambda app_id: paths.generated_documents / str(app_id) / "application.json"
     )
     insights = InsightsService(sessions, lambda: runtime_ref[0].settings.llm.monthly_cap_usd)
+
+    def sent_documents(application_id: int) -> tuple[CvDocument, CoverLetter] | None:
+        bundle = runtime_ref[0].applications.load_bundle(application_id)
+        return (bundle.cv, bundle.cover_letter) if bundle else None
+
     documents = DocumentService(
         paths,
         lambda: runtime_ref[0].settings,
@@ -205,9 +219,11 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
             jobs,
             documents,
         ),
+        followups=FollowUpService(sessions, llm, sent_documents),
         autofill=Autofiller(headless=False),
         board=board,
         insights=insights,
+        calibration=CalibrationService(sessions, llm, memory),
         reports=ReportService(paths, board, insights, lambda: profiles.load_profile().contact.name),
         reset=ResetService(paths, sessions, files, portals),
         backup_path=backup_path,

@@ -17,7 +17,8 @@ from offerbound.apply.drafts import (
     indexed_profile,
 )
 from offerbound.apply.review import REVIEW_RULES
-from offerbound.apply.service import ApplyParams, DocumentsIn, StagePatch
+from offerbound.apply.service import ApplyParams, DocumentsIn, FlagRef, StagePatch
+from offerbound.apply.style import check_style, polish
 from offerbound.apply.truth import check_cv, check_letter
 from offerbound.commands.registry import CommandContext, CommandRegistry, CommandSpec
 
@@ -49,6 +50,10 @@ class RegenerateParams(BaseModel):
     application_id: int
     section: Section = Field(description=f"One of: {', '.join(SECTIONS)}")
     instruction: str | None = Field(default=None, max_length=1_000)
+
+
+class KeepFlagParams(FlagRef):
+    application_id: int
 
 
 class SaveDraftParams(BaseModel):
@@ -84,6 +89,12 @@ async def _documents(ctx: CommandContext, params: DocumentsParams) -> dict[str, 
     return detail.model_dump(mode="json")
 
 
+async def _keep_flag(ctx: CommandContext, params: KeepFlagParams) -> dict[str, Any]:
+    ref = FlagRef(document=params.document, location=params.location, text=params.text)
+    detail = await asyncio.to_thread(ctx.runtime.applications.keep_flag, params.application_id, ref)
+    return detail.model_dump(mode="json")
+
+
 async def _regenerate(ctx: CommandContext, params: RegenerateParams) -> dict[str, Any]:
     result = await ctx.runtime.applications.regenerate(
         params.application_id, params.section, params.instruction, ctx.progress, ctx.task_id
@@ -115,17 +126,22 @@ async def _apply_context(ctx: CommandContext, params: JobRef) -> dict[str, Any]:
 
 async def _apply_save(ctx: CommandContext, params: SaveDraftParams) -> dict[str, Any]:
     """A draft written by Claude Code. Structured facts still come from the profile by
-    index, and the fact check runs exactly as in the app."""
+    index, and the fact and style checks run exactly as in the app."""
     service = ctx.runtime.applications
     profile = await asyncio.to_thread(ctx.runtime.profiles.load_profile)
     job = await asyncio.to_thread(service.job, params.job_id)
-    cv = build_cv(profile, params.draft.cv)
-    letter = build_letter(profile, job, params.draft.cover_letter)
-    flags = check_cv(cv, profile) + check_letter(letter, profile, job.description)
+    cv, letter = polish(
+        build_cv(profile, params.draft.cv), build_letter(profile, job, params.draft.cover_letter)
+    )
+    flags = (
+        check_cv(cv, profile)
+        + check_letter(letter, profile, job.description)
+        + check_style(cv, letter)
+    )
     application_id = await asyncio.to_thread(service.ensure_application, job.id)
     fit = await asyncio.to_thread(service.latest_fit, job.id)
     bundle = await service.render_documents(
-        application_id, job.id, cv, letter, flags, fit, EXTERNAL_MODEL
+        application_id, job.id, cv, letter, flags, fit, EXTERNAL_MODEL, params.draft.requirements
     )
     return {
         "application_id": application_id,
@@ -180,6 +196,16 @@ def register_apply(registry: CommandRegistry) -> None:
             "and re-renders the files.",
             _documents,
             DocumentsParams,
+            read_only=False,
+        )
+    )
+    registry.register(
+        CommandSpec(
+            "application-keep-flag",
+            "Keep a flagged line as written (stretch, style, or skipped-requirement flags only; "
+            "unsupported facts must be fixed).",
+            _keep_flag,
+            KeepFlagParams,
             read_only=False,
         )
     )

@@ -10,6 +10,7 @@ export const SHOW_OPTIONS = [
   { value: "unranked", label: "Not ranked yet", filters: { status: "unranked", show: "active" } },
   { value: "saved", label: "Saved", filters: { status: "all", show: "saved" } },
   { value: "dismissed", label: "Dismissed", filters: { status: "all", show: "dismissed" } },
+  { value: "closed", label: "Past their deadline", filters: { status: "all", show: "closed" } },
 ] as const satisfies readonly { value: string; label: string; filters: JobFilters }[];
 
 export type ShowValue = (typeof SHOW_OPTIONS)[number]["value"];
@@ -17,6 +18,7 @@ export type ShowValue = (typeof SHOW_OPTIONS)[number]["value"];
 export function showValue(filters: JobFilters): ShowValue {
   if (filters.show === "saved") return "saved";
   if (filters.show === "dismissed") return "dismissed";
+  if (filters.show === "closed") return "closed";
   if (filters.status === "ranked") return "ranked";
   if (filters.status === "unranked") return "unranked";
   return "all";
@@ -51,6 +53,7 @@ const SKIP_REASONS: [keyof FilterCounts, string][] = [
   ["already_ranked", "already ranked"],
   ["applied", "already in your pipeline"],
   ["dismissed", "dismissed"],
+  ["closed", "past their deadline"],
 ];
 
 /** "Skipped 12: 8 outside your locations, 4 below your salary floor." or null. */
@@ -82,4 +85,78 @@ export function safeUrl(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** The four parts behind a fit score, with their weights (backend fit/rubric.py WEIGHTS). */
+export const FIT_PARTS = [
+  { key: "experience", label: "Experience", weight: 35, hint: "Role, seniority, and domain" },
+  { key: "skills", label: "Skills", weight: 30, hint: "The posting's must-haves" },
+  { key: "career", label: "Career fit", weight: 20, hint: "Your goals and the work you enjoy" },
+  { key: "logistics", label: "Logistics", weight: 15, hint: "Location, salary, schedule" },
+] as const;
+
+export type GateVerdict = "pass" | "check" | "fail";
+
+/** How a gate verdict reads, per gate. */
+export function gateText(gate: "eligibility" | "language", verdict: GateVerdict): string {
+  if (gate === "eligibility") {
+    return {
+      pass: "You can hold this job",
+      check: "Check you can hold this job",
+      fail: "You may not be eligible",
+    }[verdict];
+  }
+  return {
+    pass: "Language requirements met",
+    check: "Language bar may be above your level",
+    fail: "Needs a language you don't list",
+  }[verdict];
+}
+
+/** A short table note when a gate failed or needs checking ("Not eligible", "Check language"). */
+export function gateNote(job: JobRow): { label: string; fail: boolean } | null {
+  const gates = job.gates;
+  if (!gates) return null;
+  if (gates.eligibility.verdict === "fail") return { label: "Not eligible", fail: true };
+  if (gates.language.verdict === "fail") return { label: "Language", fail: true };
+  if (gates.deal_breaker) return { label: "Deal-breaker", fail: true };
+  if (gates.eligibility.verdict === "check") return { label: "Check eligibility", fail: false };
+  if (gates.language.verdict === "check") return { label: "Check language", fail: false };
+  return null;
+}
+
+/** Whether gates are worth showing outside the job sheet (anything but a clean pass). */
+export function needsAttention(gates: NonNullable<JobRow["gates"]>): boolean {
+  return (
+    gates.eligibility.verdict !== "pass" ||
+    gates.language.verdict !== "pass" ||
+    gates.deal_breaker !== ""
+  );
+}
+
+/** "Closes in 3 days", "Closes today", "Closed Oct 30", or null when there's no deadline. */
+export function deadlineText(job: Pick<JobRow, "closes_at" | "deadline">): string | null {
+  if (!job.closes_at) return null;
+  const [y, m, d] = job.closes_at.split("-").map(Number);
+  const when = new Date(Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1));
+  const label = when.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  if (job.deadline === "closed") return `Closed ${label}`;
+  if (job.deadline !== "soon") return `Closes ${label}`;
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const days = Math.round((when.getTime() - today) / 86_400_000);
+  if (days <= 0) return "Closes today";
+  return days === 1 ? "Closes tomorrow" : `Closes in ${String(days)} days`;
+}
+
+/** "Posted 2 months ago" for postings older than 30 days, or null. */
+export function staleText(job: Pick<JobRow, "stale_days">): string | null {
+  const days = job.stale_days;
+  if (days === null) return null;
+  if (days < 60) return `Posted ${String(days)} days ago`;
+  return `Posted ${String(Math.round(days / 30))} months ago`;
 }

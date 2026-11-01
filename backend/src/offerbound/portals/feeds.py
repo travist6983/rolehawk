@@ -9,9 +9,11 @@ from datetime import datetime
 from offerbound.db.models import PortalKind, RiskLevel
 from offerbound.portals.base import NormalizedJob, PortalContext, PortalError, RawJob
 from offerbound.portals.http import HttpError
+from offerbound.portals.integrity import clean_posting
 from offerbound.portals.text import (
     html_to_text,
     looks_remote,
+    parse_date,
     parse_datetime,
     salary_range,
 )
@@ -48,6 +50,7 @@ class RemoteOK:
 
     def normalize(self, raw: RawJob) -> NormalizedJob:
         job = raw.data
+        desc = clean_posting(job.get("description"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job.get("url") or f"https://remoteok.com/remote-jobs/{raw.external_id}",
@@ -56,7 +59,8 @@ class RemoteOK:
             location=job.get("location") or "Remote",
             remote=True,
             salary_text=salary_range(job.get("salary_min"), job.get("salary_max"), "USD", "year"),
-            description=html_to_text(job.get("description")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("date") or job.get("epoch")),
         )
 
@@ -92,6 +96,7 @@ class WeWorkRemotely:
         if not title:  # no "Company: " prefix
             company, title = "", item["title"]
         region = item.get("region") or "Remote"
+        desc = clean_posting(item.get("description"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=item.get("link") or item.get("guid") or "",
@@ -99,7 +104,8 @@ class WeWorkRemotely:
             title=html_to_text(title),
             location=region,
             remote=True,
-            description=html_to_text(item.get("description")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(item.get("pubDate")),
         )
 
@@ -160,6 +166,7 @@ class Adzuna:
         salary = salary_range(job.get("salary_min"), job.get("salary_max"))
         if salary and job.get("salary_is_predicted") in (1, "1", True):
             salary = f"{salary} (Adzuna estimate)"
+        desc = clean_posting(job.get("description"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job["redirect_url"],
@@ -168,7 +175,8 @@ class Adzuna:
             location=location,
             remote=looks_remote(location, job.get("title")),
             salary_text=salary,
-            description=html_to_text(job.get("description")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("created")),
         )
 
@@ -237,4 +245,5 @@ class USAJobs:
             ),
             description=details.get("JobSummary") or job.get("QualificationSummary") or "",
             posted_at=parse_datetime(job.get("PublicationStartDate")),
+            closes_at=parse_date(job.get("ApplicationCloseDate")),
         )

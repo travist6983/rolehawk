@@ -95,4 +95,8 @@ class Preferences(_Model):
     salary_floor: SalaryFloor | None = None
     work_authorization: str | None = None
     deal_breakers: list[str] = Field(default_factory=list)
+    # The motivation filter: the fit rubric's career score weighs whether a job is mostly
+    # work that energizes them or work that drains them.
+    energizing: list[str] = Field(default_factory=list)
+    draining: list[str] = Field(default_factory=list)
     extra_sections: SkipJsonSchema[dict[str, str]] = Field(default_factory=dict)

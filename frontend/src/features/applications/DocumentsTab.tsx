@@ -6,6 +6,7 @@ import { errorText } from "@/api/errors";
 import {
   applicationFileUrl,
   applicationKeys,
+  useKeepFlag,
   useRegenerate,
   useSaveDocuments,
   type Bundle,
@@ -25,12 +26,25 @@ import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
+  canDrop,
   commaTextToList,
+  dropLine,
+  FLAG_KINDS,
   flagsAt,
   linesToList,
   listToCommaText,
+  sectionFor,
+  softenInstruction,
   textToParagraphs,
 } from "./applicationText";
+import {
+  FlagActionsContext,
+  RewriteAskContext,
+  useFlagActions,
+  useRewriteAsk,
+  type FlagActions,
+  type RewriteAsk,
+} from "./flagActions";
 
 export type Doc = "cv" | "cover_letter";
 
@@ -64,23 +78,76 @@ function ListTextarea({
 const lines = (items: string[]) => items.join("\n");
 const paragraphs = (items: string[]) => items.join("\n\n");
 
+function FlagButtons({ flag }: { flag: Flag }) {
+  const actions = useFlagActions();
+  if (!actions || !["stretch", "style", "unaddressed"].includes(flag.kind)) return null;
+  const rewritable = flag.kind !== "unaddressed" && sectionFor(flag) !== null;
+  return (
+    <span className="mt-1 flex flex-wrap gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 px-2 text-xs"
+        disabled={actions.busy}
+        onClick={() => {
+          actions.keep(flag);
+        }}
+      >
+        Keep as written
+      </Button>
+      {rewritable && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 px-2 text-xs"
+          onClick={() => {
+            actions.soften(flag);
+          }}
+        >
+          {flag.kind === "stretch" ? "Soften" : "Rewrite"}
+        </Button>
+      )}
+      {flag.kind === "stretch" && canDrop(flag) && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 px-2 text-xs"
+          onClick={() => {
+            actions.drop(flag);
+          }}
+        >
+          Drop line
+        </Button>
+      )}
+    </span>
+  );
+}
+
 function FlagList({ flags }: { flags: Flag[] }) {
   const quote = (text: string) => (text.length > 120 ? `${text.slice(0, 117)}…` : text);
   if (flags.length === 0) return null;
   return (
     <ul className="space-y-1" aria-label="Needs your review">
-      {flags.map((f) => (
-        <li
-          key={`${f.document}:${f.location}:${f.text}`}
-          className="flex gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive"
-        >
-          <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span>
-            <span className="font-medium">&ldquo;{quote(f.text)}&rdquo;</span>: {f.issue}
-            {f.source === "review" && <span className="text-destructive/80"> (AI review)</span>}
-          </span>
-        </li>
-      ))}
+      {flags.map((f) => {
+        const kind = FLAG_KINDS[f.kind];
+        return (
+          <li
+            key={`${f.document}:${f.location}:${f.text}:${f.issue}`}
+            className={cn(
+              "flex gap-1.5 rounded-md px-2 py-1 text-xs",
+              kind.serious ? "bg-destructive/10 text-destructive" : "bg-muted text-caution",
+            )}
+          >
+            <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <span>
+              <span className="font-medium">{kind.label}:</span>{" "}
+              <span className="font-medium">&ldquo;{quote(f.text)}&rdquo;</span> {f.issue}
+              {f.source === "review" && <span className="opacity-80"> (AI review)</span>}
+              <FlagButtons flag={f} />
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -97,6 +164,18 @@ function Rewrite({
   const [open, setOpen] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
+  // A flag's "Soften" asks this section to open its form pre-filled (adjusting state while
+  // rendering, as React recommends, rather than in an effect).
+  const ask = useRewriteAsk();
+  const [seenAsk, setSeenAsk] = useState(ask);
+  if (ask !== seenAsk) {
+    setSeenAsk(ask);
+    if (ask?.section === section) {
+      setTaskId(null);
+      setInstruction(ask.instruction);
+      setOpen(true);
+    }
+  }
   const regenerate = useRegenerate(applicationId);
   const stream = useEventStream();
   const client = useQueryClient();
@@ -390,7 +469,32 @@ export function DocumentsTab({
   const [cv, setCv] = useState<CvDocument>(bundle.cv);
   const [letter, setLetter] = useState<CoverLetter>(bundle.cover_letter);
   const [resets, setResets] = useState(0);
+  const [ask, setAsk] = useState<RewriteAsk | null>(null);
   const save = useSaveDocuments(applicationId);
+  const keep = useKeepFlag(applicationId);
+  const actions: FlagActions = {
+    busy: keep.isPending,
+    keep: (flag) => {
+      keep.mutate(
+        { document: flag.document, location: flag.location, text: flag.text },
+        {
+          onSuccess: () => toast.success("Kept as written"),
+          onError: (error) => toast.error(errorText(error, "Couldn't keep it")),
+        },
+      );
+    },
+    soften: (flag) => {
+      const section = sectionFor(flag);
+      if (section) setAsk({ section, instruction: softenInstruction(flag), at: Date.now() });
+    },
+    drop: (flag) => {
+      const next = dropLine(cv, letter, flag);
+      setCv(next.cv);
+      setLetter(next.letter);
+      setResets((n) => n + 1);
+      toast("Line removed. Save to update the files.");
+    },
+  };
   const version = `${bundle.updated_at}-${String(resets)}`;
 
   const dirty =
@@ -400,108 +504,114 @@ export function DocumentsTab({
   const label = doc === "cv" ? "CV" : "Cover letter";
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Document">
-          {(["cv", "cover_letter"] as const).map((d) => (
-            <Button
-              key={d}
-              size="sm"
-              variant={doc === d ? "default" : "outline"}
-              aria-pressed={doc === d}
-              onClick={() => {
-                onDocChange(d);
-              }}
-            >
-              {d === "cv" ? "CV" : "Cover letter"}
-            </Button>
-          ))}
-          <span className="ml-auto flex gap-2">
-            {dirty && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setCv(bundle.cv);
-                  setLetter(bundle.cover_letter);
-                  setResets((n) => n + 1);
-                }}
-              >
-                <Undo2Icon /> Discard
-              </Button>
+    <FlagActionsContext.Provider value={actions}>
+      <RewriteAskContext.Provider value={ask}>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Document">
+              {(["cv", "cover_letter"] as const).map((d) => (
+                <Button
+                  key={d}
+                  size="sm"
+                  variant={doc === d ? "default" : "outline"}
+                  aria-pressed={doc === d}
+                  onClick={() => {
+                    onDocChange(d);
+                  }}
+                >
+                  {d === "cv" ? "CV" : "Cover letter"}
+                </Button>
+              ))}
+              <span className="ml-auto flex gap-2">
+                {dirty && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setCv(bundle.cv);
+                      setLetter(bundle.cover_letter);
+                      setResets((n) => n + 1);
+                    }}
+                  >
+                    <Undo2Icon /> Discard
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  disabled={!dirty || save.isPending}
+                  onClick={() => {
+                    save.mutate(
+                      { cv, cover_letter: letter },
+                      {
+                        onSuccess: (detail) => {
+                          const left = detail.documents?.flags.length ?? 0;
+                          toast.success(
+                            left ? `Saved. ${String(left)} line(s) still need a look.` : "Saved",
+                          );
+                        },
+                        onError: (error) => toast.error(errorText(error, "Couldn't save")),
+                      },
+                    );
+                  }}
+                >
+                  <SaveIcon /> {save.isPending ? "Saving…" : "Save and update files"}
+                </Button>
+              </span>
+            </div>
+            {doc === "cv" ? (
+              <CvEditor
+                version={version}
+                cv={cv}
+                flags={bundle.flags}
+                applicationId={applicationId}
+                onChange={setCv}
+                busy={dirty}
+              />
+            ) : (
+              <LetterEditor
+                version={version}
+                letter={letter}
+                flags={bundle.flags}
+                applicationId={applicationId}
+                onChange={setLetter}
+                busy={dirty}
+              />
             )}
-            <Button
-              size="sm"
-              disabled={!dirty || save.isPending}
-              onClick={() => {
-                save.mutate(
-                  { cv, cover_letter: letter },
-                  {
-                    onSuccess: (detail) => {
-                      const left = detail.documents?.flags.length ?? 0;
-                      toast.success(
-                        left ? `Saved. ${String(left)} line(s) still need a look.` : "Saved",
-                      );
-                    },
-                    onError: (error) => toast.error(errorText(error, "Couldn't save")),
-                  },
-                );
-              }}
-            >
-              <SaveIcon /> {save.isPending ? "Saving…" : "Save and update files"}
-            </Button>
-          </span>
+            {dirty && (
+              <p className="text-xs text-muted-foreground">
+                Save your edits before rewriting a part.
+              </p>
+            )}
+          </div>
+          <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="mr-auto text-sm font-medium">{label} preview</h3>
+              {(["pdf", "docx"] as const).map((fmt) =>
+                files[fmt] ? (
+                  <Button key={fmt} size="sm" variant="outline" asChild>
+                    <a href={applicationFileUrl(applicationId, doc, fmt)} download>
+                      <DownloadIcon /> {fmt === "pdf" ? "PDF" : "Word"}
+                    </a>
+                  </Button>
+                ) : null,
+              )}
+            </div>
+            {files.pdf ? (
+              <iframe
+                key={`${doc}-${bundle.updated_at}`}
+                title={`${label} PDF`}
+                src={applicationFileUrl(applicationId, doc, "pdf", bundle.updated_at)}
+                className="h-[75dvh] w-full rounded-md border bg-white"
+              />
+            ) : (
+              <p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                PDF isn't available (Chromium isn't installed); the Word file is ready. Run{" "}
+                <code>offerbound doctor</code> for the fix.
+              </p>
+            )}
+          </div>
         </div>
-        {doc === "cv" ? (
-          <CvEditor
-            version={version}
-            cv={cv}
-            flags={bundle.flags}
-            applicationId={applicationId}
-            onChange={setCv}
-            busy={dirty}
-          />
-        ) : (
-          <LetterEditor
-            version={version}
-            letter={letter}
-            flags={bundle.flags}
-            applicationId={applicationId}
-            onChange={setLetter}
-            busy={dirty}
-          />
-        )}
-        {dirty && (
-          <p className="text-xs text-muted-foreground">Save your edits before rewriting a part.</p>
-        )}
-      </div>
-      <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="mr-auto text-sm font-medium">{label} preview</h3>
-          {(["pdf", "docx"] as const).map((fmt) =>
-            files[fmt] ? (
-              <Button key={fmt} size="sm" variant="outline" asChild>
-                <a href={applicationFileUrl(applicationId, doc, fmt)} download>
-                  <DownloadIcon /> {fmt === "pdf" ? "PDF" : "Word"}
-                </a>
-              </Button>
-            ) : null,
-          )}
-        </div>
-        {files.pdf ? (
-          <iframe
-            key={`${doc}-${bundle.updated_at}`}
-            title={`${label} PDF`}
-            src={applicationFileUrl(applicationId, doc, "pdf", bundle.updated_at)}
-            className="h-[75dvh] w-full rounded-md border bg-white"
-          />
-        ) : (
-          <p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-            PDF isn't available (Chromium isn't installed); the Word file is ready. Run{" "}
-            <code>offerbound doctor</code> for the fix.
-          </p>
-        )}
-      </div>
-    </div>
+      </RewriteAskContext.Provider>
+    </FlagActionsContext.Provider>
   );
 }

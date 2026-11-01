@@ -1,5 +1,5 @@
 import { observeElementRect, useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { BookmarkIcon } from "lucide-react";
+import { BookmarkIcon, ShieldAlertIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import type { JobRow } from "@/api/queries";
@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { whereText } from "./discoverText";
+import { deadlineText, gateNote, staleText, whereText } from "./discoverText";
 
 const ROW_HEIGHT = 60;
 const LOAD_MORE_WITHIN = 30; // rows from the end
@@ -115,6 +115,7 @@ export function JobTable({
             const job = rows[item.index];
             if (!job) return null;
             const checked = selected.has(job.id);
+            const gate = gateNote(job);
             return (
               <tr
                 key={job.id}
@@ -171,6 +172,25 @@ export function JobTable({
                         {job.stage === "saved" ? "Saved" : "In pipeline"}
                       </Badge>
                     )}
+                    {gate && (
+                      <span
+                        className={cn(
+                          "shrink-0 text-[10px] font-medium",
+                          gate.fail ? "text-destructive" : "text-caution",
+                        )}
+                      >
+                        {gate.label}
+                      </span>
+                    )}
+                    {job.integrity === "warning" && (
+                      <span
+                        className="flex shrink-0 items-center gap-0.5 text-caution"
+                        title="Parts of this posting are aimed at AI tools"
+                      >
+                        <ShieldAlertIcon aria-hidden className="size-3" />
+                        <span className="sr-only">Parts of this posting are aimed at AI tools</span>
+                      </span>
+                    )}
                     <span className="truncate md:hidden">· {whereText(job)}</span>
                   </span>
                 </td>
@@ -184,7 +204,22 @@ export function JobTable({
                   {job.source}
                 </td>
                 <td className="hidden pr-3 text-xs text-muted-foreground sm:table-cell">
-                  {timeAgo(job.posted_at ?? job.scraped_at)}
+                  {job.deadline ? (
+                    <span className={job.deadline === "soon" ? "font-medium text-caution" : ""}>
+                      {deadlineText(job)}
+                    </span>
+                  ) : (
+                    <span
+                      className={job.stale_days !== null ? "text-caution" : undefined}
+                      title={
+                        job.stale_days !== null
+                          ? `${staleText(job) ?? ""}. Some stay open for months; check before applying.`
+                          : undefined
+                      }
+                    >
+                      {timeAgo(job.posted_at ?? job.scraped_at)}
+                    </span>
+                  )}
                 </td>
               </tr>
             );

@@ -31,20 +31,27 @@ backend/                 Python 3.12 package `offerbound` (uv, FastAPI)
                          pricing, task routing, spend meter, LLMService (the only entry point)
     memory/              markdown memory files, proposals (accept/reject), context packs,
                          fact extraction, session summaries + retention
-    profile/             typed profile + preferences, markdown parser/renderer, merge, document
-                         parsing (PDF/DOCX/TXT/LinkedIn ZIP), extraction, gap interview, /setup
+    profile/             typed profile + preferences, markdown parser/renderer, merge, conflicts
+                         (versions that disagree, user picks), document parsing (PDF/DOCX/
+                         TXT/LinkedIn ZIP), extraction, gap interview, /setup
     chat/                chat turns (streaming, tool loop), tools, read-only pipeline SQL
     portals/             job sources: Portal protocol, ATS boards (Greenhouse, Lever, Ashby,
                          Workable) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
-                         PortalStore (source settings, company watchlist), SOURCES.md
+                         PortalStore (source settings, company watchlist), integrity.py
+                         (hidden text, invisible characters, lines aimed at AI), SOURCES.md
       custom/            /add-portal: definitions (data, never code), detection, engine,
                          sandbox subprocess runner, plugin files, Claude fallback
-    fit/                 the shared fit rubric (/rank and /apply), hard filters, Ranker
+    fit/                 the shared fit rubric (/rank and /apply: eligibility and language
+                         gates, four scored parts, deadline), hard filters, Ranker
     insights/            Pipeline board (next actions), Insights stats, self-contained HTML
-                         report (inline SVG, CSP blocks all network)
-    apply/               /apply: drafts (facts by profile index), truth.py (fact check),
-                         review.py (AI review pass), ApplyService, autofill (+ tag_fields.js)
+                         report (inline SVG, CSP blocks all network), calibration.py (learn
+                         from results: preference proposals)
+    apply/               /apply: drafts (facts by profile index, posting requirements),
+                         truth.py (fact check), style.py (clichés, dashes), ats.py (text
+                         layer + keyword coverage), review.py (AI review: facts, stretches,
+                         requirements), ApplyService, followup.py (follow-ups, stale sweep),
+                         autofill (+ tag_fields.js)
     geo.py               countries from free-text job locations (unknown never filters)
     rendering/           CV + cover letter data (model.py), shared block layout, Jinja2 HTML
                          templates/<id>/ (manifest.json + template.html.j2), python-docx
@@ -133,14 +140,15 @@ Run `npm run check` from the root before you call a chunk done.
 
 - **Services hold logic.** API routes, chat tools, and the CLI are thin: parse input, call one service function, return its result. If a route or tool has a branch that isn't input validation, move it into a service.
 - **No secrets in files.** API keys, the Gmail app password, and the Notion token go in the OS keychain via `keyring`. `config.toml`, logs, fixtures, and test data never contain secrets; logs redact them.
-- **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. Three layers enforce it; don't weaken any: drafts pick roles/projects/certifications by profile index and `build_cv` copies their facts (the model never writes them), `apply/truth.py` flags numbers and skills the profile lacks (one automatic revision round), and the AI review pass flags the rest for the user.
-- **Custom sources are data.** /add-portal stores a validated definition (rss, jsonld, json_api, html) in `<data>/portals/<id>.py`, read with `ast.literal_eval` and never imported. They run only through `portals/custom/sandbox.py` (`python -I` subprocess, clean env, timeout) and `engine.Fetcher` (same domain only, private/loopback addresses refused on every hop). Never add a path that executes model-written code.
+- **Never invent profile facts in generated documents.** Generated CVs, cover letters, and answers may rephrase and reorder, but must not add employers, titles, dates, degrees, certifications, or numbers that are not in `profile.md`. Three layers enforce it; don't weaken any: drafts pick roles/projects/certifications by profile index and `build_cv` copies their facts (the model never writes them), `apply/truth.py` flags numbers and skills the profile lacks (one automatic revision round, shared with the style and keyword checks), and the AI review pass flags the rest for the user. Keyword gaps the profile doesn't support stay gaps (`apply/ats.py`): never stuff them in. Unsupported-fact flags can't be "kept as written". Follow-ups may only use what the sent CV and letter say.
+- **Custom sources are data.** /add-portal stores a validated definition (rss, jsonld, json_api, html) in `<data>/portals/<id>.py`, read with `ast.literal_eval` and never imported. They run only through `portals/custom/sandbox.py` (`python -I` subprocess, clean env, timeout) and `engine.Fetcher` (same domain only, private/loopback addresses refused on every hop, robots.txt respected). Never add a path that executes model-written code.
+- **Nothing is sent for the user.** Follow-ups are drafts the user sends and then logs; there's no email or message sending anywhere.
 - **Autofill never submits.** It fills fields and attaches files, then stops; there is no click, press, or submit in `apply/autofill.py` (a test greps for them). Auto-submit is v2.0 and out of scope.
-- **Nothing changes memory silently.** Fact extraction produces proposed diffs the user accepts or rejects.
+- **Nothing changes memory silently.** Fact extraction and calibration produce proposed diffs the user accepts or rejects. Setup conflicts are resolved by the user's pick (unpicked ones keep the existing version).
 - **profile.md and preferences.md are canonical.** Code reads them through `ProfileService` (parse) and writes through it (render + reindex `profile_items` + sync `search_targets`), or through accepted proposals. The user's own edits are saved verbatim; unknown sections are preserved. Never write those files any other way.
 - **Setup is review-first.** Imported or extracted data becomes a draft the user reviews before it is applied; applying merges (existing facts win) so re-running never duplicates. The gap interview is deterministic (no AI), so setup works without an API key.
 - **Uploads are untrusted input.** Size caps, archive bomb checks, content-sniffed types, and only known LinkedIn CSVs are read. Commands that read local paths set `chat_allowed=False`.
-- **Untrusted text stays untrusted.** Job descriptions, emails, and web pages go in delimited blocks, never in system prompts. Tools triggered while processing them are read-only.
+- **Untrusted text stays untrusted.** Job descriptions, emails, and web pages go in delimited blocks, never in system prompts. Tools triggered while processing them are read-only. Every job description goes through `portals/integrity.py` (`clean_posting`) before it's stored: hidden HTML and invisible characters are removed, and lines aimed at AI tools are quoted for the user, never removed and never obeyed. New sources must pass descriptions through it (set `NormalizedJob.integrity`).
 - **No live network calls in tests.** Use recorded fixtures and a `FakeProvider` for the LLM. Job sources use `tests/portal_web.py` (`FakeWeb`: an httpx2 `MockTransport` over `tests/fixtures/portals/`); swap `runtime.scraper.http_factory` to use it in API tests.
 - **Job sources are polite.** All source traffic goes through `PoliteClient` (identifying User-Agent, per-host pacing from `min_interval_s`, retries honoring Retry-After). Verify endpoints and terms before adding or changing one and record them in `portals/SOURCES.md`. Third-party XML is parsed with DTDs refused; ATS slugs must match `SLUG_PATTERN` (they go into URL paths).
 - **Types are strict on both sides.** mypy `strict = true`; TypeScript `strict` plus `noUncheckedIndexedAccess`. Don't add `Any`, `# type: ignore`, or `as unknown as` without a comment explaining why.
@@ -150,7 +158,7 @@ Run `npm run check` from the root before you call a chunk done.
 - **Naming:** `jobs` are job postings; background runs are `tasks`. Long-running commands go through `TaskRunner.submit()` and report with `ctx.progress()`, which streams to the UI as `task.updated` SSE events.
 - **API auth:** every `/api/*` route except `/api/health` needs the per-launch session token. The frontend sends it as `X-Offerbound-Token`; the cookie set by the launch URL only works for GET/HEAD (for EventSource). Host and Origin headers are allowlisted. Never loosen these for convenience.
 - **Calling Claude:** go through `LLMService` with a `Task` (rank, extract, write, review, chat). Routing picks the model and effort; the meter logs every call to `llm_calls` and enforces the monthly cap. Never construct an SDK client elsewhere. Use `structured()` with a pydantic schema for anything parsed (`structured_result()` when you need the model that answered). Keep numeric constraints out of those schemas (structured outputs don't enforce them); clamp after parsing.
-- **Fit scores** come only from `fit/rubric.py` (`FIT_RUBRIC`, `JobFit`). /rank, /apply's fit check, and the Claude Code skill all use it so scores mean the same thing. Batch commands show an estimate (`LLMService.estimate`) before running.
+- **Fit scores** come only from `fit/rubric.py` (`FIT_RUBRIC`, `JobFit`). /rank, /apply's fit check, and the Claude Code skill all use it so scores mean the same thing. Claude scores four parts and two gates; `JobFit.score` is computed from them (weights in `WEIGHTS`, capped at 39 by a failed gate or a deal breaker), so never ask a model for the overall number. Bump `RUBRIC_VERSION` when the rubric changes. Batch commands show an estimate (`LLMService.estimate`) before running.
 - **Model facts live in `llm/models.py`** (pricing, server-side fallback support). Check Anthropic's docs before adding a model; don't guess IDs.
 - **Chat history is append-only text across turns;** within one turn the system prompt and tools stay fixed and assistant content (thinking blocks included) is replayed verbatim. Changing this breaks the API's preserved-thinking check and the prompt cache.
 - **New commands** register a `CommandSpec` (params model, `read_only`, `background`) so the API, chat, and CLI all get them. Mark anything that writes data `read_only=False`; chat then shows a confirmation card instead of running it. Set `untrusted_output=True` when the result carries third-party text (job titles, postings); chat wraps it as untrusted.

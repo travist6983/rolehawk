@@ -187,6 +187,8 @@ describe("Onboarding", () => {
               profile: sampleProfile(),
               preferences: emptyPreferences(),
               document_ids: [4],
+              document_conflicts: [],
+              conflicts: [],
               created_at: "2026-10-31T12:01:00Z",
             })
           : HttpResponse.json({ detail: "No setup draft" }, { status: 404 }),
@@ -232,6 +234,61 @@ describe("Onboarding", () => {
     // The step changes only after the save response; wait for it (findBy would match the old step).
     await waitFor(() => {
       expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Questions");
+    });
+  });
+
+  it("asks which version is right when documents disagree", async () => {
+    let applied: { resolutions?: Record<string, number> } | null = null;
+    const conflict = {
+      id: "c1",
+      kind: "title" as const,
+      subject: "Your role at Northwind Payments",
+      question: "Is this the same role? Pick the title that's right.",
+      options: [
+        {
+          label: "Senior Frontend Engineer",
+          source: "LinkedIn export",
+          patch: { kind: "role" as const, company: "", titles: [], institution: "", values: {} },
+        },
+        {
+          label: "Lead Frontend Engineer",
+          source: "cv.pdf",
+          patch: { kind: "role" as const, company: "", titles: [], institution: "", values: {} },
+        },
+      ],
+    };
+    server.use(
+      http.get("/api/setup/draft", () =>
+        HttpResponse.json({
+          profile: sampleProfile(),
+          preferences: emptyPreferences(),
+          document_ids: [4],
+          document_conflicts: [conflict],
+          conflicts: [conflict],
+          created_at: "2026-10-31T12:01:00Z",
+        }),
+      ),
+      http.post("/api/setup/draft/apply", async ({ request }) => {
+        applied = (await request.json()) as typeof applied;
+        return HttpResponse.json({
+          profile: sampleProfile(),
+          preferences: emptyPreferences(),
+          added: {},
+          updated: { experience: 1 },
+          resolved: 1,
+          completeness: { score: 50, missing: [] },
+        });
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=resume");
+    expect(await screen.findByText("1 thing your documents disagree on")).toBeVisible();
+    const save = screen.getByRole("button", { name: "Save to profile" });
+    expect(save).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: /Lead Frontend Engineer/ }));
+    expect(save).toBeEnabled();
+    await user.click(save);
+    await waitFor(() => {
+      expect(applied?.resolutions).toEqual({ c1: 1 });
     });
   });
 

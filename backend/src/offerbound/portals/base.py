@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Protocol
 
 from pydantic import BaseModel
 
 from offerbound.db.models import PortalKind, RiskLevel
 from offerbound.portals.http import PoliteClient
+from offerbound.portals.integrity import PostingIntegrity
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,9 @@ class NormalizedJob(BaseModel):
     salary_text: str | None = None
     description: str = ""
     posted_at: datetime | None = None
+    closes_at: date | None = None  # the application deadline, when the source states one
+    # What the integrity check removed or found (portals/integrity.py); None if not run.
+    integrity: PostingIntegrity | None = None
 
 
 class PortalError(Exception):

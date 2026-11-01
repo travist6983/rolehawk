@@ -138,8 +138,11 @@ def test_preferences_round_trip_and_tolerant_values() -> None:
         salary_floor=SalaryFloor(amount=150000, currency="USD"),
         work_authorization="Citizen or permanent resident",
         deal_breakers=["Mandatory on-call"],
+        energizing=["Building tools from scratch", "Mentoring"],
+        draining=["Maintaining legacy systems"],
     )
     assert parse_preferences(render_preferences(prefs)) == prefs
+    assert "## Work that energizes me" in render_preferences(prefs)
     hand = "## Remote\n- fully remote please\n## Salary floor\n- 90k\n## Country\n- gb"
     parsed = parse_preferences(hand, default_currency="GBP")
     assert parsed.remote is RemotePreference.REMOTE

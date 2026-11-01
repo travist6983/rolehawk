@@ -62,6 +62,11 @@ export const handlers = [
   http.get("/api/jobs", () => HttpResponse.json(jobPage([]))),
   http.get("/api/documents/settings", () => HttpResponse.json(documentSettings())),
   http.get("/api/pipeline", () => HttpResponse.json(board())),
+  http.get("/api/followups/stale", () => HttpResponse.json([])),
+  http.get("/api/calibration", () =>
+    HttpResponse.json({ resolved: 0, positive: 0, negative: 0, needed: 3, ready: false }),
+  ),
+  http.get("/api/applications/:id/followups", () => HttpResponse.json([])),
   http.get("/api/insights", () =>
     HttpResponse.json(
       insights({

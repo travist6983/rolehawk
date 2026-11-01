@@ -43,14 +43,17 @@ titles, dates, or skills. Leave unknown fields null.
 ## 3. Review with the user, then apply
 
 Show the user the draft (roles, education, skills, contact) and ask them to confirm or remove
-anything wrong. Only after they agree:
+anything wrong. The draft's `conflicts` list facts stated differently in their documents or
+their existing profile (a role's title or dates, a degree, an email), each with `options`
+and the source of each. Ask the user which version is right for every one; never pick for
+them. Then apply with their picks (option index by conflict id):
 
 ```bash
-offerbound run setup-apply --json
+offerbound run setup-apply --params-json '{"resolutions": {"3f2a9c1b7d4e": 1}}' --json
 ```
 
-Applying merges into `profile.md` / `preferences.md`. Existing facts win, and re-running
-updates entries instead of duplicating them.
+Applying merges into `profile.md` / `preferences.md`. A conflict without a pick keeps the
+existing version, and re-running updates entries instead of duplicating them.
 
 ## 4. Gap interview
 

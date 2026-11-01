@@ -27,14 +27,19 @@ copied from the profile; a fact check flags any number or skill the profile does
    the fit score and threshold, `profile_index` (roles, projects, and certifications with
    their indexes), `writer_rules` (follow them), `review_rules`, and `draft_schema`.
    If the fit is below the threshold, tell the user and ask before continuing.
-3. Write the draft as JSON matching `draft_schema`, then save it:
+3. Write the draft as JSON matching `draft_schema`, starting with `requirements`: every
+   requirement the posting states, with its own keywords exactly as written. Address each
+   one in the documents, or name the gap honestly in the cover letter. Then save it:
 
    ```bash
    offerbound run apply-save --params-json '{"job_id": 12, "draft": {"cv": {...}, "cover_letter": {...}}}' --json
    ```
 
    The result has `status` (`ready` or `needs_review`), `flags` (each with the line, its
-   location, and what isn't supported), and the file paths.
+   location, its `kind`, and the issue), and the file paths. Em dashes in your text are
+   replaced with commas; clichés come back as `style` flags. The CV file is also read back
+   the way an applicant tracking system reads it: `ats` checks and per-requirement keyword
+   coverage are in the application (`offerbound run application`).
 4. Review your own draft against `review_rules`. If there are flags or unsupported claims,
    fix them with `application-documents` (below) rather than arguing with the check.
 
@@ -54,9 +59,14 @@ with `--params-json '{"job_id": 12, "force": true}'` only if the user asks.
 offerbound run application --param application_id=7 --json            # documents, flags, history
 offerbound run application-documents --params-json '{"application_id": 7, "cv": {...}}' --json
 offerbound run application-regenerate --params-json '{"application_id": 7, "section": "summary", "instruction": "shorter"}' --json
+offerbound run application-keep-flag --params-json '{"application_id": 7, "document": "cv", "location": "summary", "text": "..."}' --json
 offerbound run autofill --param application_id=7 --json               # opens the form; never submits
 offerbound run application-update --params-json '{"application_id": 7, "stage": "applied"}' --json
 ```
+
+Flags have a `kind`: `unsupported` (fix it; it can't be kept), `stretch` (keep, soften, or
+drop: ask the user), `style`, `unaddressed` (a requirement the documents skip), and `ats`.
+Keep a flag only when the user says the line stays as written.
 
 Autofill opens a visible browser window, fills contact fields, and attaches the CV and cover
 letter. The user checks the form and submits it themselves; only then mark it applied.

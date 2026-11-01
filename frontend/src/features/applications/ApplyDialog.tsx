@@ -17,12 +17,15 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { needsAttention } from "@/features/discover/discoverText";
+import { FitGates } from "@/features/discover/FitDetails";
 import { useEventStream } from "@/features/events/EventStreamProvider";
 import { usd } from "@/lib/format";
 
 import { readOutcome, type ApplyOutcome } from "./applicationText";
 
 function FitSummary({ fit }: { fit: ApplyOutcome["fit"] | NonNullable<ApplyPlan["fit"]> }) {
+  const gates = "gates" in fit ? fit.gates : null;
   return (
     <div className="space-y-2 rounded-lg border p-3 text-sm">
       <p className="flex items-center gap-2">
@@ -42,6 +45,7 @@ function FitSummary({ fit }: { fit: ApplyOutcome["fit"] | NonNullable<ApplyPlan[
       {fit.must_have_gaps.length > 0 && (
         <p className="text-muted-foreground">Missing: {fit.must_have_gaps.join(", ")}</p>
       )}
+      {gates && needsAttention(gates) && <FitGates gates={gates} />}
     </div>
   );
 }

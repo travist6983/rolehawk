@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -17,6 +17,7 @@ from offerbound.db.types import utcnow
 from offerbound.llm.service import LLMService
 from offerbound.paths import DataPaths
 from offerbound.profile import interview
+from offerbound.profile.conflicts import Conflict, find_conflicts, resolve
 from offerbound.profile.documents import DocumentError, DocumentKind, parse_document
 from offerbound.profile.extraction import ExtractedSetup, extract_setup
 from offerbound.profile.interview import AnswerValue, InterviewProgress, InterviewState
@@ -40,10 +41,25 @@ class DocumentView(BaseModel):
 
 
 class Draft(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     profile: Profile
     preferences: Preferences
     document_ids: list[int] = Field(default_factory=list)
+    # Where the imported documents disagree with each other (stored with the draft) ...
+    document_conflicts: list[Conflict] = Field(default_factory=list)
+    # ... and every conflict to resolve, including with the current profile (computed).
+    conflicts: list[Conflict] = Field(default_factory=list)
     created_at: datetime
+
+
+class ApplyDraftIn(ExtractedSetup):
+    """The reviewed draft, plus the version picked for each conflict (option index by id).
+    A conflict without a pick keeps the existing version."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    resolutions: dict[str, int] = Field(default_factory=dict)
 
 
 class ApplyResult(BaseModel):
@@ -51,6 +67,7 @@ class ApplyResult(BaseModel):
     preferences: Preferences
     added: dict[str, int]
     updated: dict[str, int]
+    resolved: int = Field(default=0, description="Conflicts settled with the user's pick")
     completeness: Completeness
 
 
@@ -139,6 +156,7 @@ class SetupService:
             raise DocumentError("Add a document first.")
         draft_profile = Profile()
         draft_prefs = Preferences()
+        document_conflicts: list[Conflict] = []
         texts: list[tuple[str, str]] = []
         for row in rows:
             if row.kind == DocumentKind.LINKEDIN.value:
@@ -150,16 +168,21 @@ class SetupService:
                 texts.append((row.filename, row.text))
         if texts:
             extracted = await extract_setup(self._llm, texts, task_id=task_id)
+            names = ", ".join(name for name, _ in texts)
+            document_conflicts = find_conflicts(
+                draft_profile, extracted.profile, ("LinkedIn export", names)
+            )
             draft_profile, _ = merge_profile(draft_profile, extracted.profile)
             draft_prefs = merge_preferences(draft_prefs, extracted.preferences)
         draft = Draft(
             profile=draft_profile,
             preferences=draft_prefs,
             document_ids=[row.id for row in rows],
+            document_conflicts=document_conflicts,
             created_at=utcnow(),
         )
         self._state.set(DRAFT_KEY, draft.model_dump(mode="json"))
-        return draft
+        return self._with_conflicts(draft)
 
     def store_draft(self, extracted: ExtractedSetup) -> Draft:
         """Skills (Claude Code) extract in their own session and store the result here."""
@@ -167,17 +190,30 @@ class SetupService:
             profile=extracted.profile, preferences=extracted.preferences, created_at=utcnow()
         )
         self._state.set(DRAFT_KEY, draft.model_dump(mode="json"))
-        return draft
+        return self._with_conflicts(draft)
+
+    def _conflicts(self, draft: Draft | None, incoming: Profile) -> list[Conflict]:
+        current = find_conflicts(
+            self._profiles.load_profile(), incoming, ("your profile", "the imported documents")
+        )
+        stored = draft.document_conflicts if draft else []
+        return list({c.id: c for c in [*stored, *current]}.values())
+
+    def _with_conflicts(self, draft: Draft) -> Draft:
+        return draft.model_copy(update={"conflicts": self._conflicts(draft, draft.profile)})
 
     def get_draft(self) -> Draft | None:
         raw: Any = self._state.get(DRAFT_KEY)
-        return Draft.model_validate(raw) if raw else None
+        return self._with_conflicts(Draft.model_validate(raw)) if raw else None
 
     def discard_draft(self) -> None:
         self._state.delete(DRAFT_KEY)
 
-    def apply_draft(self, edited: ExtractedSetup | None = None) -> ApplyResult:
-        """Merge the (optionally user-edited) draft into the profile. Existing facts win;
+    def apply_draft(
+        self, edited: ExtractedSetup | None = None, resolutions: dict[str, int] | None = None
+    ) -> ApplyResult:
+        """Merge the (optionally user-edited) draft into the profile, after applying the
+        version the user picked for each conflict. Unpicked conflicts keep existing facts;
         re-running setup updates entries instead of duplicating them."""
         draft = self.get_draft()
         source = edited or (
@@ -185,8 +221,13 @@ class SetupService:
         )
         if source is None:
             raise NoDraftError
+        picks = resolutions or {}
         with self._profiles.lock:
-            profile, report = merge_profile(self._profiles.load_profile(), source.profile)
+            conflicts = self._conflicts(draft, source.profile)
+            current, incoming = resolve(
+                self._profiles.load_profile(), source.profile, conflicts, picks
+            )
+            profile, report = merge_profile(current, incoming)
             prefs = merge_preferences(self._profiles.load_preferences(), source.preferences)
             self._profiles.save_profile(profile)
             self._profiles.save_preferences(prefs)
@@ -196,6 +237,7 @@ class SetupService:
             preferences=prefs,
             added=report.added,
             updated=report.updated,
+            resolved=sum(1 for c in conflicts if c.id in picks),
             completeness=completeness(profile, prefs),
         )
 

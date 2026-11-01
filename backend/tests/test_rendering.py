@@ -22,6 +22,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
+from offerbound.apply.ats import parse_checks
 from offerbound.install.layout import browser_hint
 from offerbound.profile.model import Contact, Experience, Profile
 from offerbound.rendering.docx_builder import cv_docx, letter_docx
@@ -180,7 +181,7 @@ def test_dates_and_periods() -> None:
     assert month_year("2021-03") == "Mar 2021"
     assert month_year("2021") == "2021"
     assert month_year("Spring 2020") == "Spring 2020"
-    assert period("2021-03", None, current=True) == "Mar 2021 \N{EN DASH} Present"
+    assert period("2021-03", None, current=True) == "Mar 2021 - Present"
     assert period("2020", "2020") == "2020"
     assert period(None, "2019-12") == "Dec 2019"
     assert period(None, None) is None
@@ -252,6 +253,24 @@ def test_outputs_are_ats_friendly(rendered: dict[str, Rendered], key: str) -> No
     assert doc.paragraphs[0].style.name == "Title"
     if r.manifest.kind is DocumentKind.CV:
         assert any(p.style is not None and p.style.name == "Heading 1" for p in doc.paragraphs)
+
+
+CV_KEYS = [
+    f"{m.id}/{label}/{paper}"
+    for m in builtin_templates()
+    if m.kind is DocumentKind.CV
+    for label in ("sample", "tricky")
+    for paper in ("letter", "a4")
+]
+
+
+@pytest.mark.parametrize("key", CV_KEYS)
+def test_cvs_pass_the_ats_parse_checks(rendered: dict[str, Rendered], key: str) -> None:
+    r = rendered[key]
+    cv = tricky_cv() if "/tricky/" in key else sample_cv()
+    for text in (pdf_text(r.pdf), docx_text(r.docx)):
+        failed = [c for c in parse_checks(cv, text) if not c.passed]
+        assert failed == [], failed
 
 
 def test_long_cvs_flow_onto_more_pages(rendered: dict[str, Rendered]) -> None:

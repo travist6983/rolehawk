@@ -70,8 +70,17 @@ async def _store_draft(ctx: CommandContext, params: ExtractedSetup) -> dict[str,
     return draft.model_dump(mode="json")
 
 
-async def _apply(ctx: CommandContext, _params: NoParams) -> dict[str, Any]:
-    result = await asyncio.to_thread(ctx.runtime.setup.apply_draft)
+class ApplyParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    resolutions: dict[str, int] = Field(
+        default_factory=dict,
+        description="Conflict id -> the option to keep (see setup-draft's conflicts); "
+        "unpicked conflicts keep the existing version",
+    )
+
+
+async def _apply(ctx: CommandContext, params: ApplyParams) -> dict[str, Any]:
+    result = await asyncio.to_thread(ctx.runtime.setup.apply_draft, None, params.resolutions)
     return result.model_dump(mode="json")
 
 
@@ -133,8 +142,10 @@ def register_setup(registry: CommandRegistry) -> None:
         ),
         CommandSpec(
             "setup-apply",
-            "Merge the reviewed setup draft into profile.md and preferences.md.",
+            "Merge the reviewed setup draft into profile.md and preferences.md, keeping the "
+            "version the user picked for each conflict.",
             _apply,
+            ApplyParams,
             read_only=False,
         ),
         CommandSpec(

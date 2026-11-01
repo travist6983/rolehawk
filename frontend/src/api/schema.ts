@@ -478,7 +478,8 @@ export interface paths {
         put?: never;
         /**
          * Apply Draft
-         * @description Applies the stored draft, or the edited version the user reviewed.
+         * @description Applies the stored draft, or the edited version the user reviewed, with the version
+         *     picked for each conflict.
          */
         post: operations["apply_draft_api_setup_draft_apply_post"];
         delete?: never;
@@ -1031,6 +1032,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/applications/{application_id}/flags/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep Flag
+         * @description Keep a flagged line as written; it stays hidden when the checks run again.
+         */
+        post: operations["keep_flag_api_applications__application_id__flags_keep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/applications/{application_id}/regenerate": {
         parameters: {
             query?: never;
@@ -1085,6 +1106,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/followups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quiet
+         * @description Waiting applications quiet long enough for a follow-up (at most two each).
+         */
+        get: operations["quiet_api_followups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/followups/stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stale */
+        get: operations["stale_api_followups_stale_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/followups/close-stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close Stale
+         * @description Move the chosen long-quiet applications to Ghosted.
+         */
+        post: operations["close_stale_api_followups_close_stale_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{application_id}/followups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["history_api_applications__application_id__followups_get"];
+        put?: never;
+        /**
+         * Log
+         * @description Record a follow-up the user sent.
+         */
+        post: operations["log_api_applications__application_id__followups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{application_id}/followups/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft
+         * @description A draft from the documents already sent. Nothing is sent.
+         */
+        post: operations["draft_api_applications__application_id__followups_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pipeline": {
         parameters: {
             query?: never;
@@ -1116,6 +1235,30 @@ export interface paths {
         get: operations["insights_api_insights_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calibration Status
+         * @description Applications with a result, and whether there are enough to learn from.
+         */
+        get: operations["calibration_status_api_calibration_get"];
+        put?: never;
+        /**
+         * Calibrate
+         * @description Patterns in what got interviews, with preference edits as pending proposals.
+         */
+        post: operations["calibrate_api_calibration_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1238,6 +1381,19 @@ export interface components {
             history: components["schemas"]["StageEventView"][];
         };
         /**
+         * ApplyDraftIn
+         * @description The reviewed draft, plus the version picked for each conflict (option index by id).
+         *     A conflict without a pick keeps the existing version.
+         */
+        ApplyDraftIn: {
+            profile?: components["schemas"]["Profile-Input"];
+            preferences?: components["schemas"]["Preferences-Input"];
+            /** Resolutions */
+            resolutions?: {
+                [key: string]: number;
+            };
+        };
+        /**
          * ApplyMethod
          * @enum {string}
          */
@@ -1291,7 +1447,32 @@ export interface components {
             updated: {
                 [key: string]: number;
             };
+            /**
+             * Resolved
+             * @description Conflicts settled with the user's pick
+             * @default 0
+             */
+            resolved: number;
             completeness: components["schemas"]["Completeness"];
+        };
+        /** AtsCheck */
+        AtsCheck: {
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: boolean;
+            /** Detail */
+            detail: string;
+        };
+        /** AtsReport */
+        AtsReport: {
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "pdf" | "docx";
+            /** Checks */
+            checks: components["schemas"]["AtsCheck"][];
         };
         /** AutofillReport */
         AutofillReport: {
@@ -1324,6 +1505,20 @@ export interface components {
             file: string;
         };
         /**
+         * Breakdown
+         * @description The four parts of a fit score, 0 to 100 each.
+         */
+        Breakdown: {
+            /** Experience */
+            experience: number;
+            /** Skills */
+            skills: number;
+            /** Career */
+            career: number;
+            /** Logistics */
+            logistics: number;
+        };
+        /**
          * Bundle
          * @description application.json: the documents as data, their review flags, and their files.
          */
@@ -1352,11 +1547,46 @@ export interface components {
              * @default false
              */
             pdf_unavailable: boolean;
+            /** Requirements */
+            requirements: components["schemas"]["RequirementView"][];
+            ats: components["schemas"]["AtsReport"] | null;
+            /** Kept */
+            kept: components["schemas"]["FlagRef"][];
             /**
              * Updated At
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** CalibrationResult */
+        CalibrationResult: {
+            /** Findings */
+            findings: components["schemas"]["Finding"][];
+            /** Proposals */
+            proposals: components["schemas"]["ProposalView"][];
+            /** Resolved */
+            resolved: number;
+            /**
+             * Ran At
+             * Format: date-time
+             */
+            ran_at: string;
+        };
+        /** CalibrationStatus */
+        CalibrationStatus: {
+            /** Resolved */
+            resolved: number;
+            /** Positive */
+            positive: number;
+            /** Negative */
+            negative: number;
+            /**
+             * Needed
+             * @description Results needed before patterns mean much
+             */
+            needed: number;
+            /** Ready */
+            ready: boolean;
         };
         /** CancelOut */
         CancelOut: {
@@ -1406,6 +1636,12 @@ export interface components {
             has_documents: boolean;
             /** Flags */
             flags: number;
+            /** Closes At */
+            closes_at: string | null;
+            /** Follow Ups */
+            follow_ups: number;
+            /** Follow Up Due */
+            follow_up_due: boolean;
             /** Next Action */
             next_action: string | null;
         };
@@ -1494,6 +1730,16 @@ export interface components {
             value: string;
             /** Label */
             label: string;
+        };
+        /** CloseStaleIn */
+        CloseStaleIn: {
+            /** Application Ids */
+            application_ids: number[];
+        };
+        /** ClosedStale */
+        ClosedStale: {
+            /** Closed */
+            closed: number;
         };
         /** Column */
         Column: {
@@ -1603,6 +1849,30 @@ export interface components {
             score: number;
             /** Missing */
             missing: string[];
+        };
+        /** Conflict */
+        Conflict: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "title" | "dates" | "degree" | "contact";
+            /** Subject */
+            subject: string;
+            /** Question */
+            question: string;
+            /** Options */
+            options: components["schemas"]["ConflictOption"][];
+        };
+        /** ConflictOption */
+        ConflictOption: {
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            patch: components["schemas"]["Patch"];
         };
         /** Contact */
         "Contact-Input": {
@@ -1985,12 +2255,21 @@ export interface components {
             profile: components["schemas"]["Profile-Output"];
             preferences: components["schemas"]["Preferences-Output"];
             /** Document Ids */
-            document_ids?: number[];
+            document_ids: number[];
+            /** Document Conflicts */
+            document_conflicts: components["schemas"]["Conflict"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["Conflict"][];
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+        };
+        /** DraftIn */
+        DraftIn: {
+            /** @default email */
+            channel: components["schemas"]["FollowUpChannel"];
         };
         /** Education */
         "Education-Input": {
@@ -2111,11 +2390,6 @@ export interface components {
             /** Document Ids */
             document_ids: number[];
         };
-        /** ExtractedSetup */
-        ExtractedSetup: {
-            profile?: components["schemas"]["Profile-Input"];
-            preferences?: components["schemas"]["Preferences-Input"];
-        };
         /** FieldMap */
         FieldMap: {
             /** Title */
@@ -2154,6 +2428,11 @@ export interface components {
              */
             dismissed: number;
             /**
+             * Closed
+             * @default 0
+             */
+            closed: number;
+            /**
              * Country
              * @default 0
              */
@@ -2174,6 +2453,24 @@ export interface components {
              */
             excluded: number;
         };
+        /** Finding */
+        Finding: {
+            /**
+             * Pattern
+             * @description One sentence, written to the job seeker
+             */
+            pattern: string;
+            /**
+             * Application Ids
+             * @description The applications that show it
+             */
+            application_ids: number[];
+            /**
+             * Strength
+             * @enum {string}
+             */
+            strength: "firm" | "worth watching";
+        };
         /** FitView */
         FitView: {
             /** Score */
@@ -2186,6 +2483,7 @@ export interface components {
             threshold: number;
             /** Passes */
             passes: boolean;
+            gates: components["schemas"]["Gates"] | null;
         };
         /** Flag */
         Flag: {
@@ -2205,6 +2503,71 @@ export interface components {
              * @enum {string}
              */
             source: "check" | "review";
+            /**
+             * Kind
+             * @default unsupported
+             * @enum {string}
+             */
+            kind: "unsupported" | "stretch" | "unaddressed" | "style" | "ats";
+        };
+        /**
+         * FlagRef
+         * @description Which flag: the same document, line, and quoted text.
+         */
+        FlagRef: {
+            /**
+             * Document
+             * @enum {string}
+             */
+            document: "cv" | "cover_letter";
+            /** Location */
+            location: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * FollowUpChannel
+         * @enum {string}
+         */
+        FollowUpChannel: "email" | "linkedin" | "portal";
+        /** FollowUpDraft */
+        FollowUpDraft: {
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Issues
+             * @description Claims or phrases worth a second look before sending
+             */
+            issues: string[];
+        };
+        /** FollowUpIn */
+        FollowUpIn: {
+            /** @default email */
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject?: string | null;
+            /** Body */
+            body: string;
+        };
+        /** FollowUpView */
+        FollowUpView: {
+            /** Id */
+            id: number;
+            /** Application Id */
+            application_id: number;
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
         };
         /** FormField */
         FormField: {
@@ -2235,6 +2598,34 @@ export interface components {
             count: number;
             /** Rate From Previous */
             rate_from_previous: number | null;
+        };
+        /** Gate */
+        Gate: {
+            /**
+             * Verdict
+             * @description pass, check, or fail
+             * @enum {string}
+             */
+            verdict: "pass" | "check" | "fail";
+            /**
+             * Quote
+             * @description The posting's exact words; empty if silent
+             * @default
+             */
+            quote: string;
+        };
+        /**
+         * Gates
+         * @description What's stored with a score: the two gates and any deal breaker.
+         */
+        Gates: {
+            eligibility: components["schemas"]["Gate"];
+            language: components["schemas"]["Gate"];
+            /**
+             * Deal Breaker
+             * @default
+             */
+            deal_breaker: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2334,6 +2725,61 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /**
+         * IntegrityView
+         * @description What the API shows: the findings plus a verdict and a one-line summary.
+         */
+        IntegrityView: {
+            /**
+             * Hidden Blocks
+             * @description Hidden HTML blocks with text, removed
+             * @default 0
+             */
+            hidden_blocks: number;
+            /**
+             * Hidden Excerpts
+             * @description Their first words
+             */
+            hidden_excerpts: string[];
+            /**
+             * Hidden Urls
+             * @description Links only in hidden text
+             */
+            hidden_urls: string[];
+            /**
+             * Invisible Chars
+             * @description Removed characters that can carry or hide text
+             * @default 0
+             */
+            invisible_chars: number;
+            /**
+             * Tampering
+             * @description Why those look deliberate
+             */
+            tampering: string[];
+            /**
+             * Invisible Text
+             * @description Text spelled in invisible characters, decoded
+             */
+            invisible_text: string[];
+            /**
+             * Instruction Lines
+             * @description Lines addressed to AI tools, quoted
+             */
+            instruction_lines: string[];
+            /**
+             * Mixed Script Words
+             * @description Words mixing Latin with look-alike letters
+             */
+            mixed_script_words: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "clean" | "cleaned" | "warning";
+            /** Summary */
+            summary: string;
+        };
         /** InterviewState */
         InterviewState: {
             question: components["schemas"]["Question"] | null;
@@ -2381,9 +2827,34 @@ export interface components {
             scored_at: string | null;
             /** Score Model */
             score_model: string | null;
+            /** @description The four parts behind the score */
+            breakdown: components["schemas"]["Breakdown"] | null;
+            /** @description Eligibility and language gates, deal breaker */
+            gates: components["schemas"]["Gates"] | null;
             stage: components["schemas"]["Stage"] | null;
             /** Dismissed */
             dismissed: boolean;
+            /**
+             * Closes At
+             * @description The application deadline, when known
+             */
+            closes_at: string | null;
+            /**
+             * Deadline
+             * @description soon: closes within 7 days; closed: the deadline passed
+             */
+            deadline: ("soon" | "closed") | null;
+            /**
+             * Stale Days
+             * @description Days since posting, when older than 30 days (still may be open)
+             */
+            stale_days: number | null;
+            /**
+             * Integrity
+             * @description clean, cleaned (hidden text removed), or warning
+             * @enum {string}
+             */
+            integrity: "clean" | "cleaned" | "warning";
             /**
              * Description
              * @description Third-party text from the posting
@@ -2391,6 +2862,8 @@ export interface components {
             description: string;
             /** Application Id */
             application_id: number | null;
+            /** @description What the integrity check removed or found; null when nothing */
+            integrity_report: components["schemas"]["IntegrityView"] | null;
         };
         /** JobPage */
         JobPage: {
@@ -2437,9 +2910,34 @@ export interface components {
             scored_at: string | null;
             /** Score Model */
             score_model: string | null;
+            /** @description The four parts behind the score */
+            breakdown: components["schemas"]["Breakdown"] | null;
+            /** @description Eligibility and language gates, deal breaker */
+            gates: components["schemas"]["Gates"] | null;
             stage: components["schemas"]["Stage"] | null;
             /** Dismissed */
             dismissed: boolean;
+            /**
+             * Closes At
+             * @description The application deadline, when known
+             */
+            closes_at: string | null;
+            /**
+             * Deadline
+             * @description soon: closes within 7 days; closed: the deadline passed
+             */
+            deadline: ("soon" | "closed") | null;
+            /**
+             * Stale Days
+             * @description Days since posting, when older than 30 days (still may be open)
+             */
+            stale_days: number | null;
+            /**
+             * Integrity
+             * @description clean, cleaned (hidden text removed), or warning
+             * @enum {string}
+             */
+            integrity: "clean" | "cleaned" | "warning";
         };
         /**
          * JobStats
@@ -2456,6 +2954,11 @@ export interface components {
             saved: number;
             /** Dismissed */
             dismissed: number;
+            /**
+             * Closed
+             * @description Not dismissed, but the deadline has passed
+             */
+            closed: number;
         };
         /** JsonApiDefinition */
         JsonApiDefinition: {
@@ -2645,6 +3148,33 @@ export interface components {
             description: string;
             /** Posted At */
             posted_at?: string | null;
+            /** Closes At */
+            closes_at?: string | null;
+            integrity?: components["schemas"]["PostingIntegrity"] | null;
+        };
+        /** Patch */
+        Patch: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "role" | "education" | "contact" | "none";
+            /**
+             * Company
+             * @default
+             */
+            company: string;
+            /** Titles */
+            titles?: string[];
+            /**
+             * Institution
+             * @default
+             */
+            institution: string;
+            /** Values */
+            values?: {
+                [key: string]: string | boolean | null;
+            };
         };
         /** PlanIn */
         PlanIn: {
@@ -2739,6 +3269,54 @@ export interface components {
              */
             custom: boolean;
         };
+        /**
+         * PostingIntegrity
+         * @description What the check removed or found in one posting. Empty means nothing to report.
+         */
+        PostingIntegrity: {
+            /**
+             * Hidden Blocks
+             * @description Hidden HTML blocks with text, removed
+             * @default 0
+             */
+            hidden_blocks: number;
+            /**
+             * Hidden Excerpts
+             * @description Their first words
+             */
+            hidden_excerpts: string[];
+            /**
+             * Hidden Urls
+             * @description Links only in hidden text
+             */
+            hidden_urls: string[];
+            /**
+             * Invisible Chars
+             * @description Removed characters that can carry or hide text
+             * @default 0
+             */
+            invisible_chars: number;
+            /**
+             * Tampering
+             * @description Why those look deliberate
+             */
+            tampering: string[];
+            /**
+             * Invisible Text
+             * @description Text spelled in invisible characters, decoded
+             */
+            invisible_text: string[];
+            /**
+             * Instruction Lines
+             * @description Lines addressed to AI tools, quoted
+             */
+            instruction_lines: string[];
+            /**
+             * Mixed Script Words
+             * @description Words mixing Latin with look-alike letters
+             */
+            mixed_script_words: string[];
+        };
         /** Preferences */
         "Preferences-Input": {
             /** Target Titles */
@@ -2758,6 +3336,10 @@ export interface components {
             work_authorization?: string | null;
             /** Deal Breakers */
             deal_breakers?: string[];
+            /** Energizing */
+            energizing?: string[];
+            /** Draining */
+            draining?: string[];
         };
         /** Preferences */
         "Preferences-Output": {
@@ -2778,6 +3360,10 @@ export interface components {
             work_authorization: string | null;
             /** Deal Breakers */
             deal_breakers: string[];
+            /** Energizing */
+            energizing: string[];
+            /** Draining */
+            draining: string[];
         };
         /** Profile */
         "Profile-Input": {
@@ -2920,6 +3506,26 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
+        /** QuietApplication */
+        QuietApplication: {
+            /** Application Id */
+            application_id: number;
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            stage: components["schemas"]["Stage"];
+            /** Applied At */
+            applied_at: string | null;
+            /** Quiet Days */
+            quiet_days: number;
+            /** Follow Ups */
+            follow_ups: number;
+            /** Last Follow Up At */
+            last_follow_up_at: string | null;
+        };
         /** RankParams */
         RankParams: {
             /**
@@ -3014,6 +3620,48 @@ export interface components {
             path: string;
             /** Size */
             size: number;
+        };
+        /**
+         * RequirementView
+         * @description A requirement with what the checks found: keyword coverage in the CV's text layer
+         *     and, from the AI review, whether the documents address it.
+         */
+        RequirementView: {
+            /**
+             * Requirement
+             * @description Short, as the posting says it: "3+ years of SQL"
+             */
+            requirement: string;
+            /**
+             * Priority
+             * @description required, or preferred (nice to have)
+             * @enum {string}
+             */
+            priority: "required" | "preferred";
+            /**
+             * Terms
+             * @description The posting's own keywords for it, exactly as written, e.g. ['SQL']
+             */
+            terms: string[];
+            /**
+             * Also
+             * @description Other names for the same thing, e.g. ['Amazon Web Services'] for 'AWS'
+             */
+            also: string[];
+            /** Keyword */
+            keyword: ("covered" | "synonym" | "missing_have" | "gap") | null;
+            /**
+             * Matched
+             * @description The term found in the CV
+             */
+            matched: string | null;
+            /**
+             * Addressed
+             * @description From the AI review
+             */
+            addressed: boolean | null;
+            /** Note */
+            note: string | null;
         };
         /** ResetIn */
         ResetIn: {
@@ -4239,7 +4887,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["ExtractedSetup"] | null;
+                "application/json": components["schemas"]["ApplyDraftIn"] | null;
             };
         };
         responses: {
@@ -4871,8 +5519,8 @@ export interface operations {
                 /** @description Words in title/company/text */
                 q?: string | null;
                 status?: "all" | "ranked" | "unranked";
-                /** @description active hides dismissed jobs */
-                show?: "active" | "saved" | "dismissed";
+                /** @description active hides dismissed jobs and jobs whose deadline has passed */
+                show?: "active" | "saved" | "dismissed" | "closed";
                 min_score?: number | null;
                 portal_id?: string | null;
                 /** @description Only jobs marked remote */
@@ -5324,6 +5972,41 @@ export interface operations {
             };
         };
     };
+    keep_flag_api_applications__application_id__flags_keep_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlagRef"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     regenerate_api_applications__application_id__regenerate_post: {
         parameters: {
             query?: never;
@@ -5426,6 +6109,202 @@ export interface operations {
             };
         };
     };
+    quiet_api_followups_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuietApplication"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stale_api_followups_stale_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuietApplication"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_stale_api_followups_close_stale_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseStaleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClosedStale"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_applications__application_id__followups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_api_applications__application_id__followups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_api_applications__application_id__followups_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     pipeline_api_pipeline_get: {
         parameters: {
             query?: never;
@@ -5462,6 +6341,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Insights"];
+                };
+            };
+        };
+    };
+    calibration_status_api_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationStatus"];
+                };
+            };
+        };
+    };
+    calibrate_api_calibration_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationResult"];
                 };
             };
         };

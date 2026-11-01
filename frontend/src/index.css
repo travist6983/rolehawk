@@ -35,6 +35,8 @@
   --score-high: var(--color-green-700);
   --score-mid: var(--color-amber-700);
   --score-low: var(--color-zinc-600);
+  /* Caution (posting warnings, flagged checks, closing soon): text and borders, AA on cards. */
+  --caution: var(--color-amber-700);
   /* Charts: one series in the accent (validated: contrast >= 3:1 on the card surface). */
   --chart-1: var(--color-indigo-600);
   --chart-grid: var(--color-zinc-200);
@@ -64,6 +66,7 @@
   --score-high: var(--color-green-400);
   --score-mid: var(--color-amber-400);
   --score-low: var(--color-zinc-400);
+  --caution: var(--color-amber-400);
   --chart-1: var(--color-indigo-500);
   --chart-grid: var(--color-zinc-800);
 }
@@ -98,6 +101,7 @@
   --color-score-high: var(--score-high);
   --color-score-mid: var(--score-mid);
   --color-score-low: var(--score-low);
+  --color-caution: var(--caution);
 }
 
 @layer base {

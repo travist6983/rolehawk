@@ -33,6 +33,7 @@ from offerbound.portals.base import (
 )
 from offerbound.portals.base import Portal as PortalImpl
 from offerbound.portals.http import HttpError, PoliteClient
+from offerbound.portals.integrity import clean_posting
 from offerbound.portals.matching import title_matches
 from offerbound.portals.registry import ATS_IDS, BUILTIN
 from offerbound.portals.state import missing_requirements, stored_secrets
@@ -93,6 +94,18 @@ def load_queries(session: Session, default_country: str) -> list[SearchQuery]:
         )
         for t in targets
     ]
+
+
+def _checked(job: NormalizedJob) -> NormalizedJob:
+    """A last integrity pass over the final text, for sources that send plain text (and so
+    invisible characters and lines addressed to AI tools are caught whatever the source)."""
+    final = clean_posting(job.description, html_input=False)
+    found = final.integrity.merge(job.integrity) if job.integrity else final.integrity
+    return job.model_copy(update={"description": final.text, "integrity": found})
+
+
+def _integrity(job: NormalizedJob) -> dict[str, object] | None:
+    return job.integrity.stored() if job.integrity else None
 
 
 class Scraper:
@@ -302,7 +315,7 @@ class Scraper:
         new = duplicates = 0
         now = utcnow()
         with self._sessions.begin() as session:
-            for job in jobs:
+            for job in map(_checked, jobs):
                 existing = session.scalar(
                     select(Job).where(
                         Job.portal_id == portal_id, Job.external_id == job.external_id
@@ -311,7 +324,10 @@ class Scraper:
                 if existing is not None:
                     existing.scraped_at = now
                     existing.url = job.url
-                    existing.description = job.description or existing.description
+                    if job.description:
+                        existing.description = job.description
+                        existing.integrity = _integrity(job)
+                    existing.closes_at = job.closes_at or existing.closes_at
                     duplicates += 1
                     continue
                 digest = job_hash(job.company, job.title, job.location)
@@ -330,8 +346,10 @@ class Scraper:
                         salary_text=job.salary_text,
                         description=job.description,
                         posted_at=job.posted_at,
+                        closes_at=job.closes_at,
                         scraped_at=now,
                         hash=digest,
+                        integrity=_integrity(job),
                     )
                 )
                 session.flush()

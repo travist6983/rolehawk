@@ -11,6 +11,7 @@ from typing import Any
 from offerbound.db.models import PortalKind, RiskLevel
 from offerbound.portals.base import CompanyRef, NormalizedJob, PortalContext, RawJob
 from offerbound.portals.http import HttpError
+from offerbound.portals.integrity import CleanPosting, clean_posting, combine
 from offerbound.portals.text import (
     html_to_text,
     looks_remote,
@@ -55,6 +56,12 @@ async def walk_companies(
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
+def _html_or_plain(markup: Any, plain: Any) -> CleanPosting:
+    if isinstance(markup, str) and markup.strip():
+        return clean_posting(markup)
+    return clean_posting(plain if isinstance(plain, str) else None, html_input=False)
+
+
 class AtsPortal:
     """Base for sources that list jobs per company from the watchlist."""
 
@@ -87,6 +94,7 @@ class Greenhouse(AtsPortal):
     def normalize(self, raw: RawJob) -> NormalizedJob:
         job = raw.data
         location = (job.get("location") or {}).get("name")
+        desc = clean_posting(job.get("content"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job["absolute_url"],
@@ -94,7 +102,8 @@ class Greenhouse(AtsPortal):
             title=job["title"].strip(),
             location=location,
             remote=looks_remote(location),
-            description=html_to_text(job.get("content")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("first_published") or job.get("updated_at")),
         )
 
@@ -125,10 +134,15 @@ class Lever(AtsPortal):
         location = categories.get("location")
         workplace = (job.get("workplaceType") or "").lower()
         salary = job.get("salaryRange") or {}
-        sections = [job.get("descriptionPlain") or html_to_text(job.get("description"))]
+        # The HTML versions, when present, so hidden elements are seen (the plain text has
+        # them flattened in).
+        parts = [_html_or_plain(job.get("description"), job.get("descriptionPlain"))]
         for block in job.get("lists") or []:
-            sections.append(f"{block.get('text', '')}\n{html_to_text(block.get('content'))}")
-        sections.append(job.get("additionalPlain") or "")
+            body = clean_posting(block.get("content"))
+            heading = html_to_text(block.get("text"))
+            parts.append(CleanPosting(f"{heading}\n{body.text}".strip(), body.integrity))
+        parts.append(_html_or_plain(job.get("additional"), job.get("additionalPlain")))
+        desc = combine(parts)
         return NormalizedJob(
             external_id=raw.external_id,
             url=job["hostedUrl"],
@@ -142,7 +156,8 @@ class Lever(AtsPortal):
                 salary.get("currency"),
                 (salary.get("interval") or "").replace("per-", "") or None,
             ),
-            description="\n\n".join(s.strip() for s in sections if s and s.strip()),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("createdAt")),
         )
 
@@ -166,6 +181,7 @@ class Ashby(AtsPortal):
         job = raw.data
         compensation: dict[str, Any] = job.get("compensation") or {}
         workplace = (job.get("workplaceType") or "").lower()
+        desc = _html_or_plain(job.get("descriptionHtml"), job.get("descriptionPlain"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job.get("jobUrl") or job["applyUrl"],
@@ -177,7 +193,8 @@ class Ashby(AtsPortal):
             else (None if workplace else looks_remote(job.get("location"))),
             salary_text=compensation.get("scrapeableCompensationSalarySummary")
             or compensation.get("compensationTierSummary"),
-            description=job.get("descriptionPlain") or html_to_text(job.get("descriptionHtml")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("publishedAt")),
         )
 
@@ -203,6 +220,7 @@ class Workable(AtsPortal):
         location = ", ".join(
             p for p in [job.get("city"), job.get("state"), job.get("country")] if p
         )
+        desc = clean_posting(job.get("description"))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job["url"],
@@ -210,6 +228,7 @@ class Workable(AtsPortal):
             title=job["title"].strip(),
             location=location or None,
             remote=True if job.get("telecommuting") else looks_remote(location),
-            description=html_to_text(job.get("description")),
+            description=desc.text,
+            integrity=desc.integrity,
             posted_at=parse_datetime(job.get("published_on") or job.get("created_at")),
         )

@@ -111,7 +111,12 @@ def test_next_actions() -> None:
     assert next_action(Stage.APPLYING, 0, True, 2) == "Check 2 flagged lines, then submit"
     assert next_action(Stage.APPLYING, 0, True, 0) == "Submit, then mark as applied"
     assert next_action(Stage.APPLIED, 3, True, 0) == "Wait for a reply"
-    assert next_action(Stage.APPLIED, 9, True, 0) == "Send a follow-up"
+    assert next_action(Stage.APPLIED, 9, True, 0) == "Wait for a reply"
+    assert next_action(Stage.APPLIED, 10, True, 0) == "Send a follow-up"
+    assert next_action(Stage.APPLIED, 12, True, 0, follow_ups=1) == "Send a second follow-up"
+    assert next_action(Stage.APPLIED, 12, True, 0, follow_ups=2) == (
+        "No reply after two follow-ups: close it as no response?"
+    )
     assert next_action(Stage.REJECTED, 9, True, 0) is None
 
 

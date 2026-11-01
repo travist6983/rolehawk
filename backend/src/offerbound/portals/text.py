@@ -3,54 +3,17 @@
 from __future__ import annotations
 
 import hashlib
-import html
 import re
-from datetime import UTC, datetime
-from html.parser import HTMLParser
+from datetime import UTC, date, datetime
 
-MAX_DESCRIPTION_CHARS = 50_000
-
-_BLOCK_TAGS = {"p", "div", "br", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6", "tr"}
-
-
-class _TextExtractor(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.parts: list[str] = []
-        self._skip = 0
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"script", "style"}:
-            self._skip += 1
-        elif tag == "li":
-            self.parts.append("\n- ")
-        elif tag in _BLOCK_TAGS:
-            self.parts.append("\n")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag in {"script", "style"}:
-            self._skip = max(self._skip - 1, 0)
-        elif tag in _BLOCK_TAGS and tag != "li":  # the next <li> starts its own line
-            self.parts.append("\n")
-
-    def handle_data(self, data: str) -> None:
-        if not self._skip:
-            self.parts.append(data)
+from offerbound.portals.integrity import clean_posting
 
 
 def html_to_text(markup: str | None) -> str:
-    """Readable plain text from job description HTML (entity-escaped HTML too)."""
-    if not markup:
-        return ""
-    if "&lt;" in markup and "<" not in markup:
-        markup = html.unescape(markup)  # Greenhouse/RSS double-encode
-    parser = _TextExtractor()
-    parser.feed(markup)
-    text = "".join(parser.parts)
-    text = re.sub(r"[ \t\xa0]+", " ", text)
-    text = re.sub(r" *\n *", "\n", text)
-    text = re.sub(r"\n{3,}", "\n\n", text).strip()
-    return text[:MAX_DESCRIPTION_CHARS]
+    """Readable plain text from HTML (entity-escaped HTML too), with hidden elements and
+    invisible characters removed (portals/integrity.py). Descriptions use clean_posting()
+    directly so what was removed is reported."""
+    return clean_posting(markup).text
 
 
 _REMOTE = re.compile(r"\b(remote|anywhere|work from home|wfh|distributed)\b", re.IGNORECASE)
@@ -87,6 +50,23 @@ def salary_range(
     amount = f"{lo}-{hi}" if lo and hi and lo != hi else (lo or hi or "")
     parts = [currency.upper() if currency else None, amount, f"per {period}" if period else None]
     return " ".join(p for p in parts if p)
+
+
+def parse_date(value: object) -> date | None:
+    """An application deadline from a source or a model: ISO dates or datetimes, epoch
+    times, RFC 822. Free text ("ASAP", "rolling") and implausible years are None, never a
+    guess (a wrong deadline would hide an open job)."""
+    if isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value.strip()):
+        try:
+            parsed = date.fromisoformat(value.strip())
+        except ValueError:
+            return None
+    else:
+        moment = parse_datetime(value)
+        if moment is None:
+            return None
+        parsed = moment.date()
+    return parsed if 2000 <= parsed.year <= 2100 else None
 
 
 def parse_datetime(value: object) -> datetime | None:

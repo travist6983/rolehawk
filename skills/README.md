@@ -35,6 +35,10 @@ Built-in commands available today:
 | `apply-plan`, `apply` | Fit gate, tailored CV + cover letter, fact checks, Word/PDF, application at Applying (see `apply/SKILL.md`) |
 | `apply-context`, `apply-save` | Draft in Claude Code: context in, draft out, same fact checks |
 | `application`, `application-documents`, `application-regenerate`, `application-update`, `autofill` | Review, edit, rewrite a section, change stage, fill the form (never submits) |
+| `application-keep-flag` | Keep a flagged line as written (stretch, style, or skipped-requirement flags only) |
+| `followups`, `followup-draft`, `followup-log` | Quiet applications, a follow-up draft from the documents sent (never sent), log one the user sent (see `followup/SKILL.md`) |
+| `stale-applications`, `close-stale` | Applications with no reply in 60+ days; close chosen ones as Ghosted |
+| `calibration-status`, `calibrate` | Learn from results: patterns in what got interviews, as preference proposals the user accepts |
 | `pipeline`, `insights` | The board by stage with next actions; funnel, response rate by source, weekly activity, spend |
 | `html-report` | Self-contained HTML report in the reports folder (see `html-report/SKILL.md`) |
 | `reset` | Delete a scope of data after a zipped backup; typed confirmation (see `reset/SKILL.md`) |

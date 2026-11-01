@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { ConflictPicker } from "./ConflictPicker";
 import { summarizeApply } from "./summary";
 
 function dates(start?: string | null, end?: string | null, current?: boolean): string {
@@ -20,6 +21,8 @@ function dates(start?: string | null, end?: string | null, current?: boolean): s
 /** Review what was read from the documents before anything is saved. */
 export function DraftReview({ draft, onApplied }: { draft: Draft; onApplied: () => void }) {
   const [profile, setProfile] = useState(draft.profile);
+  const [picks, setPicks] = useState<Record<string, number>>({});
+  const unresolved = draft.conflicts.filter((c) => picks[c.id] === undefined).length;
   const apply = useApplyDraft();
   const discard = useDiscardDraft();
   const ids = {
@@ -48,6 +51,14 @@ export function DraftReview({ draft, onApplied }: { draft: Draft; onApplied: () 
           only use what you save here. Remove anything that's wrong; you can add details next.
         </p>
       </div>
+
+      <ConflictPicker
+        conflicts={draft.conflicts}
+        picks={picks}
+        onPick={(id, option) => {
+          setPicks((current) => ({ ...current, [id]: option }));
+        }}
+      />
 
       <Card>
         <CardHeader>
@@ -207,10 +218,10 @@ export function DraftReview({ draft, onApplied }: { draft: Draft; onApplied: () 
 
       <div className="flex flex-wrap gap-2">
         <Button
-          disabled={apply.isPending}
+          disabled={apply.isPending || unresolved > 0}
           onClick={() => {
             apply.mutate(
-              { profile, preferences: draft.preferences },
+              { profile, preferences: draft.preferences, resolutions: picks },
               {
                 onSuccess: (result) => {
                   toast.success(summarizeApply(result));
@@ -223,6 +234,12 @@ export function DraftReview({ draft, onApplied }: { draft: Draft; onApplied: () 
         >
           {apply.isPending ? "Saving…" : "Save to profile"}
         </Button>
+        {unresolved > 0 && (
+          <p className="self-center text-sm text-muted-foreground">
+            Pick a version for{" "}
+            {unresolved === 1 ? "the conflict" : `${String(unresolved)} conflicts`} above first.
+          </p>
+        )}
         <Button
           variant="ghost"
           disabled={discard.isPending}

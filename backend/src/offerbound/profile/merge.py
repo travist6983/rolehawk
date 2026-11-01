@@ -23,6 +23,35 @@ def norm(text: str | None) -> str:
     return " ".join(value.split())
 
 
+_TITLE_WORDS = {
+    "sr": "senior",
+    "snr": "senior",
+    "jr": "junior",
+    "jnr": "junior",
+    "mgr": "manager",
+    "mngr": "manager",
+    "eng": "engineer",
+    "engr": "engineer",
+    "dev": "developer",
+    "assoc": "associate",
+    "asst": "assistant",
+    "dir": "director",
+    "vp": "vice president",
+    "svp": "senior vice president",
+    "ii": "2",
+    "iii": "3",
+    "iv": "4",
+}
+
+
+def title_key(title: str | None) -> str:
+    """Titles compared the way people write them: "Sr. Data Eng" == "Senior Data Engineer",
+    "Analyst II" == "Analyst 2", "&" == "and"."""
+    value = re.sub(r"&", " and ", (title or "").casefold())
+    value = re.sub(r"[^\w\s]", " ", value)
+    return " ".join(_TITLE_WORDS.get(word, word) for word in value.split())
+
+
 @dataclass
 class MergeReport:
     added: dict[str, int] = field(default_factory=dict)
@@ -52,7 +81,7 @@ def _merge_contact(current: Contact, incoming: Contact) -> Contact:
 
 
 def _experience_key(exp: Experience) -> tuple[str, str]:
-    return norm(exp.company), norm(exp.title)
+    return norm(exp.company), title_key(exp.title)
 
 
 def _merge_experience(
@@ -158,5 +187,7 @@ def merge_preferences(current: Preferences, incoming: Preferences) -> Preference
         salary_floor=current.salary_floor or incoming.salary_floor,
         work_authorization=_fill(current.work_authorization, incoming.work_authorization),
         deal_breakers=dedupe([*current.deal_breakers, *incoming.deal_breakers]),
+        energizing=dedupe([*current.energizing, *incoming.energizing]),
+        draining=dedupe([*current.draining, *incoming.draining]),
         extra_sections={**incoming.extra_sections, **current.extra_sections},
     )

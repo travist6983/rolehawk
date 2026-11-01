@@ -25,8 +25,11 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-import { safeUrl, whereText } from "./discoverText";
+import { deadlineText, safeUrl, staleText, whereText } from "./discoverText";
+import { FitBreakdown, FitGates } from "./FitDetails";
+import { IntegrityNotice } from "./IntegrityNotice";
 
 function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
   if (job.score === null) {
@@ -51,6 +54,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
           <span className="text-xs text-muted-foreground">ranked {timeAgo(job.scored_at)}</span>
         )}
       </div>
+      {job.gates && <FitGates gates={job.gates} />}
       {job.reasons.length > 0 && (
         <div>
           <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why</h3>
@@ -77,6 +81,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
           <p className="mt-1 text-muted-foreground">None found.</p>
         )}
       </div>
+      {job.breakdown && <FitBreakdown breakdown={job.breakdown} />}
     </section>
   );
 }
@@ -207,7 +212,18 @@ export function JobDetailSheet({
                 {data.salary_text && <span>{data.salary_text}</span>}
                 <span>via {data.source}</span>
                 <span>posted {timeAgo(data.posted_at ?? data.scraped_at)}</span>
+                {deadlineText(data) && (
+                  <span className={cn(data.deadline && "font-medium text-caution")}>
+                    {deadlineText(data)}
+                  </span>
+                )}
               </p>
+              {data.stale_days !== null && (
+                <p className="text-xs text-caution">
+                  {staleText(data)}. Some postings stay open for months; check it's still live
+                  before applying.
+                </p>
+              )}
             </SheetHeader>
             <div className="space-y-5 px-4 pb-6">
               <Actions job={data} onApply={onApply} />
@@ -222,8 +238,9 @@ export function JobDetailSheet({
                   From the posting
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Written by the employer and shown as-is.
+                  Written by the employer. Hidden text and invisible characters are removed.
                 </p>
+                <IntegrityNotice report={data.integrity_report} />
                 <div className="text-sm leading-relaxed break-words whitespace-pre-line">
                   {data.description || "No description was included."}
                 </div>

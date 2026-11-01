@@ -1124,7 +1124,7 @@
           "setup"
         ],
         "summary": "Apply Draft",
-        "description": "Applies the stored draft, or the edited version the user reviewed.",
+        "description": "Applies the stored draft, or the edited version the user reviewed, with the version\npicked for each conflict.",
         "operationId": "apply_draft_api_setup_draft_apply_post",
         "requestBody": {
           "content": {
@@ -1132,7 +1132,7 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/ExtractedSetup"
+                    "$ref": "#/components/schemas/ApplyDraftIn"
                   },
                   {
                     "type": "null"
@@ -2016,14 +2016,15 @@
               "enum": [
                 "active",
                 "saved",
-                "dismissed"
+                "dismissed",
+                "closed"
               ],
               "type": "string",
-              "description": "active hides dismissed jobs",
+              "description": "active hides dismissed jobs and jobs whose deadline has passed",
               "default": "active",
               "title": "Show"
             },
-            "description": "active hides dismissed jobs"
+            "description": "active hides dismissed jobs and jobs whose deadline has passed"
           },
           {
             "name": "min_score",
@@ -2699,6 +2700,59 @@
         }
       }
     },
+    "/api/applications/{application_id}/flags/keep": {
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Keep Flag",
+        "description": "Keep a flagged line as written; it stays hidden when the checks run again.",
+        "operationId": "keep_flag_api_applications__application_id__flags_keep_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagRef"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/applications/{application_id}/regenerate": {
       "post": {
         "tags": [
@@ -2869,6 +2923,297 @@
         }
       }
     },
+    "/api/followups": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Quiet",
+        "description": "Waiting applications quiet long enough for a follow-up (at most two each).",
+        "operationId": "quiet_api_followups_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 10,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuietApplication"
+                  },
+                  "title": "Response Quiet Api Followups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/followups/stale": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Stale",
+        "operationId": "stale_api_followups_stale_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 730,
+              "minimum": 7,
+              "default": 60,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuietApplication"
+                  },
+                  "title": "Response Stale Api Followups Stale Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/followups/close-stale": {
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Close Stale",
+        "description": "Move the chosen long-quiet applications to Ghosted.",
+        "operationId": "close_stale_api_followups_close_stale_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseStaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosedStale"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/followups": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "History",
+        "operationId": "history_api_applications__application_id__followups_get",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FollowUpView"
+                  },
+                  "title": "Response History Api Applications  Application Id  Followups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Log",
+        "description": "Record a follow-up the user sent.",
+        "operationId": "log_api_applications__application_id__followups_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/followups/draft": {
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Draft",
+        "description": "A draft from the documents already sent. Nothing is sent.",
+        "operationId": "draft_api_applications__application_id__followups_draft_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pipeline": {
       "get": {
         "tags": [
@@ -2905,6 +3250,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Insights"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calibration": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Calibration Status",
+        "description": "Applications with a result, and whether there are enough to learn from.",
+        "operationId": "calibration_status_api_calibration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Calibrate",
+        "description": "Patterns in what got interviews, with preference edits as pending proposals.",
+        "operationId": "calibrate_api_calibration_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationResult"
                 }
               }
             }
@@ -3171,6 +3558,27 @@
         ],
         "title": "ApplicationDetail"
       },
+      "ApplyDraftIn": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Input"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Input"
+          },
+          "resolutions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Resolutions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ApplyDraftIn",
+        "description": "The reviewed draft, plus the version picked for each conflict (option index by id).\nA conflict without a pick keeps the existing version."
+      },
       "ApplyMethod": {
         "type": "string",
         "enum": [
@@ -3306,6 +3714,12 @@
             "type": "object",
             "title": "Updated"
           },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved",
+            "description": "Conflicts settled with the user's pick",
+            "default": 0
+          },
           "completeness": {
             "$ref": "#/components/schemas/Completeness"
           }
@@ -3319,6 +3733,54 @@
           "completeness"
         ],
         "title": "ApplyResult"
+      },
+      "AtsCheck": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "passed",
+          "detail"
+        ],
+        "title": "AtsCheck"
+      },
+      "AtsReport": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "docx"
+            ],
+            "title": "Source"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/AtsCheck"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "checks"
+        ],
+        "title": "AtsReport"
       },
       "AutofillReport": {
         "properties": {
@@ -3416,6 +3878,35 @@
         ],
         "title": "Body_upload_document_api_setup_documents_post"
       },
+      "Breakdown": {
+        "properties": {
+          "experience": {
+            "type": "integer",
+            "title": "Experience"
+          },
+          "skills": {
+            "type": "integer",
+            "title": "Skills"
+          },
+          "career": {
+            "type": "integer",
+            "title": "Career"
+          },
+          "logistics": {
+            "type": "integer",
+            "title": "Logistics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "experience",
+          "skills",
+          "career",
+          "logistics"
+        ],
+        "title": "Breakdown",
+        "description": "The four parts of a fit score, 0 to 100 each."
+      },
       "Bundle": {
         "properties": {
           "version": {
@@ -3477,6 +3968,30 @@
             "title": "Pdf Unavailable",
             "default": false
           },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementView"
+            },
+            "type": "array",
+            "title": "Requirements"
+          },
+          "ats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtsReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kept": {
+            "items": {
+              "$ref": "#/components/schemas/FlagRef"
+            },
+            "type": "array",
+            "title": "Kept"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -3496,10 +4011,82 @@
           "model",
           "files",
           "pdf_unavailable",
+          "requirements",
+          "ats",
+          "kept",
           "updated_at"
         ],
         "title": "Bundle",
         "description": "application.json: the documents as data, their review flags, and their files."
+      },
+      "CalibrationResult": {
+        "properties": {
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalView"
+            },
+            "type": "array",
+            "title": "Proposals"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "ran_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ran At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "findings",
+          "proposals",
+          "resolved",
+          "ran_at"
+        ],
+        "title": "CalibrationResult"
+      },
+      "CalibrationStatus": {
+        "properties": {
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "positive": {
+            "type": "integer",
+            "title": "Positive"
+          },
+          "negative": {
+            "type": "integer",
+            "title": "Negative"
+          },
+          "needed": {
+            "type": "integer",
+            "title": "Needed",
+            "description": "Results needed before patterns mean much"
+          },
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resolved",
+          "positive",
+          "negative",
+          "needed",
+          "ready"
+        ],
+        "title": "CalibrationStatus"
       },
       "CancelOut": {
         "properties": {
@@ -3670,6 +4257,26 @@
             "type": "integer",
             "title": "Flags"
           },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "follow_ups": {
+            "type": "integer",
+            "title": "Follow Ups"
+          },
+          "follow_up_due": {
+            "type": "boolean",
+            "title": "Follow Up Due"
+          },
           "next_action": {
             "anyOf": [
               {
@@ -3696,6 +4303,9 @@
           "applied_at",
           "has_documents",
           "flags",
+          "closes_at",
+          "follow_ups",
+          "follow_up_due",
           "next_action"
         ],
         "title": "Card"
@@ -3949,6 +4559,38 @@
           "label"
         ],
         "title": "Choice"
+      },
+      "CloseStaleIn": {
+        "properties": {
+          "application_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Application Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "application_ids"
+        ],
+        "title": "CloseStaleIn"
+      },
+      "ClosedStale": {
+        "properties": {
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "closed"
+        ],
+        "title": "ClosedStale"
       },
       "Column": {
         "properties": {
@@ -4286,6 +4928,70 @@
           "missing"
         ],
         "title": "Completeness"
+      },
+      "Conflict": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "title",
+              "dates",
+              "degree",
+              "contact"
+            ],
+            "title": "Kind"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "subject",
+          "question",
+          "options"
+        ],
+        "title": "Conflict"
+      },
+      "ConflictOption": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "patch": {
+            "$ref": "#/components/schemas/Patch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "source",
+          "patch"
+        ],
+        "title": "ConflictOption"
       },
       "Contact-Input": {
         "properties": {
@@ -5568,6 +6274,20 @@
             "type": "array",
             "title": "Document Ids"
           },
+          "document_conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/Conflict"
+            },
+            "type": "array",
+            "title": "Document Conflicts"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/Conflict"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5578,9 +6298,23 @@
         "required": [
           "profile",
           "preferences",
+          "document_ids",
+          "document_conflicts",
+          "conflicts",
           "created_at"
         ],
         "title": "Draft"
+      },
+      "DraftIn": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel",
+            "default": "email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DraftIn"
       },
       "Education-Input": {
         "properties": {
@@ -5978,18 +6712,6 @@
         ],
         "title": "ExtractIn"
       },
-      "ExtractedSetup": {
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile-Input"
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/Preferences-Input"
-          }
-        },
-        "type": "object",
-        "title": "ExtractedSetup"
-      },
       "FieldMap": {
         "properties": {
           "title": {
@@ -6088,6 +6810,11 @@
             "title": "Dismissed",
             "default": 0
           },
+          "closed": {
+            "type": "integer",
+            "title": "Closed",
+            "default": 0
+          },
           "country": {
             "type": "integer",
             "title": "Country",
@@ -6112,6 +6839,38 @@
         "type": "object",
         "title": "FilterCounts",
         "description": "Jobs skipped before scoring, by reason."
+      },
+      "Finding": {
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "title": "Pattern",
+            "description": "One sentence, written to the job seeker"
+          },
+          "application_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Application Ids",
+            "description": "The applications that show it"
+          },
+          "strength": {
+            "type": "string",
+            "enum": [
+              "firm",
+              "worth watching"
+            ],
+            "title": "Strength"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pattern",
+          "application_ids",
+          "strength"
+        ],
+        "title": "Finding"
       },
       "FitView": {
         "properties": {
@@ -6140,6 +6899,16 @@
           "passes": {
             "type": "boolean",
             "title": "Passes"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6148,7 +6917,8 @@
           "reasons",
           "must_have_gaps",
           "threshold",
-          "passes"
+          "passes",
+          "gates"
         ],
         "title": "FitView"
       },
@@ -6181,6 +6951,18 @@
               "review"
             ],
             "title": "Source"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unsupported",
+              "stretch",
+              "unaddressed",
+              "style",
+              "ats"
+            ],
+            "title": "Kind",
+            "default": "unsupported"
           }
         },
         "type": "object",
@@ -6189,9 +6971,165 @@
           "location",
           "text",
           "issue",
-          "source"
+          "source",
+          "kind"
         ],
         "title": "Flag"
+      },
+      "FlagRef": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "enum": [
+              "cv",
+              "cover_letter"
+            ],
+            "title": "Document"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document",
+          "location",
+          "text"
+        ],
+        "title": "FlagRef",
+        "description": "Which flag: the same document, line, and quoted text."
+      },
+      "FollowUpChannel": {
+        "type": "string",
+        "enum": [
+          "email",
+          "linkedin",
+          "portal"
+        ],
+        "title": "FollowUpChannel"
+      },
+      "FollowUpDraft": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues",
+            "description": "Claims or phrases worth a second look before sending"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "subject",
+          "body",
+          "issues"
+        ],
+        "title": "FollowUpDraft"
+      },
+      "FollowUpIn": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel",
+            "default": "email"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "FollowUpIn"
+      },
+      "FollowUpView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "application_id": {
+            "type": "integer",
+            "title": "Application Id"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "application_id",
+          "channel",
+          "subject",
+          "body",
+          "sent_at"
+        ],
+        "title": "FollowUpView"
       },
       "FormField": {
         "properties": {
@@ -6272,6 +7210,55 @@
           "rate_from_previous"
         ],
         "title": "FunnelStep"
+      },
+      "Gate": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "check",
+              "fail"
+            ],
+            "title": "Verdict",
+            "description": "pass, check, or fail"
+          },
+          "quote": {
+            "type": "string",
+            "title": "Quote",
+            "description": "The posting's exact words; empty if silent",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "quote"
+        ],
+        "title": "Gate"
+      },
+      "Gates": {
+        "properties": {
+          "eligibility": {
+            "$ref": "#/components/schemas/Gate"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Gate"
+          },
+          "deal_breaker": {
+            "type": "string",
+            "title": "Deal Breaker",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "eligibility",
+          "language",
+          "deal_breaker"
+        ],
+        "title": "Gates",
+        "description": "What's stored with a score: the two gates and any deal breaker."
       },
       "HTTPValidationError": {
         "properties": {
@@ -6550,6 +7537,98 @@
         ],
         "title": "Inspection"
       },
+      "IntegrityView": {
+        "properties": {
+          "hidden_blocks": {
+            "type": "integer",
+            "title": "Hidden Blocks",
+            "description": "Hidden HTML blocks with text, removed",
+            "default": 0
+          },
+          "hidden_excerpts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Excerpts",
+            "description": "Their first words"
+          },
+          "hidden_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Urls",
+            "description": "Links only in hidden text"
+          },
+          "invisible_chars": {
+            "type": "integer",
+            "title": "Invisible Chars",
+            "description": "Removed characters that can carry or hide text",
+            "default": 0
+          },
+          "tampering": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tampering",
+            "description": "Why those look deliberate"
+          },
+          "invisible_text": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invisible Text",
+            "description": "Text spelled in invisible characters, decoded"
+          },
+          "instruction_lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Instruction Lines",
+            "description": "Lines addressed to AI tools, quoted"
+          },
+          "mixed_script_words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mixed Script Words",
+            "description": "Words mixing Latin with look-alike letters"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Verdict"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hidden_blocks",
+          "hidden_excerpts",
+          "hidden_urls",
+          "invisible_chars",
+          "tampering",
+          "invisible_text",
+          "instruction_lines",
+          "mixed_script_words",
+          "verdict",
+          "summary"
+        ],
+        "title": "IntegrityView",
+        "description": "What the API shows: the findings plus a verdict and a one-line summary."
+      },
       "InterviewState": {
         "properties": {
           "question": {
@@ -6708,6 +7787,28 @@
             ],
             "title": "Score Model"
           },
+          "breakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Breakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The four parts behind the score"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Eligibility and language gates, deal breaker"
+          },
           "stage": {
             "anyOf": [
               {
@@ -6721,6 +7822,57 @@
           "dismissed": {
             "type": "boolean",
             "title": "Dismissed"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At",
+            "description": "The application deadline, when known"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "soon",
+                  "closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline",
+            "description": "soon: closes within 7 days; closed: the deadline passed"
+          },
+          "stale_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Days",
+            "description": "Days since posting, when older than 30 days (still may be open)"
+          },
+          "integrity": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Integrity",
+            "description": "clean, cleaned (hidden text removed), or warning"
           },
           "description": {
             "type": "string",
@@ -6737,6 +7889,17 @@
               }
             ],
             "title": "Application Id"
+          },
+          "integrity_report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntegrityView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the integrity check removed or found; null when nothing"
           }
         },
         "type": "object",
@@ -6757,10 +7920,17 @@
           "must_have_gaps",
           "scored_at",
           "score_model",
+          "breakdown",
+          "gates",
           "stage",
           "dismissed",
+          "closes_at",
+          "deadline",
+          "stale_days",
+          "integrity",
           "description",
-          "application_id"
+          "application_id",
+          "integrity_report"
         ],
         "title": "JobDetail"
       },
@@ -6913,6 +8083,28 @@
             ],
             "title": "Score Model"
           },
+          "breakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Breakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The four parts behind the score"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Eligibility and language gates, deal breaker"
+          },
           "stage": {
             "anyOf": [
               {
@@ -6926,6 +8118,57 @@
           "dismissed": {
             "type": "boolean",
             "title": "Dismissed"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At",
+            "description": "The application deadline, when known"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "soon",
+                  "closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline",
+            "description": "soon: closes within 7 days; closed: the deadline passed"
+          },
+          "stale_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Days",
+            "description": "Days since posting, when older than 30 days (still may be open)"
+          },
+          "integrity": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "cleaned",
+              "warning"
+            ],
+            "title": "Integrity",
+            "description": "clean, cleaned (hidden text removed), or warning"
           }
         },
         "type": "object",
@@ -6946,8 +8189,14 @@
           "must_have_gaps",
           "scored_at",
           "score_model",
+          "breakdown",
+          "gates",
           "stage",
-          "dismissed"
+          "dismissed",
+          "closes_at",
+          "deadline",
+          "stale_days",
+          "integrity"
         ],
         "title": "JobRow"
       },
@@ -6972,6 +8221,11 @@
           "dismissed": {
             "type": "integer",
             "title": "Dismissed"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed",
+            "description": "Not dismissed, but the deadline has passed"
           }
         },
         "type": "object",
@@ -6980,7 +8234,8 @@
           "ranked",
           "unranked",
           "saved",
-          "dismissed"
+          "dismissed",
+          "closed"
         ],
         "title": "JobStats",
         "description": "Counts over every job that isn't dismissed (dismissed counted separately)."
@@ -7450,6 +8705,28 @@
               }
             ],
             "title": "Posted At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "integrity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostingIntegrity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7460,6 +8737,59 @@
           "title"
         ],
         "title": "NormalizedJob"
+      },
+      "Patch": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "role",
+              "education",
+              "contact",
+              "none"
+            ],
+            "title": "Kind"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company",
+            "default": ""
+          },
+          "titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Titles"
+          },
+          "institution": {
+            "type": "string",
+            "title": "Institution",
+            "default": ""
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "Patch"
       },
       "PlanIn": {
         "properties": {
@@ -7706,6 +9036,83 @@
         ],
         "title": "PortalView"
       },
+      "PostingIntegrity": {
+        "properties": {
+          "hidden_blocks": {
+            "type": "integer",
+            "title": "Hidden Blocks",
+            "description": "Hidden HTML blocks with text, removed",
+            "default": 0
+          },
+          "hidden_excerpts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Excerpts",
+            "description": "Their first words"
+          },
+          "hidden_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden Urls",
+            "description": "Links only in hidden text"
+          },
+          "invisible_chars": {
+            "type": "integer",
+            "title": "Invisible Chars",
+            "description": "Removed characters that can carry or hide text",
+            "default": 0
+          },
+          "tampering": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tampering",
+            "description": "Why those look deliberate"
+          },
+          "invisible_text": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invisible Text",
+            "description": "Text spelled in invisible characters, decoded"
+          },
+          "instruction_lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Instruction Lines",
+            "description": "Lines addressed to AI tools, quoted"
+          },
+          "mixed_script_words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mixed Script Words",
+            "description": "Words mixing Latin with look-alike letters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hidden_blocks",
+          "hidden_excerpts",
+          "hidden_urls",
+          "invisible_chars",
+          "tampering",
+          "invisible_text",
+          "instruction_lines",
+          "mixed_script_words"
+        ],
+        "title": "PostingIntegrity",
+        "description": "What the check removed or found in one posting. Empty means nothing to report."
+      },
       "Preferences-Input": {
         "properties": {
           "target_titles": {
@@ -7782,6 +9189,20 @@
             },
             "type": "array",
             "title": "Deal Breakers"
+          },
+          "energizing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Energizing"
+          },
+          "draining": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Draining"
           }
         },
         "additionalProperties": false,
@@ -7864,6 +9285,20 @@
             },
             "type": "array",
             "title": "Deal Breakers"
+          },
+          "energizing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Energizing"
+          },
+          "draining": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Draining"
           }
         },
         "additionalProperties": false,
@@ -7876,7 +9311,9 @@
           "country",
           "salary_floor",
           "work_authorization",
-          "deal_breakers"
+          "deal_breakers",
+          "energizing",
+          "draining"
         ],
         "title": "Preferences"
       },
@@ -8371,6 +9808,74 @@
         ],
         "title": "Question"
       },
+      "QuietApplication": {
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "title": "Application Id"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/Stage"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At"
+          },
+          "quiet_days": {
+            "type": "integer",
+            "title": "Quiet Days"
+          },
+          "follow_ups": {
+            "type": "integer",
+            "title": "Follow Ups"
+          },
+          "last_follow_up_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Follow Up At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "job_id",
+          "title",
+          "company",
+          "stage",
+          "applied_at",
+          "quiet_days",
+          "follow_ups",
+          "last_follow_up_at"
+        ],
+        "title": "QuietApplication"
+      },
       "RankParams": {
         "properties": {
           "job_ids": {
@@ -8618,6 +10123,105 @@
           "size"
         ],
         "title": "ReportFile"
+      },
+      "RequirementView": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "title": "Requirement",
+            "description": "Short, as the posting says it: \"3+ years of SQL\""
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "required",
+              "preferred"
+            ],
+            "title": "Priority",
+            "description": "required, or preferred (nice to have)"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Terms",
+            "description": "The posting's own keywords for it, exactly as written, e.g. ['SQL']"
+          },
+          "also": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Also",
+            "description": "Other names for the same thing, e.g. ['Amazon Web Services'] for 'AWS'"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "covered",
+                  "synonym",
+                  "missing_have",
+                  "gap"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "matched": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched",
+            "description": "The term found in the CV"
+          },
+          "addressed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Addressed",
+            "description": "From the AI review"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement",
+          "priority",
+          "terms",
+          "also",
+          "keyword",
+          "matched",
+          "addressed",
+          "note"
+        ],
+        "title": "RequirementView",
+        "description": "A requirement with what the checks found: keyword coverage in the CV's text layer\nand, from the AI review, whether the documents address it."
       },
       "ResetIn": {
         "properties": {

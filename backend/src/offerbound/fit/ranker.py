@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Sequence
+from datetime import date
 
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -16,7 +17,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.db.models import Job, JobScore, SearchTarget
 from offerbound.fit.filters import FilterCounts, build_rules, candidates
-from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, JobFit
+from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, Gates, JobFit
 from offerbound.llm.errors import (
     LLMError,
     LLMNotConfiguredError,
@@ -37,7 +38,7 @@ BATCH_SIZE = 20
 CONCURRENCY = 4
 MAX_JOBS_PER_RUN = 1_000
 DESCRIPTION_CHARS = 5_000  # per job; postings rarely put requirements past this
-OUTPUT_TOKENS_PER_JOB = 150
+OUTPUT_TOKENS_PER_JOB = 260  # four parts, two gates with quotes, reasons, gaps
 
 Progress = Callable[[float | None, str | None], Awaitable[None]]
 
@@ -260,6 +261,9 @@ class Ranker:
     def _store(self, fits: list[JobFit], model: str, task_id: str | None) -> None:
         with self._sessions.begin() as session:
             for fit in fits:
+                job = session.get(Job, fit.job_id)
+                if job is not None and job.closes_at is None and fit.deadline:
+                    job.closes_at = date.fromisoformat(fit.deadline)  # the source's date wins
                 session.add(
                     JobScore(
                         job_id=fit.job_id,
@@ -267,6 +271,8 @@ class Ranker:
                         score=fit.score,
                         reasons=fit.reasons,
                         must_have_gaps=fit.must_have_gaps,
+                        breakdown=fit.breakdown.model_dump(),
+                        gates=Gates.of(fit).model_dump(),
                         model=model,
                     )
                 )

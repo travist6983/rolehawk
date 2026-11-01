@@ -239,7 +239,7 @@ export function useApplyDraft() {
   const client = useQueryClient();
   const invalidate = useInvalidateProfile();
   return useMutation({
-    mutationFn: (edited: Schemas["ExtractedSetup"]) =>
+    mutationFn: (edited: Schemas["ApplyDraftIn"]) =>
       unwrap(api.POST("/api/setup/draft/apply", { body: edited })),
     onSuccess: () => {
       client.setQueryData(setupKeys.draft, null);
@@ -587,6 +587,8 @@ export type ApplyPlan = Schemas["ApplyPlan"];
 export type ApplicationDetail = Schemas["ApplicationDetail"];
 export type Bundle = Schemas["Bundle"];
 export type Flag = Schemas["Flag"];
+export type RequirementView = Schemas["RequirementView"];
+export type AtsReport = Schemas["AtsReport"];
 export type CvDocument = Schemas["CvDocument-Output"];
 export type CoverLetter = Schemas["CoverLetter-Output"];
 export type Stage = Schemas["Stage"];
@@ -661,6 +663,20 @@ export function useSaveDocuments(id: number) {
   });
 }
 
+export function useKeepFlag(id: number) {
+  const onSuccess = useSetApplication(id);
+  return useMutation({
+    mutationFn: (body: Schemas["FlagRef"]) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/flags/keep", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess,
+  });
+}
+
 export function useRegenerate(id: number) {
   return useMutation({
     mutationFn: (body: Schemas["RegenerateIn"]) =>
@@ -718,6 +734,97 @@ export function usePipeline() {
   return useQuery({
     queryKey: pipelineKeys.board,
     queryFn: () => unwrap(api.GET("/api/pipeline")),
+  });
+}
+
+export type QuietApplication = Schemas["QuietApplication"];
+export type FollowUpDraft = Schemas["FollowUpDraft"];
+export type FollowUpChannel = Schemas["FollowUpIn"]["channel"];
+
+export const followUpKeys = {
+  stale: ["followups", "stale"] as const,
+  history: (id: number) => ["followups", "history", id] as const,
+};
+
+export function useStaleApplications() {
+  return useQuery({
+    queryKey: followUpKeys.stale,
+    queryFn: () => unwrap(api.GET("/api/followups/stale")),
+  });
+}
+
+export function useFollowUpHistory(id: number) {
+  return useQuery({
+    queryKey: followUpKeys.history(id),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/applications/{application_id}/followups", {
+          params: { path: { application_id: id } },
+        }),
+      ),
+  });
+}
+
+/** A draft from the documents already sent. Nothing is sent. */
+export function useDraftFollowUp(id: number) {
+  return useMutation({
+    mutationFn: (channel: NonNullable<FollowUpChannel>) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/followups/draft", {
+          params: { path: { application_id: id } },
+          body: { channel },
+        }),
+      ),
+  });
+}
+
+/** Record a follow-up the user sent; the pipeline's next action updates. */
+export function useLogFollowUp(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Schemas["FollowUpIn"]) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/followups", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: pipelineKeys.board });
+      void client.invalidateQueries({ queryKey: ["followups"] });
+    },
+  });
+}
+
+export function useCloseStale() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationIds: number[]) =>
+      unwrap(api.POST("/api/followups/close-stale", { body: { application_ids: applicationIds } })),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: pipelineKeys.board });
+      void client.invalidateQueries({ queryKey: ["followups"] });
+    },
+  });
+}
+
+export type CalibrationResult = Schemas["CalibrationResult"];
+
+export function useCalibrationStatus() {
+  return useQuery({
+    queryKey: ["calibration"] as const,
+    queryFn: () => unwrap(api.GET("/api/calibration")),
+  });
+}
+
+/** Finds patterns in results; preference edits come back as pending proposals. */
+export function useCalibrate() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/calibration")),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.proposals });
+    },
   });
 }
 

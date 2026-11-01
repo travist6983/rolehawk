@@ -7,7 +7,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { AlertTriangleIcon, ClockIcon, MoreHorizontalIcon } from "lucide-react";
+import { AlertTriangleIcon, ClockIcon, MailIcon, MoreHorizontalIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+import { FollowUpDialog } from "./FollowUpDialog";
 import {
   CLOSED_STAGES,
   columnIndexOf,
@@ -96,6 +97,7 @@ function KanbanCard({
   dragging,
   onKeyDown,
   onMove,
+  onFollowUp,
 }: {
   card: BoardCard;
   picked: boolean;
@@ -103,6 +105,7 @@ function KanbanCard({
   dragging: React.RefObject<boolean>;
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>, card: BoardCard) => void;
   onMove: (stage: Stage) => void;
+  onFollowUp?: (card: BoardCard) => void;
 }) {
   const { setNodeRef, listeners, transform, isDragging } = useDraggable({
     id: `card-${String(card.application_id)}`,
@@ -164,6 +167,25 @@ function KanbanCard({
           {card.next_action}
         </p>
       )}
+      {card.follow_up_due && onFollowUp && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 w-full text-xs"
+          // A button inside a draggable card: don't start a drag or a keyboard move.
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+          }}
+          onClick={() => {
+            onFollowUp(card);
+          }}
+        >
+          <MailIcon /> Draft a follow-up
+        </Button>
+      )}
     </article>
   );
 }
@@ -209,6 +231,7 @@ export function Kanban({ board }: { board: Board }) {
   const [picked, setPicked] = useState<Picked | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [closing, setClosing] = useState<BoardCard | null>(null);
+  const [followingUp, setFollowingUp] = useState<BoardCard | null>(null);
   const dragging = useRef(false);
   const instructionsId = useId();
 
@@ -312,6 +335,7 @@ export function Kanban({ board }: { board: Board }) {
                     onMove={(stage) => {
                       doMove(card, stage);
                     }}
+                    onFollowUp={setFollowingUp}
                   />
                 ))}
               </KanbanColumn>
@@ -319,6 +343,14 @@ export function Kanban({ board }: { board: Board }) {
           ))}
         </div>
       </DndContext>
+      {followingUp && (
+        <FollowUpDialog
+          card={followingUp}
+          onClose={() => {
+            setFollowingUp(null);
+          }}
+        />
+      )}
       <Dialog
         open={closing !== null}
         onOpenChange={(open) => {

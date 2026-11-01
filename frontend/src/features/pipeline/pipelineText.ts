@@ -31,3 +31,15 @@ export function daysText(days: number): string {
   if (days === 0) return "today";
   return days === 1 ? "1 day" : `${String(days)} days`;
 }
+
+export const CHANNELS = [
+  { value: "email", label: "Email" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "portal", label: "Application portal" },
+] as const;
+
+/** "This would be your first follow-up (at most two is the norm)." */
+export function followUpText(card: Pick<BoardCard, "follow_ups">): string {
+  const which = card.follow_ups === 0 ? "first" : "second and last";
+  return `This would be your ${which} follow-up (at most two is the norm).`;
+}

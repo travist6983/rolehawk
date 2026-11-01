@@ -27,7 +27,7 @@ from offerbound.fit.filters import (
     salary_max,
 )
 from offerbound.fit.ranker import NothingToRankError, Ranker, RankParams
-from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, JobFit
+from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, Gate
 from offerbound.jobs.store import JobQuery
 from offerbound.llm.errors import LLMNotConfiguredError, LLMUnavailableError, SpendCapExceededError
 from offerbound.llm.fake import FakeProvider
@@ -35,6 +35,7 @@ from offerbound.llm.service import LLMService
 from offerbound.llm.types import LLMRequest, Task
 from offerbound.profile.model import Preferences, RemotePreference, SalaryFloor
 from offerbound.services.runtime import Runtime
+from tests.fits import fit_json, fit_of
 from tests.test_api_setup import wait_for_task
 
 pytestmark = pytest.mark.anyio
@@ -54,11 +55,11 @@ def scorer(score_for: Callable[[int, str], int] | None = None) -> Handler:
         jobs = [(int(i), title) for i, title in JOB_ID.findall(prompt)]
         return FitBatch(
             jobs=[
-                JobFit(
-                    job_id=i,
-                    score=score_for(i, title) if score_for else 50 + i % 50,
-                    reasons=["Matches your SQL experience", "Hybrid in your city", "Good pay", "x"],
-                    must_have_gaps=["Tableau"] if i % 2 else [],
+                fit_of(
+                    i,
+                    score_for(i, title) if score_for else 50 + i % 50,
+                    ["Matches your SQL experience", "Hybrid in your city", "Good pay", "x"],
+                    ["Tableau"] if i % 2 else [],
                 )
                 for i, title in jobs
             ]
@@ -186,6 +187,7 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
         "already_ranked": 1,
         "applied": 1,
         "dismissed": 1,
+        "closed": 0,
         "country": 2,
         "location": 2,
         "salary": 1,
@@ -277,9 +279,9 @@ async def test_a_failed_batch_is_reported_and_bad_replies_are_cleaned(
         if ids[2] in prompt_ids:  # one job missing, an unknown id, a repeat, a wild score
             return FitBatch(
                 jobs=[
-                    JobFit(job_id=ids[2], score=140, reasons=[], must_have_gaps=[]),
-                    JobFit(job_id=ids[2], score=10, reasons=[], must_have_gaps=[]),
-                    JobFit(job_id=99_999, score=50, reasons=[], must_have_gaps=[]),
+                    fit_of(ids[2], 140),
+                    fit_of(ids[2], 10),
+                    fit_of(99_999, 50),
                 ]
             )
         return scorer()(request, schema)
@@ -346,6 +348,7 @@ async def test_job_listing_sorts_filters_and_counts(runtime: Runtime) -> None:
         "unranked": 2,
         "saved": 0,
         "dismissed": 0,
+        "closed": 0,
     }
 
     assert [j.id for j in runtime.jobs.list(JobQuery(min_score=50)).items] == [high]
@@ -462,7 +465,7 @@ def test_claude_code_can_score_through_commands(client: TestClient) -> None:
 
     saved = run(
         "rank-save",
-        {"scores": [{"job_id": ids[2], "score": 88, "reasons": ["Good"], "must_have_gaps": []}]},
+        {"scores": [fit_json(ids[2], 88, reasons=["Good"])]},
     )
     assert saved == {"saved": 1}
     assert runtime.jobs.get(ids[2]).score_model == "claude-code"
@@ -478,3 +481,58 @@ async def test_chat_sees_job_text_as_untrusted(runtime: Runtime) -> None:
     assert outcome.content.startswith('<untrusted_content source="command:jobs"')
     spend = await execute(tool, ctx, {"command": "spend", "params_json": "{}"})
     assert spend.untrusted is False
+
+
+# --- the rubric's parts and gates ---------------------------------------------------------
+
+
+def test_overall_score_is_the_weighted_parts_and_gates_cap_it() -> None:
+    fit = fit_of(1, 0).model_copy(
+        update={"experience": 100, "skills": 50, "career": 50, "logistics": 0}
+    )
+    assert fit.score == 60  # 35 + 15 + 10 + 0
+    assert fit_of(1, 90, eligibility="check", language="check").score == 90
+    assert fit_of(1, 90, eligibility="fail").score == 39
+    assert fit_of(1, 90, language="fail").score == 39
+    assert fit_of(1, 90, deal_breaker="Fully in-office").score == 39
+    assert fit_of(1, 30, eligibility="fail").score == 30
+
+
+def test_rubric_asks_for_gates_with_quotes() -> None:
+    for words in ("eligibility", "language", "quote", "Silence is not permission", "drains"):
+        assert words in FIT_RUBRIC
+
+
+async def test_parts_and_gates_are_stored_and_listed(runtime: Runtime, fake: FakeProvider) -> None:
+    set_prefs(runtime)
+    ids = add_jobs(runtime, 2)
+
+    citizen_only = Gate(verdict="fail", quote="Must be a U.S. citizen with an active clearance.")
+
+    def handler(request: LLMRequest, schema: type[BaseModel]) -> BaseModel:
+        found = [int(i) for i in re.findall(r"^Job (\d+):", request.messages[-1].text, re.M)]
+        return FitBatch(
+            jobs=[
+                fit_of(i, 88).model_copy(update={"eligibility": citizen_only})
+                if i == ids[0]
+                else fit_of(i, 70, language="check")
+                for i in found
+            ]
+        )
+
+    async def progress(_f: float | None, _m: str | None) -> None:
+        return None
+
+    fake.structured_handler = handler
+    await runtime.ranker.run(RankParams(), progress)
+    rows = {r.id: r for r in runtime.jobs.list(JobQuery(status="ranked")).items}
+    first, second = rows[ids[0]], rows[ids[1]]
+    assert first.score == 39
+    assert first.breakdown is not None
+    assert first.breakdown.experience == 88
+    assert first.gates is not None
+    assert first.gates.eligibility.verdict == "fail"
+    assert first.gates.eligibility.quote == "Must be a U.S. citizen with an active clearance."
+    assert second.score == 70
+    assert second.gates is not None
+    assert second.gates.language.verdict == "check"

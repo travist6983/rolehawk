@@ -11,7 +11,9 @@ from typing import Literal
 from offerbound.rendering.model import CoverLetter, CvDocument, CvSection
 
 SEPARATOR = " | "  # between contact items and inline lists; plain text, ATS-safe
-RANGE = " \N{EN DASH} "  # date ranges: "Mar 2021 - Present" with a typographic dash
+# Date ranges use a plain ASCII hyphen: many ATS parsers (Workday among them) only split a
+# range on U+002D, and drop the dates entirely when they are joined by an en dash.
+RANGE = " - "
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 HeadingCase = Literal["upper", "title"]
 

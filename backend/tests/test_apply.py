@@ -37,7 +37,7 @@ from offerbound.apply.service import ApplyParams, DocumentsIn, ProfileIncomplete
 from offerbound.apply.truth import check_cv, check_letter, numbers_in
 from offerbound.db.models import Application, Job, Stage
 from offerbound.db.types import utcnow
-from offerbound.fit.rubric import FitBatch, JobFit
+from offerbound.fit.rubric import FitBatch
 from offerbound.llm.fake import FakeProvider
 from offerbound.llm.types import LLMRequest, Task
 from offerbound.profile.model import (
@@ -50,6 +50,7 @@ from offerbound.profile.model import (
 )
 from offerbound.rendering.text import docx_text, pdf_text
 from offerbound.services.runtime import Runtime
+from tests.fits import fit_of
 from tests.test_api_setup import wait_for_task
 
 pytestmark = pytest.mark.anyio
@@ -156,13 +157,7 @@ class Scripted:
         if schema is FitBatch:
             self.prompts["fit"].append(prompt)
             job_id = int(JOB_ID.findall(prompt)[0])
-            return FitBatch(
-                jobs=[
-                    JobFit(
-                        job_id=job_id, score=self.score, reasons=["Strong React"], must_have_gaps=[]
-                    )
-                ]
-            )
+            return FitBatch(jobs=[fit_of(job_id, self.score, ["Strong React"])])
         if schema is ApplicationDraft:
             self.prompts["draft"].append(prompt)
             return self.drafts.pop(0) if len(self.drafts) > 1 else self.drafts[0]
@@ -327,6 +322,31 @@ async def test_unsupported_details_get_one_revision_round(
     assert len(script.prompts["draft"]) == 2
     assert "47% isn't in your profile" in script.prompts["draft"][1]
     assert result.status == "ready"
+    assert result.flags == []
+
+
+async def test_cliches_get_the_revision_round_and_em_dashes_are_replaced(
+    runtime: Runtime, fake: FakeProvider
+) -> None:
+    cliched = clean_draft()
+    cliched.cover_letter.paragraphs[0] = "I am passionate about accessible checkout flows."
+    dashed = clean_draft()
+    dashed.cover_letter.paragraphs[1] = (
+        "At Northwind I lifted conversion 12% \N{EM DASH} by redesigning."
+    )
+    script = Scripted(drafts=[cliched, dashed])
+    job_id = ready(runtime, fake, script)
+
+    result = await runtime.applications.apply(ApplyParams(job_id=job_id), noop_progress)
+
+    assert len(script.prompts["draft"]) == 2
+    assert '"passionate about" is a cliché' in script.prompts["draft"][1]
+    assert result.application_id is not None
+    bundle = runtime.applications.load_bundle(result.application_id)
+    assert bundle is not None
+    assert (
+        bundle.cover_letter.paragraphs[1] == "At Northwind I lifted conversion 12%, by redesigning."
+    )
     assert result.flags == []
 
 

@@ -12,7 +12,7 @@ import re
 from collections.abc import Iterable
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from offerbound.profile.model import Profile
 from offerbound.rendering.model import CoverLetter, CvDocument
@@ -20,12 +20,21 @@ from offerbound.rendering.model import CoverLetter, CvDocument
 DocumentName = Literal["cv", "cover_letter"]
 
 
+# unsupported: the profile doesn't back it. stretch: grounded, but framed further than the
+# candidate could defend in an interview. unaddressed: a posting requirement the documents
+# skip. style: a cliché. ats: something an applicant tracking system would misread.
+FlagKind = Literal["unsupported", "stretch", "unaddressed", "style", "ats"]
+
+
 class Flag(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     document: DocumentName
     location: str  # "summary", "experience.0.bullets.2", "skills", "paragraphs.1"
     text: str
     issue: str
     source: Literal["check", "review"]
+    kind: FlagKind = "unsupported"
 
 
 _NUMBER = re.compile(r"(?<![\w.])[$€£]?\d[\d,]*(?:\.\d+)?\s?(?:%|[kKmMbB]\b|x\b)?")
@@ -41,6 +50,13 @@ def _norm_number(raw: str) -> str:
 
 def numbers_in(text: str) -> set[str]:
     return {n for n in (_norm_number(m) for m in _NUMBER.findall(text)) if n}
+
+
+def numbers_missing_from(text: str, source: str) -> list[str]:
+    """Numbers in `text` (as written) that `source` doesn't contain; small counts are fine."""
+    known = numbers_in(source) | _SMALL_OK
+    found = [m.strip() for m in _NUMBER.findall(text)]
+    return list(dict.fromkeys(r for r in found if _norm_number(r) and _norm_number(r) not in known))
 
 
 def _profile_text(profile: Profile) -> str:

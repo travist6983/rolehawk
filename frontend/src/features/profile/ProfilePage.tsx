@@ -145,6 +145,8 @@ function PreferencesView({ prefs }: { prefs: Preferences }) {
     ],
     ["Work authorization", prefs.work_authorization ?? null],
     ["Deal-breakers", prefs.deal_breakers.join(", ") || null],
+    ["Work that energizes you", prefs.energizing.join(", ") || null],
+    ["Work that drains you", prefs.draining.join(", ") || null],
   ];
   return (
     <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">

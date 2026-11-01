@@ -99,7 +99,10 @@ third-party apps to). See [skills/README.md](skills/README.md) for the full list
   data goes** lists them. No analytics, no telemetry, no account.
 - Your API key is stored in your operating system's keychain, never in a file.
 - Job postings and web pages are treated as untrusted text: they can't instruct Claude to
-  change your data.
+  change your data. Hidden text and invisible characters are removed from postings, and
+  lines aimed at AI tools are shown to you.
+
+To report a security problem, see [SECURITY.md](SECURITY.md).
 
 Please read the [disclaimer](DISCLAIMER.md): you're responsible for following each job site's
 terms and for what you send to employers.
