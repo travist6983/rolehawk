@@ -1,14 +1,14 @@
 import pytest
 
-from offerbound.memory.files import TEMPLATES, MemoryTarget
-from offerbound.profile.markdown import (
+from rolehawk.memory.files import TEMPLATES, MemoryTarget
+from rolehawk.profile.markdown import (
     parse_preferences,
     parse_profile,
     render_preferences,
     render_profile,
 )
-from offerbound.profile.merge import merge_preferences, merge_profile, norm
-from offerbound.profile.model import (
+from rolehawk.profile.merge import merge_preferences, merge_profile, norm
+from rolehawk.profile.model import (
     Certification,
     Contact,
     Education,
@@ -20,7 +20,7 @@ from offerbound.profile.model import (
     SalaryFloor,
     SalaryPeriod,
 )
-from offerbound.profile.parsing import (
+from rolehawk.profile.parsing import (
     parse_date,
     parse_date_range,
     parse_salary,
@@ -271,7 +271,7 @@ def test_merge_preferences_keeps_existing_values() -> None:
 
 
 def test_places_and_titles_keep_their_commas() -> None:
-    from offerbound.profile.parsing import split_places
+    from rolehawk.profile.parsing import split_places
 
     assert split_places("Denver, CO; Boulder, CO\nRemote (US)") == [
         "Denver, CO",

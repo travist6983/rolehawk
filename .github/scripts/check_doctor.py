@@ -1,4 +1,4 @@
-"""CI helper: print an `offerbound doctor --json` report and fail unless everything a fresh
+"""CI helper: print an `rolehawk doctor --json` report and fail unless everything a fresh
 install needs passed. The keychain is skipped: CI's Linux runner has no Secret Service."""
 
 import json

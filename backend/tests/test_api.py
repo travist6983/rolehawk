@@ -3,10 +3,10 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from offerbound.api.app import create_app
-from offerbound.api.security import TOKEN_COOKIE
-from offerbound.llm.fake import FakeProvider
-from offerbound.paths import DataPaths
+from rolehawk.api.app import create_app
+from rolehawk.api.security import TOKEN_COOKIE
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.paths import DataPaths
 from tests.conftest import BASE_URL, TEST_TOKEN
 
 
@@ -18,7 +18,7 @@ def test_health_is_public(anon_client: TestClient) -> None:
 
 def test_api_requires_token(anon_client: TestClient) -> None:
     assert anon_client.get("/api/tasks").status_code == 401
-    assert anon_client.get("/api/tasks", headers={"X-Offerbound-Token": "wrong"}).status_code == 401
+    assert anon_client.get("/api/tasks", headers={"X-RoleHawk-Token": "wrong"}).status_code == 401
 
 
 def test_header_token_allows_all_methods(client: TestClient) -> None:
@@ -68,7 +68,7 @@ def test_dev_origin_allowed_when_configured(paths: DataPaths, fake: FakeProvider
     app = create_app(
         paths=paths, token=TEST_TOKEN, extra_origins=["http://127.0.0.1:5173"], provider=fake
     )
-    with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
+    with TestClient(app, base_url=BASE_URL, headers={"X-RoleHawk-Token": TEST_TOKEN}) as c:
         assert c.get("/api/tasks", headers={"Origin": "http://127.0.0.1:5173"}).status_code == 200
 
 
@@ -123,7 +123,7 @@ def test_spa_serves_built_frontend_with_fallback(paths: DataPaths, fake: FakePro
         assert "immutable" in asset.headers["cache-control"]
         assert c.get("/../../etc/passwd").text == "<div id=root></div>"
         assert c.get("/api/nope").status_code == 401  # API paths never fall through
-        authed = c.get("/api/nope", headers={"X-Offerbound-Token": TEST_TOKEN})
+        authed = c.get("/api/nope", headers={"X-RoleHawk-Token": TEST_TOKEN})
         assert authed.status_code == 404
 
 

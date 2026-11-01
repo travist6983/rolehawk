@@ -1,6 +1,6 @@
 # Security
 
-Offerbound handles resumes, salary expectations, and an Anthropic API key, so it's built to
+RoleHawk handles resumes, salary expectations, and an Anthropic API key, so it's built to
 keep them on your computer. This page says what it protects against, how, and how to report
 a problem.
 
@@ -8,14 +8,14 @@ a problem.
 
 Please report privately through GitHub: open the repository's **Security** tab and choose
 **Report a vulnerability**. Don't open a public issue for security problems. Include the
-version (`offerbound --version` or `offerbound doctor`), your OS, and steps to reproduce.
+version (`rolehawk --version` or `rolehawk doctor`), your OS, and steps to reproduce.
 
 You'll get an acknowledgment within a week. Fixes ship in the next release, and the release
 notes credit you unless you'd rather not be named.
 
-Only the latest release is supported; `offerbound update` installs it.
+Only the latest release is supported; `rolehawk update` installs it.
 
-## What Offerbound protects against
+## What RoleHawk protects against
 
 | Risk | What stops it |
 | --- | --- |
@@ -30,11 +30,11 @@ Only the latest release is supported; `offerbound update` installs it.
 
 ## Limits worth knowing
 
-- The prompt-injection defenses lower the risk; they don't remove it. Read what Offerbound
+- The prompt-injection defenses lower the risk; they don't remove it. Read what RoleHawk
   wrote before you send it, especially for postings flagged as containing lines aimed at AI
   tools.
 - Anything you send to Anthropic is covered by your agreement with Anthropic. Job sources,
   employer sites you open with autofill, and GitHub (for updates) see ordinary web requests.
   **Settings → Where your data goes** lists every destination.
-- Your data folder (`~/Offerbound`) is protected by your OS account, not by Offerbound. Use
+- Your data folder (`~/RoleHawk`) is protected by your OS account, not by RoleHawk. Use
   disk encryption if others share your computer.

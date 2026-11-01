@@ -8,14 +8,14 @@ import httpx2
 import pytest
 from pydantic import BaseModel
 
-from offerbound.llm.anthropic_provider import FALLBACK_BETA, AnthropicProvider, resolve_api_key
-from offerbound.llm.errors import (
+from rolehawk.llm.anthropic_provider import FALLBACK_BETA, AnthropicProvider, resolve_api_key
+from rolehawk.llm.errors import (
     LLMAuthError,
     LLMRefusalError,
     LLMTruncatedError,
     LLMUnavailableError,
 )
-from offerbound.llm.types import (
+from rolehawk.llm.types import (
     LLMRequest,
     Message,
     StreamDone,
@@ -257,8 +257,8 @@ async def test_stream_yields_text_then_completion() -> None:
 
 
 def test_key_resolution_prefers_keychain(monkeypatch: pytest.MonkeyPatch) -> None:
-    from offerbound import keychain
-    from offerbound.keychain import SecretName
+    from rolehawk import keychain
+    from rolehawk.keychain import SecretName
 
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     assert resolve_api_key() == (None, "none")

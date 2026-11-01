@@ -23,7 +23,7 @@ node_modules/
 frontend/dist/
 *.tsbuildinfo
 
-# Secrets and local data (user data lives in ~/Offerbound, never in the repo)
+# Secrets and local data (user data lives in ~/RoleHawk, never in the repo)
 .env
 .env.*
 !.env.example

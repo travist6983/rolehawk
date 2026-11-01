@@ -14,11 +14,11 @@ import csv
 import sys
 from pathlib import Path
 
-from offerbound.countries import data_dir
-from offerbound.portals.ats import AtsPortal
-from offerbound.portals.base import CompanyRef, PortalContext
-from offerbound.portals.http import HttpError, PoliteClient
-from offerbound.portals.registry import ATS_IDS, get_portal
+from rolehawk.countries import data_dir
+from rolehawk.portals.ats import AtsPortal
+from rolehawk.portals.base import CompanyRef, PortalContext
+from rolehawk.portals.http import HttpError, PoliteClient
+from rolehawk.portals.registry import ATS_IDS, get_portal
 
 FIELDS = ["slug", "name", "industry", "country"]
 

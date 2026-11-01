@@ -60,7 +60,7 @@ export function DestinationsCard({ status }: { status: LLMStatus }) {
             never submits.
           </Row>
           <Row name="GitHub">
-            Only when you run <code className="font-mono text-xs">offerbound update</code>, to
+            Only when you run <code className="font-mono text-xs">rolehawk update</code>, to
             download the new version.
           </Row>
         </dl>

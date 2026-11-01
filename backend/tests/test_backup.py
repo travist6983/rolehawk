@@ -4,8 +4,8 @@ from pathlib import Path
 
 from sqlalchemy import Engine
 
-from offerbound.paths import DataPaths
-from offerbound.services import backup
+from rolehawk.paths import DataPaths
+from rolehawk.services import backup
 
 
 def test_backup_contains_consistent_db_and_files(paths: DataPaths, engine: Engine) -> None:
@@ -15,11 +15,11 @@ def test_backup_contains_consistent_db_and_files(paths: DataPaths, engine: Engin
     assert dest.parent == paths.backups
     with zipfile.ZipFile(dest) as archive:
         names = set(archive.namelist())
-        assert "offerbound.db" in names
+        assert "rolehawk.db" in names
         assert "memory/profile.md" in names
         assert not any(name.startswith("backups/") for name in names)
         assert not any(name.endswith(("-wal", "-shm")) for name in names)
-        db_bytes = archive.read("offerbound.db")
+        db_bytes = archive.read("rolehawk.db")
 
     restored = paths.root.parent / "restored.db"
     restored.write_bytes(db_bytes)
@@ -33,7 +33,7 @@ def test_backup_contains_consistent_db_and_files(paths: DataPaths, engine: Engin
 
 def test_backup_without_database(paths: DataPaths) -> None:
     with zipfile.ZipFile(backup.create_backup(paths, reason="empty")) as archive:
-        assert "offerbound.db" not in archive.namelist()
+        assert "rolehawk.db" not in archive.namelist()
 
 
 def test_unique_names_and_pruning(paths: DataPaths) -> None:

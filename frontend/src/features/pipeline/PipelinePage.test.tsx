@@ -198,7 +198,7 @@ describe("pipeline helpers", () => {
     const { user } = await renderApp("/");
     await user.click(await screen.findByRole("button", { name: "Draft a follow-up" }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("Offerbound never sends anything");
+    expect(dialog).toHaveTextContent("RoleHawk never sends anything");
     await user.click(within(dialog).getByRole("radio", { name: "LinkedIn" }));
     await user.click(within(dialog).getByRole("button", { name: "Write a draft" }));
     await waitFor(() => {

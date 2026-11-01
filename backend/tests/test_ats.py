@@ -5,18 +5,18 @@ from __future__ import annotations
 
 import pytest
 
-from offerbound.apply.ats import (
+from rolehawk.apply.ats import (
     PostingRequirement,
     contains,
     coverage,
     cv_text,
     parse_checks,
 )
-from offerbound.apply.drafts import build_cv
-from offerbound.apply.review import RequirementReview, ReviewFlag, ReviewResult
-from offerbound.apply.service import ApplyParams, DocumentsIn, FlagRef, KeepFlagError
-from offerbound.llm.fake import FakeProvider
-from offerbound.services.runtime import Runtime
+from rolehawk.apply.drafts import build_cv
+from rolehawk.apply.review import RequirementReview, ReviewFlag, ReviewResult
+from rolehawk.apply.service import ApplyParams, DocumentsIn, FlagRef, KeepFlagError
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.services.runtime import Runtime
 from tests.test_apply import Scripted, clean_draft, noop_progress, profile, ready
 
 EN = "\N{EN DASH}"

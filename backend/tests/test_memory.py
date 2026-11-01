@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.db.models import (
+from rolehawk.db.models import (
     ChatMessage,
     ChatRole,
     ChatSession,
@@ -14,20 +14,20 @@ from offerbound.db.models import (
     ProposalOp,
     RiskLevel,
 )
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.prompting import untrusted
-from offerbound.memory import edits
-from offerbound.memory.context import build_context_pack
-from offerbound.memory.extraction import ExtractedProposals, extract_proposals
-from offerbound.memory.files import TEMPLATES, MemoryFiles, MemoryTarget
-from offerbound.memory.proposals import (
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.prompting import untrusted
+from rolehawk.memory import edits
+from rolehawk.memory.context import build_context_pack
+from rolehawk.memory.extraction import ExtractedProposals, extract_proposals
+from rolehawk.memory.files import TEMPLATES, MemoryFiles, MemoryTarget
+from rolehawk.memory.proposals import (
     MemoryService,
     ProposalIn,
     ProposalStateError,
 )
-from offerbound.memory.sessions import SUMMARIZE_AT, SessionMaintenance, SessionSummary
-from offerbound.paths import DataPaths
-from offerbound.services.runtime import Runtime
+from rolehawk.memory.sessions import SUMMARIZE_AT, SessionMaintenance, SessionSummary
+from rolehawk.paths import DataPaths
+from rolehawk.services.runtime import Runtime
 
 
 def proposal(

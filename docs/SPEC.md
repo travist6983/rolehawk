@@ -1,4 +1,4 @@
-# Offerbound AI: Spec + Build Prompts
+# RoleHawk: Spec + Build Prompts
 
 Oct 31, 2026 · @Travis Terry
 
@@ -31,20 +31,20 @@ The v1 cut is deliberate: job search remains the author's top priority, so v1 mu
 
 **Name and branding**
 
-The product is **Offerbound AI**: a memorable brand plus "AI" for search traffic, since job seekers search "AI job search" and GitHub ranks on name, description, and topics.
+The product is **RoleHawk**: a memorable brand plus "AI" for search traffic, since job seekers search "AI job search" and GitHub ranks on name, description, and topics.
 
 | Item | Value |
 | --- | --- |
-| Product name | Offerbound AI |
+| Product name | RoleHawk |
 | GitHub repo slug | offerbound-ai-job-search |
 | Repo description | Free, open source AI job search copilot. Finds, ranks, and applies to jobs with Claude. Runs locally. |
 | GitHub topics | ai, llm, job-search, resume, cover-letter, claude, career, automation |
-| CLI command | offerbound |
-| Python package | offerbound |
-| Data folder | \~/Offerbound (Windows: %USERPROFILE%/Offerbound) |
-| App install folder | \~/.offerbound/app |
-| Env override | OFFERBOUND\_HOME |
-| Database file | offerbound.db |
+| CLI command | rolehawk |
+| Python package | rolehawk |
+| Data folder | \~/RoleHawk (Windows: %USERPROFILE%/RoleHawk) |
+| App install folder | \~/.rolehawk/app |
+| Env override | ROLEHAWK\_HOME |
+| Database file | rolehawk.db |
 
 Before Chunk 1, confirm the name is free on GitHub, PyPI, npm, and a .dev or .app domain.
 
@@ -92,17 +92,17 @@ Dashed boxes are external services; only the local data folder holds user data.
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, pydantic v2, httpx, Playwright, python-docx, Jinja2, keyring, imap-tools. Managed by uv.
 - **Long jobs:** scrape, rank, and apply run as background tasks with progress over Server-Sent Events.
 - **LLM layer:** one `LLMProvider` interface with two backends (Anthropic API key, Claude Agent SDK), structured outputs via pydantic schemas, every call logged for cost.
-- **Skills:** `skills/<command>/SKILL.md` files call `offerbound run <command> --json`, which hits the same services.
+- **Skills:** `skills/<command>/SKILL.md` files call `rolehawk run <command> --json`, which hits the same services.
 
 ## Data model and memory
 
 All state lives in one user data folder: a SQLite database for anything queried or counted, and markdown files for anything Claude or the user should read in full.
 
-**Data folder** (`~/Offerbound` on Mac/Linux, `%USERPROFILE%\Offerbound` on Windows)
+**Data folder** (`~/RoleHawk` on Mac/Linux, `%USERPROFILE%\RoleHawk` on Windows)
 
 ```
-Offerbound/
-  offerbound.db            # SQLite, WAL mode
+RoleHawk/
+  rolehawk.db            # SQLite, WAL mode
   memory/
     profile.md              # canonical candidate profile, human-editable
     preferences.md          # titles, locations, salary floor, deal-breakers
@@ -350,16 +350,16 @@ irm https://raw.githubusercontent.com/<owner>/<repo>/main/install.ps1 | iex
 
 1. Detect OS and CPU architecture; print plainly what it will install and where.
 2. Install `uv` into the user's home folder if missing (no admin rights).
-3. Download the latest release ZIP (not a git clone, so no git required) into `~/.offerbound/app`.
+3. Download the latest release ZIP (not a git clone, so no git required) into `~/.rolehawk/app`.
 4. `uv sync` installs a pinned Python 3.12 and backend dependencies.
 5. Install Playwright Chromium (about 150 MB) into the app folder.
 6. The frontend ships prebuilt as static files inside the release, so Node is never required for users.
-7. Create the data folder, a desktop shortcut, and the `offerbound` command.
+7. Create the data folder, a desktop shortcut, and the `rolehawk` command.
 8. Start the backend on 127.0.0.1 and open the browser.
 
 **Daily use**
 
-- `offerbound` (or the desktop shortcut) starts the app; `offerbound update` pulls the newest release and runs migrations after a backup; `offerbound doctor` prints a diagnostics report users can paste into a GitHub issue.
+- `rolehawk` (or the desktop shortcut) starts the app; `rolehawk update` pulls the newest release and runs migrations after a backup; `rolehawk doctor` prints a diagnostics report users can paste into a GitHub issue.
 
 **Claude connection step**
 
@@ -427,7 +427,7 @@ Done when: `uv run pytest` and `npm test` pass on an empty test each, and CI is 
 
 ```text
 Using docs/SPEC.md "Data model and memory":
-- Implement the data folder resolver (Mac/Linux/Windows paths, overridable via env OFFERBOUND_HOME).
+- Implement the data folder resolver (Mac/Linux/Windows paths, overridable via env ROLEHAWK_HOME).
 - SQLAlchemy 2.0 models for every core table; Alembic migrations; SQLite in WAL mode; FTS5 virtual table over jobs(title, company, description).
 - config.toml loader (pydantic-settings) and a secrets module wrapping `keyring`.
 - FastAPI app bound to 127.0.0.1, random session token required on every request (header or cookie set from launch URL).
@@ -446,7 +446,7 @@ Implement backend/llm/ per docs/SPEC.md:
 - Cost tracking: log every call to llm_calls with tokens and estimated cost; enforce optional monthly cap; estimate() for batch jobs.
 - Memory: context_pack(command, ids) assembling profile.md, preferences.md, facts.md, latest session summary, and requested rows. Fact extraction after chat turns returning proposed diffs, never writing directly.
 - Chat service with tools: run_command, query_pipeline (read-only SQL views), propose_memory_update.
-- Write skills/*/SKILL.md so Claude Code can call the same services through a small CLI (`offerbound run <command> --json`).
+- Write skills/*/SKILL.md so Claude Code can call the same services through a small CLI (`rolehawk run <command> --json`).
 Look up current model IDs and SDK APIs from official docs rather than memory. Tests use a FakeProvider.
 ```
 
@@ -518,7 +518,7 @@ Implement /add-portal: fetch URL, detect JSON API, RSS, or JSON-LD JobPosting be
 **Chunk 12: Installer + CI + README**
 
 ```text
-Write scripts/install.sh and scripts/install.ps1 per docs/SPEC.md "Installer": install uv without admin, download the release ZIP, uv sync, install Playwright Chromium, create data folder, desktop shortcut, and `offerbound` command with start, update, doctor subcommands. Release workflow builds the frontend, bundles the ZIP, and smoke-tests install on macos, ubuntu, windows runners. README: GIF placeholder, two install lines, cost table, FAQ, troubleshooting, DISCLAIMER.md, MIT LICENSE, CONTRIBUTING.md.
+Write scripts/install.sh and scripts/install.ps1 per docs/SPEC.md "Installer": install uv without admin, download the release ZIP, uv sync, install Playwright Chromium, create data folder, desktop shortcut, and `rolehawk` command with start, update, doctor subcommands. Release workflow builds the frontend, bundles the ZIP, and smoke-tests install on macos, ubuntu, windows runners. README: GIF placeholder, two install lines, cost table, FAQ, troubleshooting, DISCLAIMER.md, MIT LICENSE, CONTRIBUTING.md.
 ```
 
 **Chunk 13: Opt-in LinkedIn/Indeed scrapers**

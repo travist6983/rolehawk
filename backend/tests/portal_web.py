@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx2
 
-from offerbound.portals.http import PoliteClient
+from rolehawk.portals.http import PoliteClient
 
 FIXTURES = Path(__file__).parent / "fixtures" / "portals"
 

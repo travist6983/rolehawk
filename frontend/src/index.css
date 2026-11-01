@@ -10,7 +10,7 @@
    (see index.html and src/lib/theme.ts). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design tokens from the Claude design (Offerbound.dc.html): warm paper, espresso sidebar,
+/* Design tokens from the Claude design (RoleHawk.dc.html): warm paper, espresso sidebar,
    terracotta accent; Newsreader for display, Public Sans for text, IBM Plex Mono for keys.
    The shadcn names map onto the design's: --bg, --card, --fg, --fg2, --mu, --ln, --pr, ... */
 :root {

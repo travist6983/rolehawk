@@ -1,9 +1,9 @@
 name: Release
 
 # Builds the release ZIP and smoke-tests the real install scripts on every OS: install from a
-# local copy of the release files, start the app, then `offerbound update` to a build labeled
+# local copy of the release files, start the app, then `rolehawk update` to a build labeled
 # one patch version higher. A v* tag also publishes the files as a GitHub release (the install
-# lines download .../releases/latest/download/offerbound.zip).
+# lines download .../releases/latest/download/rolehawk.zip).
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
   pull_request:
     paths:
       - scripts/**
-      - backend/src/offerbound/install/**
-      - backend/src/offerbound/cli.py
+      - backend/src/rolehawk/install/**
+      - backend/src/rolehawk/cli.py
       - backend/pyproject.toml
       - backend/uv.lock
       - .github/workflows/release.yml
@@ -67,8 +67,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     env:
-      OFFERBOUND_NO_START: "1"
-      OFFERBOUND_RELEASE_URL: http://127.0.0.1:8799
+      ROLEHAWK_NO_START: "1"
+      ROLEHAWK_RELEASE_URL: http://127.0.0.1:8799
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -87,12 +87,12 @@ jobs:
 
           bash < scripts/install.sh   # as `curl ... | bash` runs it
           export PATH="$HOME/.local/bin:$PATH"
-          offerbound --version
+          rolehawk --version
 
-          offerbound doctor --json > doctor.json || true
+          rolehawk doctor --json > doctor.json || true
           python3 .github/scripts/check_doctor.py doctor.json
 
-          offerbound start --no-browser &
+          rolehawk start --no-browser &
           app=$!
           for _ in $(seq 1 60); do curl -fs http://127.0.0.1:8765/api/health && break; sleep 1; done
           echo
@@ -101,14 +101,14 @@ jobs:
           kill "$app"
           wait "$app" || true
 
-          OFFERBOUND_RELEASE_URL=http://127.0.0.1:8800 offerbound update
+          ROLEHAWK_RELEASE_URL=http://127.0.0.1:8800 rolehawk update
           next=$(python3 -c "import json; print(json.load(open('dist/next/release.json'))['version'])")
-          test "$(cat "$HOME/.offerbound/current")" = "$next"
-          offerbound doctor > doctor.txt || true   # exits 1 on Linux CI: no keychain service
+          test "$(cat "$HOME/.rolehawk/current")" = "$next"
+          rolehawk doctor > doctor.txt || true   # exits 1 on Linux CI: no keychain service
           grep "install: release $next" doctor.txt
-          OFFERBOUND_RELEASE_URL=http://127.0.0.1:8800 offerbound update | grep "newest release"
-          CLAUDE_CONFIG_DIR="$RUNNER_TEMP/claude" offerbound install-skills
-          test -f "$RUNNER_TEMP/claude/skills/offerbound-setup/SKILL.md"
+          ROLEHAWK_RELEASE_URL=http://127.0.0.1:8800 rolehawk update | grep "newest release"
+          CLAUDE_CONFIG_DIR="$RUNNER_TEMP/claude" rolehawk install-skills
+          test -f "$RUNNER_TEMP/claude/skills/rolehawk-setup/SKILL.md"
 
       - name: Install, start, and update (Windows PowerShell 5.1)
         if: runner.os == 'Windows'
@@ -123,14 +123,14 @@ jobs:
           Get-Content scripts/install.ps1 -Raw | Invoke-Expression   # as `irm ... | iex` runs it
           $bin = Join-Path $env:USERPROFILE ".local\bin"
           $env:Path = "$bin;$env:Path"
-          offerbound --version
-          if ($LASTEXITCODE -ne 0) { throw "the offerbound command doesn't run" }
+          rolehawk --version
+          if ($LASTEXITCODE -ne 0) { throw "the rolehawk command doesn't run" }
 
-          offerbound doctor --json | Out-File -Encoding utf8 doctor.json
+          rolehawk doctor --json | Out-File -Encoding utf8 doctor.json
           python .github/scripts/check_doctor.py doctor.json
           if ($LASTEXITCODE -ne 0) { throw "doctor checks failed" }
 
-          $app = Start-Process (Join-Path $bin "offerbound.cmd") -ArgumentList "start", "--no-browser" -WindowStyle Hidden -PassThru
+          $app = Start-Process (Join-Path $bin "rolehawk.cmd") -ArgumentList "start", "--no-browser" -WindowStyle Hidden -PassThru
           $healthy = $false
           foreach ($i in 1..60) {
             try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8765/api/health | Out-Null; $healthy = $true; break } catch { Start-Sleep -Seconds 1 }
@@ -145,17 +145,17 @@ jobs:
           }
           taskkill /T /F /PID $app.Id | Out-Null
 
-          $env:OFFERBOUND_RELEASE_URL = "http://127.0.0.1:8800"
-          offerbound update
+          $env:ROLEHAWK_RELEASE_URL = "http://127.0.0.1:8800"
+          rolehawk update
           if ($LASTEXITCODE -ne 0) { throw "update failed" }
           $next = (Get-Content dist/next/release.json -Raw | ConvertFrom-Json).version
-          $current = (Get-Content (Join-Path $env:USERPROFILE ".offerbound\current") -Raw).Trim()
+          $current = (Get-Content (Join-Path $env:USERPROFILE ".rolehawk\current") -Raw).Trim()
           if ($current -ne $next) { throw "expected $next, got $current" }
-          $report = offerbound doctor | Out-String
+          $report = rolehawk doctor | Out-String
           if ($report -notmatch "install: release $next") { throw "doctor doesn't see the update" }
           $env:CLAUDE_CONFIG_DIR = Join-Path $env:RUNNER_TEMP "claude"
-          offerbound install-skills
-          if (-not (Test-Path (Join-Path $env:CLAUDE_CONFIG_DIR "skills\offerbound-setup\SKILL.md"))) { throw "skills weren't installed" }
+          rolehawk install-skills
+          if (-not (Test-Path (Join-Path $env:CLAUDE_CONFIG_DIR "skills\rolehawk-setup\SKILL.md"))) { throw "skills weren't installed" }
           Write-Host "Install, start, and update all worked."
 
   publish:
@@ -175,5 +175,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "$GITHUB_REF_NAME"
-          dist/release/offerbound.zip dist/release/offerbound.zip.sha256 dist/release/release.json
-          --repo "$GITHUB_REPOSITORY" --title "Offerbound AI $GITHUB_REF_NAME" --generate-notes
+          dist/release/rolehawk.zip dist/release/rolehawk.zip.sha256 dist/release/release.json
+          --repo "$GITHUB_REPOSITORY" --title "RoleHawk $GITHUB_REF_NAME" --generate-notes

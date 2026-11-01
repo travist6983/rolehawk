@@ -3,8 +3,8 @@
 One folder per command. Each `SKILL.md` lets Claude Code run the command from a terminal
 against the same data folder the dashboard uses.
 
-`offerbound install-skills` copies the released ones (those marked v1.0) into
-`~/.claude/skills/offerbound-<name>/` (or `$CLAUDE_CONFIG_DIR/skills`). Run it again after an
+`rolehawk install-skills` copies the released ones (those marked v1.0) into
+`~/.claude/skills/rolehawk-<name>/` (or `$CLAUDE_CONFIG_DIR/skills`). Run it again after an
 update to refresh them.
 
 ## How skills work
@@ -12,7 +12,7 @@ update to refresh them.
 The backend exposes every command through one CLI:
 
 ```bash
-offerbound run <command> [--param key=value ...] [--params-json '{...}'] [--json]
+rolehawk run <command> [--param key=value ...] [--params-json '{...}'] [--json]
 ```
 
 Built-in commands available today:
@@ -52,7 +52,7 @@ Feature commands register as they ship (see the release table).
 - **In the app** (dashboard and chat drawer): the user's Anthropic API key, stored in the OS
   keychain. Costs are logged and capped.
 - **From Claude Code** (these skills): Claude Code does the reasoning in the user's own
-  session and calls `offerbound run` for data and actions. Offerbound never offers or uses a
+  session and calls `rolehawk run` for data and actions. RoleHawk never offers or uses a
   claude.ai login itself: Anthropic doesn't allow third-party apps to do that.
 
 | Release | Commands |

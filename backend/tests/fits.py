@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from offerbound.fit.rubric import Gate, GateVerdict, JobFit
+from rolehawk.fit.rubric import Gate, GateVerdict, JobFit
 
 
 def fit_of(

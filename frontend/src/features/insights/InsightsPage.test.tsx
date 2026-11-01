@@ -47,8 +47,8 @@ describe("Insights", () => {
       http.post("/api/reports", () => {
         called = true;
         return HttpResponse.json({
-          filename: "offerbound-report-2026-10-31.html",
-          path: "/Users/ada/Offerbound/reports/offerbound-report-2026-10-31.html",
+          filename: "rolehawk-report-2026-10-31.html",
+          path: "/Users/ada/RoleHawk/reports/rolehawk-report-2026-10-31.html",
           size: 12_000,
         });
       }),
@@ -60,7 +60,7 @@ describe("Insights", () => {
     });
     expect(await screen.findByRole("link", { name: "Download report" })).toHaveAttribute(
       "href",
-      "/api/reports/offerbound-report-2026-10-31.html",
+      "/api/reports/rolehawk-report-2026-10-31.html",
     );
   });
 });

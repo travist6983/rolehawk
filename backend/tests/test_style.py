@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import pytest
 
-from offerbound.apply.drafts import build_cv, build_letter
-from offerbound.apply.style import check_style, plain_dashes, polish
-from offerbound.db.models import Job
-from offerbound.rendering.model import CoverLetter, CvDocument
+from rolehawk.apply.drafts import build_cv, build_letter
+from rolehawk.apply.style import check_style, plain_dashes, polish
+from rolehawk.db.models import Job
+from rolehawk.rendering.model import CoverLetter, CvDocument
 from tests.test_apply import clean_draft, profile
 
 EM = "\N{EM DASH}"

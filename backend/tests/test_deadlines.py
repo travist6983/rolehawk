@@ -10,20 +10,20 @@ import pytest
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from offerbound.db.models import Job, JobScore, Stage
-from offerbound.db.types import utcnow
-from offerbound.fit.ranker import RankParams
-from offerbound.fit.rubric import FitBatch
-from offerbound.insights.board import next_action
-from offerbound.jobs.store import JobQuery, deadline_status
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest
-from offerbound.portals.base import RawJob
-from offerbound.portals.custom.definition import JsonLdDefinition
-from offerbound.portals.custom.engine import postings_in, run_jsonld
-from offerbound.portals.feeds import USAJobs
-from offerbound.portals.text import parse_date
-from offerbound.services.runtime import Runtime
+from rolehawk.db.models import Job, JobScore, Stage
+from rolehawk.db.types import utcnow
+from rolehawk.fit.ranker import RankParams
+from rolehawk.fit.rubric import FitBatch
+from rolehawk.insights.board import next_action
+from rolehawk.jobs.store import JobQuery, deadline_status
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest
+from rolehawk.portals.base import RawJob
+from rolehawk.portals.custom.definition import JsonLdDefinition
+from rolehawk.portals.custom.engine import postings_in, run_jsonld
+from rolehawk.portals.feeds import USAJobs
+from rolehawk.portals.text import parse_date
+from rolehawk.services.runtime import Runtime
 from tests.fits import fit_of
 from tests.portal_web import fixture_json
 from tests.test_rank import add_jobs, set_prefs

@@ -8,7 +8,7 @@ import type { components, paths } from "./schema";
 
 export type Schemas = components["schemas"];
 
-export const TOKEN_HEADER = "X-Offerbound-Token";
+export const TOKEN_HEADER = "X-RoleHawk-Token";
 
 let sessionToken: string | null = null;
 const unauthorizedListeners = new Set<() => void>();

@@ -17,7 +17,7 @@ function Unauthorized() {
         app, use the new link it opened, or start it again:
       </p>
       <code className="inline-flex items-center gap-2 rounded-md bg-muted px-3 py-2 font-mono text-sm">
-        <TerminalIcon className="size-4" aria-hidden /> offerbound
+        <TerminalIcon className="size-4" aria-hidden /> rolehawk
       </code>
     </main>
   );

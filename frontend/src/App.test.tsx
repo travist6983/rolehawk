@@ -44,7 +44,7 @@ describe("App shell", () => {
       "true",
     );
     expect(document.documentElement).toHaveClass("dark");
-    expect(localStorage.getItem("offerbound.theme")).toBe("dark");
+    expect(localStorage.getItem("rolehawk.theme")).toBe("dark");
   });
 
   it("asks to relaunch when the session can't be established", async () => {
@@ -64,7 +64,7 @@ describe("App shell", () => {
       </QueryClientProvider>,
     );
     expect(
-      await screen.findByRole("heading", { name: "Open Offerbound from its launcher" }),
+      await screen.findByRole("heading", { name: "Open RoleHawk from its launcher" }),
     ).toBeInTheDocument();
   });
 });

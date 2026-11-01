@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
-from offerbound.db.models import (
+from rolehawk.db.models import (
     Application,
     ChatSession,
     Company,
@@ -28,11 +28,11 @@ from offerbound.db.models import (
     Task,
     TaskStatus,
 )
-from offerbound.db.types import utcnow
-from offerbound.insights.board import next_action
-from offerbound.memory.files import MemoryTarget
-from offerbound.services.reset import ConfirmationError, ResetIn, ResetScope
-from offerbound.services.runtime import Runtime
+from rolehawk.db.types import utcnow
+from rolehawk.insights.board import next_action
+from rolehawk.memory.files import MemoryTarget
+from rolehawk.services.reset import ConfirmationError, ResetIn, ResetScope
+from rolehawk.services.runtime import Runtime
 
 pytestmark = pytest.mark.anyio
 _ids = itertools.count()
@@ -233,7 +233,7 @@ async def test_report_is_self_contained_and_escaped(runtime: Runtime) -> None:
     assert 'id="apps"' in html
     assert runtime.reports.path_for(report.filename) == path
     with pytest.raises(KeyError):
-        runtime.reports.path_for("../offerbound.db")
+        runtime.reports.path_for("../rolehawk.db")
 
 
 # --- reset --------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ async def test_reset_everything_keeps_settings_and_sources(runtime: Runtime) -> 
 
     result = runtime.reset.reset(ResetIn(scope=ResetScope.EVERYTHING, confirm="everything"))
     with zipfile.ZipFile(result.backup) as backup:
-        assert "offerbound.db" in backup.namelist()
+        assert "rolehawk.db" in backup.namelist()
     with runtime.sessions() as session:
         for model in (Application, Job, ChatSession, LLMCall):
             assert session.scalar(select(func.count()).select_from(model)) == 0
@@ -350,7 +350,7 @@ def test_insights_api(client: TestClient) -> None:
     assert download.status_code == 200
     assert download.headers["content-type"].startswith("text/html")
     assert "attachment" in download.headers["content-disposition"]
-    assert client.get("/api/reports/..%2Fofferbound.db").status_code == 404
+    assert client.get("/api/reports/..%2Frolehawk.db").status_code == 404
 
     assert [s["id"] for s in client.get("/api/reset/scopes").json()] == [
         "profile",

@@ -1,11 +1,11 @@
 ---
-name: offerbound-scrape
+name: rolehawk-scrape
 description: Fetch new jobs from the user's enabled job sources (company job boards on Greenhouse, Lever, Ashby, Workable; Remote OK, We Work Remotely, Adzuna, USAJOBS) for their active search targets, and report new jobs, duplicates, and problems per source. Use when the user asks to find, search for, or refresh jobs, or to add companies to their watchlist.
 ---
 
 # /scrape (v1.0)
 
-Every Offerbound command is a backend service; this skill is a thin caller, so results match
+Every RoleHawk command is a backend service; this skill is a thin caller, so results match
 the dashboard's Sources screen and the chat drawer exactly. Searching uses no AI at all, so
 it works without an API key. You (Claude Code) only summarize the results.
 
@@ -14,7 +14,7 @@ it works without an API key. You (Claude Code) only summarize the results.
 1. Check what will run:
 
    ```bash
-   offerbound run sources --json
+   rolehawk run sources --json
    ```
 
    Each source has `enabled`, `ready`, and `missing` (what it still needs). If the user has
@@ -24,8 +24,8 @@ it works without an API key. You (Claude Code) only summarize the results.
 2. Search:
 
    ```bash
-   offerbound run scrape --json                                          # every enabled source
-   offerbound run scrape --params-json '{"portal_ids": ["greenhouse"]}' --json   # just these
+   rolehawk run scrape --json                                          # every enabled source
+   rolehawk run scrape --params-json '{"portal_ids": ["greenhouse"]}' --json   # just these
    ```
 
    Progress lines stream to stderr; the summary prints to stdout when it finishes (usually
@@ -43,8 +43,8 @@ it works without an API key. You (Claude Code) only summarize the results.
 Company job boards are searched one company at a time.
 
 ```bash
-offerbound run watchlist --json
-offerbound run watchlist-add --params-json '{"ats": "greenhouse", "slugs": ["stripe", "figma"]}' --json
+rolehawk run watchlist --json
+rolehawk run watchlist-add --params-json '{"ats": "greenhouse", "slugs": ["stripe", "figma"]}' --json
 ```
 
 The board name is the part after the ATS host in a careers link: `boards.greenhouse.io/stripe`,

@@ -19,7 +19,7 @@ import { parseSlashCommand } from "./slash";
 import type { ChatCard, ChatItem, ChatView } from "./types";
 import { PRODUCT_NAME } from "@/lib/brand";
 
-const SESSION_KEY = "offerbound.chatSession";
+const SESSION_KEY = "rolehawk.chatSession";
 
 let idCounter = 0;
 const nextId = (prefix: string) => `${prefix}-${String(Date.now())}-${String(++idCounter)}`;

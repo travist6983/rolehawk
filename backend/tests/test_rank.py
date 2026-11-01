@@ -15,26 +15,26 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
-from offerbound.chat.tools import ToolContext, chat_tools, execute
-from offerbound.db.models import Application, Job, JobScore, RemotePolicy, SearchTarget, Stage
-from offerbound.db.types import utcnow
-from offerbound.fit import ranker as ranker_module
-from offerbound.fit.filters import (
+from rolehawk.chat.tools import ToolContext, chat_tools, execute
+from rolehawk.db.models import Application, Job, JobScore, RemotePolicy, SearchTarget, Stage
+from rolehawk.db.types import utcnow
+from rolehawk.fit import ranker as ranker_module
+from rolehawk.fit.filters import (
     Rules,
     build_rules,
     deal_breaker_terms,
     location_ok,
     salary_max,
 )
-from offerbound.fit.ranker import NothingToRankError, Ranker, RankParams
-from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, Gate
-from offerbound.jobs.store import JobQuery
-from offerbound.llm.errors import LLMNotConfiguredError, LLMUnavailableError, SpendCapExceededError
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.service import LLMService
-from offerbound.llm.types import LLMRequest, Task
-from offerbound.profile.model import Preferences, RemotePreference, SalaryFloor
-from offerbound.services.runtime import Runtime
+from rolehawk.fit.ranker import NothingToRankError, Ranker, RankParams
+from rolehawk.fit.rubric import FIT_RUBRIC, FitBatch, Gate
+from rolehawk.jobs.store import JobQuery
+from rolehawk.llm.errors import LLMNotConfiguredError, LLMUnavailableError, SpendCapExceededError
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.service import LLMService
+from rolehawk.llm.types import LLMRequest, Task
+from rolehawk.profile.model import Preferences, RemotePreference, SalaryFloor
+from rolehawk.services.runtime import Runtime
 from tests.fits import fit_json, fit_of
 from tests.test_api_setup import wait_for_task
 

@@ -13,7 +13,7 @@ describe("Reset", () => {
         body = await request.json();
         return HttpResponse.json({
           scope: "jobs",
-          backup: "/Users/ada/Offerbound/backups/offerbound-20261031-reset-jobs.zip",
+          backup: "/Users/ada/RoleHawk/backups/rolehawk-20261031-reset-jobs.zip",
           removed: { "job scores": 40, jobs: 2500 },
         });
       }),
@@ -36,6 +36,6 @@ describe("Reset", () => {
     const status = await screen.findByText("Reset done.");
     const summary = status.closest("[role=status]");
     expect(summary).toHaveTextContent("Removed 40 job scores, 2500 jobs.");
-    expect(summary).toHaveTextContent("offerbound-20261031-reset-jobs.zip");
+    expect(summary).toHaveTextContent("rolehawk-20261031-reset-jobs.zip");
   });
 });

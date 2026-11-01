@@ -22,11 +22,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
-from offerbound.apply.ats import parse_checks
-from offerbound.install.layout import browser_hint
-from offerbound.profile.model import Contact, Experience, Profile
-from offerbound.rendering.docx_builder import cv_docx, letter_docx
-from offerbound.rendering.layout import (
+from rolehawk.apply.ats import parse_checks
+from rolehawk.install.layout import browser_hint
+from rolehawk.profile.model import Contact, Experience, Profile
+from rolehawk.rendering.docx_builder import cv_docx, letter_docx
+from rolehawk.rendering.layout import (
     Bullets,
     Entry,
     Paragraph,
@@ -35,7 +35,7 @@ from offerbound.rendering.layout import (
     month_year,
     period,
 )
-from offerbound.rendering.model import (
+from rolehawk.rendering.model import (
     CoverLetter,
     CvContact,
     CvDocument,
@@ -44,17 +44,17 @@ from offerbound.rendering.model import (
     CvSection,
     DocumentKind,
 )
-from offerbound.rendering.pdf import PdfEngine, PdfUnavailableError
-from offerbound.rendering.samples import sample_cover_letter, sample_cv
-from offerbound.rendering.service import DocumentSettingsIn
-from offerbound.rendering.templates import (
+from rolehawk.rendering.pdf import PdfEngine, PdfUnavailableError
+from rolehawk.rendering.samples import sample_cover_letter, sample_cv
+from rolehawk.rendering.service import DocumentSettingsIn
+from rolehawk.rendering.templates import (
     Paper,
     TemplateManifest,
     builtin_templates,
     render_html,
 )
-from offerbound.rendering.text import docx_text, pdf_text, words
-from offerbound.services.runtime import Runtime
+from rolehawk.rendering.text import docx_text, pdf_text, words
+from rolehawk.services.runtime import Runtime
 
 pytestmark = pytest.mark.anyio
 
@@ -347,7 +347,7 @@ async def test_missing_chromium_is_a_clear_error(monkeypatch: pytest.MonkeyPatch
             await engine.render("<p>x</p>", "letter", "t")
     finally:
         await engine.aclose()
-    assert "offerbound doctor" in info.value.user_message
+    assert "rolehawk doctor" in info.value.user_message
     assert browser_hint().startswith("uv run playwright install")  # a source checkout
 
 

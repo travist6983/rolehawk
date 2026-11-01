@@ -1,5 +1,5 @@
 [project]
-name = "offerbound"
+name = "rolehawk"
 version = "0.1.0"
 description = "Free, open source AI job search copilot. Finds, ranks, and applies to jobs with Claude. Runs locally."
 license = "MIT"
@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-offerbound = "offerbound.cli:main"
+rolehawk = "rolehawk.cli:main"
 
 [dependency-groups]
 dev = [
@@ -39,17 +39,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/offerbound"]
+packages = ["src/rolehawk"]
 
 [tool.hatch.build.targets.wheel.force-include]
-# Country defaults and company watchlists ship inside the package (offerbound.countries).
-"../data" = "offerbound/data"
+# Country defaults and company watchlists ship inside the package (rolehawk.countries).
+"../data" = "rolehawk/data"
 
 # ---------------------------------------------------------------------------
 # Cross-platform tasks: `uv run poe <task>` (no Makefile, so Windows works).
 # ---------------------------------------------------------------------------
 [tool.poe.tasks]
-dev = { cmd = "offerbound start --dev --no-browser", help = "Run the API with autoreload (pair with `npm run dev`)" }
+dev = { cmd = "rolehawk start --dev --no-browser", help = "Run the API with autoreload (pair with `npm run dev`)" }
 lint = { cmd = "ruff check .", help = "Lint with ruff" }
 format = { cmd = "ruff format .", help = "Format with ruff" }
 format-check = { cmd = "ruff format --check .", help = "Check formatting" }
@@ -57,7 +57,7 @@ fix = { sequence = ["ruff check --fix .", "ruff format ."], default_item_type = 
 typecheck = { cmd = "mypy", help = "Type-check with mypy (strict)" }
 test = { cmd = "pytest", help = "Run tests" }
 check = { sequence = ["lint", "format-check", "typecheck", "test"], help = "Everything CI runs" }
-openapi = { cmd = "offerbound openapi --out ../frontend/src/api/openapi.json", help = "Export the API schema for the frontend client" }
+openapi = { cmd = "rolehawk openapi --out ../frontend/src/api/openapi.json", help = "Export the API schema for the frontend client" }
 
 [tool.ruff]
 line-length = 100

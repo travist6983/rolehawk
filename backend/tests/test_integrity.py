@@ -11,11 +11,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.db.models import Job
-from offerbound.jobs.store import JobStore
-from offerbound.portals.integrity import IntegrityView, PostingIntegrity, clean_posting
-from offerbound.portals.state import PortalStore
-from offerbound.portals.text import html_to_text
+from rolehawk.db.models import Job
+from rolehawk.jobs.store import JobStore
+from rolehawk.portals.integrity import IntegrityView, PostingIntegrity, clean_posting
+from rolehawk.portals.state import PortalStore
+from rolehawk.portals.text import html_to_text
 from tests.portal_web import FakeWeb
 from tests.test_scrape import Progress, add_targets, make_scraper
 

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Offerbound AI installer for macOS and Linux.
+# RoleHawk installer for macOS and Linux.
 #
 #   curl -fsSL https://raw.githubusercontent.com/travist6983/offerbound-ai-job-search/main/scripts/install.sh | bash
 #
 # Everything goes in your home folder; nothing needs sudo:
 #   ~/.local/bin/uv               uv, if you don't have it (it brings Python 3.12)
-#   ~/.offerbound/                the app (one folder per version) and Chromium (~150 MB)
-#   ~/.local/bin/offerbound       the `offerbound` command
-#   a Desktop shortcut            Offerbound.command (macOS) or offerbound.desktop (Linux)
-# Your data lives in ~/Offerbound; reinstalling or updating never touches it.
+#   ~/.rolehawk/                the app (one folder per version) and Chromium (~150 MB)
+#   ~/.local/bin/rolehawk       the `rolehawk` command
+#   a Desktop shortcut            RoleHawk.command (macOS) or rolehawk.desktop (Linux)
+# Your data lives in ~/RoleHawk; reinstalling or updating never touches it.
 #
-# Optional settings: OFFERBOUND_APP_HOME (install folder), OFFERBOUND_BIN_DIR (where the
-# `offerbound` command goes), OFFERBOUND_RELEASE_URL (where the release files come from),
-# OFFERBOUND_NO_START=1 (don't start the app at the end), OFFERBOUND_NO_SHORTCUT=1.
+# Optional settings: ROLEHAWK_APP_HOME (install folder), ROLEHAWK_BIN_DIR (where the
+# `rolehawk` command goes), ROLEHAWK_RELEASE_URL (where the release files come from),
+# ROLEHAWK_NO_START=1 (don't start the app at the end), ROLEHAWK_NO_SHORTCUT=1.
 #
 # Everything is inside main(), called on the last line, so a partial download runs nothing.
 
@@ -26,7 +26,7 @@ say() {
 }
 
 fail() {
-  printf 'Offerbound install failed: %s\n' "$*" >&2
+  printf 'RoleHawk install failed: %s\n' "$*" >&2
   exit 1
 }
 
@@ -62,45 +62,45 @@ find_uv() {
 
 write_launcher() {
   local bindir="$1" home_ref="$2"
-  cat >"$bindir/offerbound" <<EOF
+  cat >"$bindir/rolehawk" <<EOF
 #!/bin/sh
-# Offerbound launcher, written by the installer. Runs the version named in "current";
-# \`offerbound update\` installs new versions next to it and moves that pointer.
+# RoleHawk launcher, written by the installer. Runs the version named in "current";
+# \`rolehawk update\` installs new versions next to it and moves that pointer.
 home=$home_ref
 version="\$(cat "\$home/current" 2>/dev/null)" || {
-  echo "Offerbound isn't installed in \$home. Run the install line from the README." >&2
+  echo "RoleHawk isn't installed in \$home. Run the install line from the README." >&2
   exit 1
 }
-exec "\$home/versions/\$version/backend/.venv/bin/offerbound" "\$@"
+exec "\$home/versions/\$version/backend/.venv/bin/rolehawk" "\$@"
 EOF
-  chmod +x "$bindir/offerbound"
+  chmod +x "$bindir/rolehawk"
 }
 
 write_shortcut() {
   local os="$1" bindir="$2"
   if [ "$os" = macOS ]; then
     [ -d "$HOME/Desktop" ] || return 0
-    printf '#!/bin/sh\nexec %s start\n' "$(quote "$bindir/offerbound")" >"$HOME/Desktop/Offerbound.command"
-    chmod +x "$HOME/Desktop/Offerbound.command"
+    printf '#!/bin/sh\nexec %s start\n' "$(quote "$bindir/rolehawk")" >"$HOME/Desktop/RoleHawk.command"
+    chmod +x "$HOME/Desktop/RoleHawk.command"
     return 0
   fi
   local apps="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
   mkdir -p "$apps"
-  cat >"$apps/offerbound.desktop" <<EOF
+  cat >"$apps/rolehawk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Offerbound AI
+Name=RoleHawk
 Comment=AI job search copilot
-Exec="$bindir/offerbound" start
+Exec="$bindir/rolehawk" start
 Terminal=true
 Categories=Office;
 EOF
   local desktop
   desktop="$(xdg-user-dir DESKTOP 2>/dev/null || printf '%s' "$HOME/Desktop")"
   if [ -d "$desktop" ] && [ "$desktop" != "$HOME" ]; then
-    cp "$apps/offerbound.desktop" "$desktop/offerbound.desktop"
-    chmod +x "$desktop/offerbound.desktop"
-    gio set "$desktop/offerbound.desktop" metadata::trusted true >/dev/null 2>&1 || true
+    cp "$apps/rolehawk.desktop" "$desktop/rolehawk.desktop"
+    chmod +x "$desktop/rolehawk.desktop"
+    gio set "$desktop/rolehawk.desktop" metadata::trusted true >/dev/null 2>&1 || true
   fi
 }
 
@@ -115,16 +115,16 @@ main() {
   need uname
   need mktemp
 
-  local home="${OFFERBOUND_APP_HOME:-$HOME/.offerbound}"
-  local base="${OFFERBOUND_RELEASE_URL:-$RELEASES}"
+  local home="${ROLEHAWK_APP_HOME:-$HOME/.rolehawk}"
+  local base="${ROLEHAWK_RELEASE_URL:-$RELEASES}"
   base="${base%/}"
 
-  say "Offerbound AI installer ($os, $(uname -m))"
+  say "RoleHawk installer ($os, $(uname -m))"
   echo "This installs, in your home folder only (no admin rights needed):"
   echo "  - uv, which manages Python 3.12 for the app (if it isn't installed yet)"
-  echo "  - Offerbound into $home, including Chromium for PDFs and autofill (about 150 MB)"
-  echo "  - the 'offerbound' command and a Desktop shortcut"
-  echo "Your data will live in ${OFFERBOUND_HOME:-~/Offerbound}."
+  echo "  - RoleHawk into $home, including Chromium for PDFs and autofill (about 150 MB)"
+  echo "  - the 'rolehawk' command and a Desktop shortcut"
+  echo "Your data will live in ${ROLEHAWK_HOME:-~/RoleHawk}."
   echo
 
   local uv
@@ -142,19 +142,19 @@ main() {
   trap 'rm -rf "$tmp"' EXIT
 
   say "Downloading the latest release..."
-  curl -fsSL --retry 3 -o "$tmp/offerbound.zip" "$base/offerbound.zip" ||
-    fail "couldn't download $base/offerbound.zip"
-  curl -fsSL --retry 3 -o "$tmp/offerbound.zip.sha256" "$base/offerbound.zip.sha256" ||
+  curl -fsSL --retry 3 -o "$tmp/rolehawk.zip" "$base/rolehawk.zip" ||
+    fail "couldn't download $base/rolehawk.zip"
+  curl -fsSL --retry 3 -o "$tmp/rolehawk.zip.sha256" "$base/rolehawk.zip.sha256" ||
     fail "couldn't download the checksum file"
   local expected actual
-  expected="$(cut -d' ' -f1 <"$tmp/offerbound.zip.sha256")"
-  actual="$(sha256_of "$tmp/offerbound.zip")"
+  expected="$(cut -d' ' -f1 <"$tmp/rolehawk.zip.sha256")"
+  actual="$(sha256_of "$tmp/rolehawk.zip")"
   [ "$expected" = "$actual" ] || fail "the download doesn't match its checksum. Try again."
 
   # Python's zipfile (through uv) unpacks it, so `unzip` isn't needed. It drops absolute
   # paths and '..' from member names, and never creates links.
-  "$uv" run --quiet --no-project --python 3.12 python -m zipfile -e "$tmp/offerbound.zip" "$tmp/x"
-  local unpacked=("$tmp"/x/offerbound-*)
+  "$uv" run --quiet --no-project --python 3.12 python -m zipfile -e "$tmp/rolehawk.zip" "$tmp/x"
+  local unpacked=("$tmp"/x/rolehawk-*)
   if [ "${#unpacked[@]}" -ne 1 ] || [ ! -f "${unpacked[0]}/VERSION" ]; then
     fail "the release has an unexpected layout."
   fi
@@ -170,9 +170,9 @@ main() {
   fi
   mv "${unpacked[0]}" "$app"
 
-  say "Installing Offerbound $version (Python 3.12 and packages)..."
+  say "Installing RoleHawk $version (Python 3.12 and packages)..."
   (cd "$app/backend" && "$uv" sync --quiet --frozen --no-dev --python 3.12)
-  local exe="$app/backend/.venv/bin/offerbound"
+  local exe="$app/backend/.venv/bin/rolehawk"
 
   say "Installing Chromium (PDF export and autofill)..."
   "$exe" install-browser
@@ -185,14 +185,14 @@ main() {
 
   local bindir uv_bin home_ref
   uv_bin="$("$uv" tool dir --bin)"
-  bindir="${OFFERBOUND_BIN_DIR:-$uv_bin}"
+  bindir="${ROLEHAWK_BIN_DIR:-$uv_bin}"
   mkdir -p "$bindir"
-  if [ -n "${OFFERBOUND_APP_HOME:-}" ]; then
+  if [ -n "${ROLEHAWK_APP_HOME:-}" ]; then
     home_ref="$(quote "$home")"
   else
     # Literal $HOME: the launcher expands it when it runs.
     # shellcheck disable=SC2016
-    home_ref='"$HOME/.offerbound"'
+    home_ref='"$HOME/.rolehawk"'
   fi
   write_launcher "$bindir" "$home_ref"
   local path_note=""
@@ -202,27 +202,27 @@ main() {
       if [ "$bindir" = "$uv_bin" ]; then
         # uv adds its tool folder to your shell's startup files (the same folder uv uses).
         "$uv" tool update-shell >/dev/null 2>&1 || true
-        path_note="Open a new terminal window for the 'offerbound' command to work."
+        path_note="Open a new terminal window for the 'rolehawk' command to work."
       else
-        path_note="Add $bindir to your PATH to use the 'offerbound' command."
+        path_note="Add $bindir to your PATH to use the 'rolehawk' command."
       fi
       ;;
   esac
 
-  if [ "${OFFERBOUND_NO_SHORTCUT:-}" != 1 ]; then
+  if [ "${ROLEHAWK_NO_SHORTCUT:-}" != 1 ]; then
     write_shortcut "$os" "$bindir"
   fi
 
   rm -rf "$tmp"
   trap - EXIT
   echo
-  say "Offerbound $version is installed."
-  echo "Start it any time with 'offerbound' or the Offerbound shortcut on your Desktop."
-  echo "Update with 'offerbound update'. Diagnostics: 'offerbound doctor'."
+  say "RoleHawk $version is installed."
+  echo "Start it any time with 'rolehawk' or the RoleHawk shortcut on your Desktop."
+  echo "Update with 'rolehawk update'. Diagnostics: 'rolehawk doctor'."
   [ -z "$path_note" ] || echo "$path_note"
-  if [ "${OFFERBOUND_NO_START:-}" != 1 ]; then
+  if [ "${ROLEHAWK_NO_START:-}" != 1 ]; then
     echo
-    say "Starting Offerbound (press Ctrl+C to stop)..."
+    say "Starting RoleHawk (press Ctrl+C to stop)..."
     exec "$exe" start
   fi
 }
