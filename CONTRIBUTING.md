@@ -68,12 +68,17 @@ For one company's careers page, you don't need code: use **Sources → Add a job
 
 ## Releasing
 
-1. Bump the version in `backend/pyproject.toml` and `backend/src/rolehawk/__init__.py`
-   (a test checks they match), then run `uv lock` in `backend/`.
-2. Merge to `main`, then tag it: `git tag v0.2.0 && git push origin v0.2.0`.
-3. The Release workflow builds the dashboard and the ZIP, installs it on Linux, macOS, and
-   Windows, starts it, tests `rolehawk update`, and then publishes the GitHub release.
-   Users get it with `rolehawk update`.
+Releases publish themselves when a version bump reaches `main`.
+
+1. In the pull request that changes the app, bump the version in `backend/pyproject.toml`
+   and `backend/src/rolehawk/__init__.py` (a test checks they match), run `uv lock` in
+   `backend/`, and run `npm run gen:api` from the root. Docs and site changes don't need one.
+2. Merge it. When CI passes on `main`, the Auto release workflow sees that `v<version>` has
+   no tag yet and runs the Release workflow for that commit: it builds the dashboard and the
+   ZIP, installs it on Linux, macOS, and Windows, starts it, tests `rolehawk update`, and then
+   creates the tag and publishes the GitHub release. Users get it with `rolehawk update`.
+
+Pushing a `v<version>` tag by hand still works too, and runs the same Release workflow.
 
 ## Reporting a security issue
 
