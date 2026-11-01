@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from rolehawk.llm.errors import LLMAuthError, LLMRefusalError
 from rolehawk.llm.models import CATALOG
+from rolehawk.llm.schema import check_output_schema
 from rolehawk.llm.types import (
     Completion,
     LLMRequest,
@@ -105,6 +106,7 @@ class FakeProvider:
 
     async def structured[T: BaseModel](self, request: LLMRequest, schema: type[T]) -> Structured[T]:
         self.structured_requests.append((request, schema))
+        check_output_schema(schema)  # the real API refuses over-complex schemas with a 400
         await self._delay()
         if self.structured_replies:
             item = self.structured_replies.popleft()

@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from rolehawk.profile.conflicts import find_conflicts, resolve
-from rolehawk.profile.extraction import ExtractedSetup
+from rolehawk.profile.extraction import ExtractedSetup, ExtractionOut
 from rolehawk.profile.merge import merge_profile, title_key
 from rolehawk.profile.model import Contact, Education, Experience, Preferences, Profile
 from rolehawk.services.runtime import Runtime
@@ -132,19 +132,23 @@ async def test_a_cv_and_a_linkedin_export_that_disagree(runtime: Runtime) -> Non
     )
     cv = runtime.setup.add_document("cv.txt", (FIXTURES / "ada_example.txt").read_bytes())
     fake_of(runtime).queue_structured(
-        {
-            "profile": {
-                "experience": [
-                    {
-                        "title": "Lead Frontend Engineer",
-                        "company": "Northwind Payments",
-                        "start": "2021-03",
-                        "current": True,
-                    }
-                ]
-            },
-            "preferences": {},
-        }
+        ExtractionOut.from_setup(
+            ExtractedSetup.model_validate(
+                {
+                    "profile": {
+                        "experience": [
+                            {
+                                "title": "Lead Frontend Engineer",
+                                "company": "Northwind Payments",
+                                "start": "2021-03",
+                                "current": True,
+                            }
+                        ]
+                    },
+                    "preferences": {},
+                }
+            )
+        )
     )
     draft = await runtime.setup.extract([export.id, cv.id])
     [conflict] = [c for c in draft.conflicts if c.kind == "title"]

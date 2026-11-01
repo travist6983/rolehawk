@@ -20,6 +20,7 @@ import getpass
 import json
 import os
 import secrets
+import socket
 import subprocess
 import sys
 import threading
@@ -47,6 +48,53 @@ def _wait_then_open(url: str, health_url: str, timeout_s: float = 30) -> None:
             time.sleep(0.25)
 
 
+PORT_TRIES = 20  # when the configured port is busy, try the next ones
+
+
+def _port_free(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        if os.name != "nt":  # as uvicorn does; on Windows it would allow sharing a live port
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
+
+def _rolehawk_on(port: int) -> bool:
+    url = f"http://127.0.0.1:{port}/api/health"
+    try:
+        with urllib.request.urlopen(url, timeout=1) as response:
+            body = json.loads(response.read())
+    except (OSError, ValueError):
+        return False
+    return isinstance(body, dict) and body.get("status") == "ok" and "version" in body
+
+
+def pick_port(configured: int, pinned: bool) -> tuple[int | None, str | None]:
+    """The port to start on and a line explaining any change. A busy configured port isn't
+    a dead end (RoleHawk left running in another window, or another app): the next free
+    port works just as well, since the launch link carries it. A port the user asked for
+    with --port is never changed."""
+    if _port_free(configured):
+        return configured, None
+    who = (
+        "RoleHawk is already running there (maybe in another window)"
+        if _rolehawk_on(configured)
+        else "another app is using it"
+    )
+    if pinned:
+        return None, f"Port {configured} is busy: {who}. Pick another with --port."
+    for port in range(configured + 1, min(configured + 1 + PORT_TRIES, 65536)):
+        if _port_free(port):
+            return port, f"Port {configured} is busy: {who}. Using port {port} instead."
+    return None, (
+        f"Ports {configured} to {configured + PORT_TRIES} are all busy. Close the other "
+        "RoleHawk window, or start with --port and a free port."
+    )
+
+
 def cmd_start(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -60,7 +108,17 @@ def cmd_start(args: argparse.Namespace) -> int:
     prepare_data_folder(paths)
     if args.port:
         os.environ["ROLEHAWK_SERVER__PORT"] = str(args.port)
-    port = load_settings(paths.config_file).server.port
+    configured = load_settings(paths.config_file).server.port
+    # The dev frontend proxies to the configured port, so dev mode never moves it.
+    picked, note = pick_port(configured, pinned=bool(args.port) or args.dev)
+    if note:
+        print(note, file=sys.stderr if picked is None else sys.stdout, flush=True)
+    if picked is None:
+        return 1
+    port = picked
+    # The app reads its port from settings (the Host allowlist uses it), including in
+    # uvicorn's reload workers.
+    os.environ["ROLEHAWK_SERVER__PORT"] = str(port)
 
     # Env vars carry the token and dev origins into uvicorn's reload worker processes.
     token = os.environ.get(ENV_TOKEN) or secrets.token_urlsafe(32)
@@ -71,7 +129,12 @@ def cmd_start(args: argparse.Namespace) -> int:
     base = "http://127.0.0.1:5173" if args.dev else f"http://127.0.0.1:{port}"
     launch_url = f"{base}/?token={token}"
     print(f"RoleHawk {__version__} - data folder: {paths.root}")
-    print(f"Open: {launch_url}", flush=True)
+    print(f"Open: {launch_url}")
+    print(
+        "Keep this window open while you use RoleHawk. To stop it, press Ctrl+C. To start it "
+        "again later, run 'rolehawk' or use the RoleHawk shortcut (no reinstall needed).",
+        flush=True,
+    )
     if not args.no_browser:
         threading.Thread(
             target=_wait_then_open,

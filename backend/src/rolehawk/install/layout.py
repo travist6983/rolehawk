@@ -23,6 +23,9 @@ ENV_BROWSERS = "PLAYWRIGHT_BROWSERS_PATH"
 VERSION_PATTERN = re.compile(r"^\d{1,4}\.\d{1,4}\.\d{1,4}$")
 
 
+RELEASE_MARKER = ".release-sha256"
+
+
 def parse_version(text: str) -> tuple[int, int, int]:
     """Release versions are plain X.Y.Z (they become folder names)."""
     if not VERSION_PATTERN.match(text):
@@ -78,6 +81,12 @@ class InstallLayout:
         if os.name == "nt":
             return venv / "Scripts" / "rolehawk.exe"
         return venv / "bin" / "rolehawk"
+
+    def release_marker(self, version: str) -> Path:
+        """The release ZIP's SHA-256, written once a version is fully installed. The install
+        scripts compare it with the published checksum to skip downloading a release that is
+        already installed."""
+        return self.app_dir(version) / RELEASE_MARKER
 
 
 def running_from(module_file: str | None = None) -> tuple[InstallLayout, str] | None:

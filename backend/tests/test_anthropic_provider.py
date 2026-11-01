@@ -15,10 +15,13 @@ from rolehawk.llm.errors import (
     LLMBillingError,
     LLMConnectionError,
     LLMError,
+    LLMModelNotFoundError,
     LLMOverloadedError,
     LLMPermissionError,
     LLMRateLimitError,
     LLMRefusalError,
+    LLMRequestError,
+    LLMTooLargeError,
     LLMTruncatedError,
     LLMUnavailableError,
 )
@@ -218,7 +221,14 @@ def _error(status: int, kind: str, message: str, **extra: Any) -> Handler:
         (_error(429, "rate_limit_error", "slow down"), LLMRateLimitError),
         (_error(529, "overloaded_error", "busy"), LLMOverloadedError),
         (_error(500, "api_error", "oops"), LLMOverloadedError),
-        (_error(404, "not_found_error", "no such model"), LLMError),
+        (_error(404, "not_found_error", "model: claude-x"), LLMModelNotFoundError),
+        (_error(413, "request_too_large", "too big"), LLMTooLargeError),
+        (_error(400, "invalid_request_error", "prompt is too long: 2M tokens"), LLMTooLargeError),
+        (
+            _error(400, "invalid_request_error", "Schema is too complex for compilation."),
+            LLMRequestError,
+        ),
+        (_error(418, "x", "teapot"), LLMError),
     ],
 )
 async def test_key_check_sorts_errors_into_explainable_kinds(
@@ -228,6 +238,21 @@ async def test_key_check_sorts_errors_into_explainable_kinds(
     with pytest.raises(error) as caught:
         await provider.check()
     assert type(caught.value) is error
+
+
+async def test_error_messages_say_what_claude_said() -> None:
+    provider, _ = _provider(
+        _error(400, "invalid_request_error", "Schema is too complex for compilation.")
+    )
+    with pytest.raises(LLMRequestError) as caught:
+        await provider.check()
+    assert '"Schema is too complex for compilation."' in caught.value.user_message
+    assert "Error code" not in caught.value.user_message  # the API text, not the SDK repr
+
+    provider, _ = _provider(_error(418, "x", "teapot"))
+    with pytest.raises(LLMError) as other:
+        await provider.check()
+    assert other.value.user_message == "Claude returned an error (418): teapot"
 
 
 async def test_key_check_network_failure() -> None:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from functools import cache
 from typing import Any
 
 from pydantic import BaseModel
@@ -23,3 +25,71 @@ def strict_json_schema(model: type[BaseModel]) -> dict[str, Any]:
     pydantic model on arrival."""
     schema: dict[str, Any] = _strictify(model.model_json_schema())
     return schema
+
+
+# Structured outputs compile the schema into a grammar and refuse big ones with a 400
+# ("Schema is too complex for compilation"). Documented limits, totaled across the request
+# (https://platform.claude.com/docs/en/build-with-claude/structured-outputs, 2026-11-01).
+MAX_OPTIONAL_FIELDS = 24
+MAX_UNION_FIELDS = 16
+
+
+@dataclass(frozen=True)
+class SchemaComplexity:
+    optional: int  # properties not listed in `required`
+    unions: int  # properties using anyOf or a type array (nullable fields count)
+
+    @property
+    def ok(self) -> bool:
+        return self.optional <= MAX_OPTIONAL_FIELDS and self.unions <= MAX_UNION_FIELDS
+
+
+def schema_complexity(schema: dict[str, Any]) -> SchemaComplexity:
+    """Count the way the API does, expanding each `$ref` where it is used (a conservative
+    upper bound when one definition is referenced twice)."""
+    defs: dict[str, Any] = schema.get("$defs", {})
+    optional = unions = 0
+
+    def walk(node: Any, seen: frozenset[str]) -> None:
+        nonlocal optional, unions
+        if isinstance(node, list):
+            for item in node:
+                walk(item, seen)
+            return
+        if not isinstance(node, dict):
+            return
+        ref = node.get("$ref")
+        if isinstance(ref, str):
+            name = ref.rsplit("/", 1)[-1]
+            if name not in seen and name in defs:
+                walk(defs[name], seen | {name})
+            return
+        props = node.get("properties")
+        if isinstance(props, dict):
+            required = set(node.get("required", []))
+            for key, value in props.items():
+                if key not in required:
+                    optional += 1
+                if isinstance(value, dict) and (
+                    "anyOf" in value or isinstance(value.get("type"), list)
+                ):
+                    unions += 1
+        for key, value in node.items():
+            if key != "$defs":
+                walk(value, seen)
+
+    walk(schema, frozenset())
+    return SchemaComplexity(optional=optional, unions=unions)
+
+
+@cache
+def check_output_schema(model: type[BaseModel]) -> SchemaComplexity:
+    """Raise before sending a structured-output schema the API would refuse."""
+    found = schema_complexity(model.model_json_schema())
+    if not found.ok:
+        raise ValueError(
+            f"{model.__name__} is too complex for structured outputs: {found.optional} optional "
+            f"fields (max {MAX_OPTIONAL_FIELDS}) and {found.unions} nullable/union fields "
+            f"(max {MAX_UNION_FIELDS}). Make fields required and use empty values instead."
+        )
+    return found

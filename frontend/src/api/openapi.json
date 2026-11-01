@@ -3487,7 +3487,17 @@
               },
               {
                 "additionalProperties": {
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
                 },
                 "type": "object"
               }
@@ -7187,7 +7197,8 @@
             "type": "string",
             "enum": [
               "text",
-              "textarea"
+              "textarea",
+              "list"
             ],
             "title": "Kind",
             "default": "text"
@@ -9936,7 +9947,17 @@
               },
               {
                 "additionalProperties": {
-                  "type": "string"
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  ]
                 },
                 "type": "object"
               },

@@ -74,6 +74,54 @@ class LLMTruncatedError(LLMError):
     user_message = "The AI response was cut off before it finished."
 
 
+_BUG_REPORT = (
+    "This is a RoleHawk bug, not a problem with your key or account. Please report it at "
+    "https://github.com/travist6983/rolehawk/issues"
+)
+
+
+def _detail(text: str, limit: int = 300) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+class LLMRequestError(LLMError):
+    """A 400 Claude rejected for its shape (not billing): RoleHawk built a bad request."""
+
+    def __init__(self, api_message: str) -> None:
+        super().__init__(api_message)
+        self.api_message = api_message
+        self.user_message = (
+            f'Claude rejected the request RoleHawk sent: "{_detail(api_message)}". {_BUG_REPORT}'
+        )
+
+
+class LLMSchemaError(LLMRequestError):
+    """Caught before sending: the structured-output schema is over the API's limits."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(detail)
+        self.user_message = (
+            f"RoleHawk asked Claude for an answer in a shape it can't produce. {_BUG_REPORT}"
+        )
+
+
+class LLMTooLargeError(LLMError):
+    user_message = (
+        "That's more text than Claude can read in one request. Upload just your resume, or a "
+        "shorter file, and try again."
+    )
+
+
+class LLMModelNotFoundError(LLMError):
+    def __init__(self, api_message: str) -> None:
+        super().__init__(api_message)
+        self.user_message = (
+            f'Claude couldn\'t find the model this feature uses ("{_detail(api_message)}"). '
+            "Pick another model under Model in Settings, then try again."
+        )
+
+
 class LLMOutputError(LLMError):
     """The model returned output that didn't match the requested schema."""
 

@@ -28,11 +28,14 @@ from rolehawk.llm.errors import (
     LLMBillingError,
     LLMConnectionError,
     LLMError,
+    LLMModelNotFoundError,
     LLMOutputError,
     LLMOverloadedError,
     LLMPermissionError,
     LLMRateLimitError,
     LLMRefusalError,
+    LLMRequestError,
+    LLMTooLargeError,
     LLMTruncatedError,
 )
 from rolehawk.llm.types import (
@@ -71,6 +74,16 @@ def resolve_api_key() -> tuple[str | None, KeySource]:
     return None, "none"
 
 
+def api_message(exc: anthropic.APIError) -> str:
+    """The human part of an API error ("Schema is too complex..."), not the whole repr."""
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        error = body.get("error")
+        if isinstance(error, dict) and isinstance(error.get("message"), str):
+            return str(error["message"])
+    return str(getattr(exc, "message", "") or exc)
+
+
 def map_error(exc: anthropic.APIError) -> LLMError:
     """Sort an SDK error into the kinds the app can explain (docs: /docs/en/api/errors).
 
@@ -95,6 +108,16 @@ def map_error(exc: anthropic.APIError) -> LLMError:
             return LLMRateLimitError(text)
         if exc.status_code >= 500:
             return LLMOverloadedError(text)
+        message = api_message(exc)
+        if exc.status_code == 413 or "prompt is too long" in message.lower():
+            return LLMTooLargeError(text)
+        if exc.status_code == 404:
+            return LLMModelNotFoundError(message)
+        if exc.status_code == 400:
+            return LLMRequestError(message)
+        error = LLMError(text)
+        error.user_message = f"Claude returned an error ({exc.status_code}): {message}"
+        return error
     return LLMError(text)
 
 

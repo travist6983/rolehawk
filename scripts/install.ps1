@@ -11,7 +11,11 @@
 #
 # Optional settings: ROLEHAWK_APP_HOME (install folder), ROLEHAWK_BIN_DIR (where the
 # `rolehawk` command goes), ROLEHAWK_RELEASE_URL (where the release files come from),
-# ROLEHAWK_NO_START=1 (don't start the app at the end), ROLEHAWK_NO_SHORTCUT=1.
+# ROLEHAWK_NO_START=1 (don't start the app at the end), ROLEHAWK_NO_SHORTCUT=1,
+# ROLEHAWK_REINSTALL=1 (download and install again even when this release is installed).
+#
+# Running it again is safe: when the newest release is already installed it skips the
+# download, refreshes the command and shortcuts, and starts the app.
 #
 # Everything is inside Install-RoleHawk, called on the last lines, so a partial download
 # runs nothing. It never calls `exit` (that would close your PowerShell window).
@@ -74,47 +78,65 @@ function Install-RoleHawk {
     $tmp = Join-Path $downloads ("install-" + [guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory $tmp | Out-Null
     try {
-        Say "Downloading the latest release..."
+        # The checksum file is tiny: fetch it first, so a rerun with this release already
+        # installed (say, after the app was stopped) skips the download and package install.
         $zip = Join-Path $tmp "rolehawk.zip"
-        Invoke-WebRequest -UseBasicParsing "$Base/rolehawk.zip" -OutFile $zip
         Invoke-WebRequest -UseBasicParsing "$Base/rolehawk.zip.sha256" -OutFile "$zip.sha256"
         $expected = ((Get-Content "$zip.sha256" -Raw).Trim() -split "\s+")[0].ToLowerInvariant()
-        $actual = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-        if ($expected -ne $actual) { throw "The download doesn't match its checksum. Try again." }
-
-        # Python's zipfile (through uv) unpacks it: it drops absolute paths and '..' from
-        # member names, and never creates links.
-        $unpackTo = Join-Path $tmp "x"
-        Invoke-Native "Unpacking" { & $uv run --quiet --no-project --python 3.12 python -m zipfile -e $zip $unpackTo }
-        $unpacked = @(Get-ChildItem -Directory $unpackTo -Filter "rolehawk-*")
-        if ($unpacked.Count -ne 1 -or -not (Test-Path (Join-Path $unpacked[0].FullName "VERSION"))) {
-            throw "The release has an unexpected layout."
-        }
-        $version = (Get-Content (Join-Path $unpacked[0].FullName "VERSION") -Raw).Trim()
-        if ($version -notmatch '^\d{1,4}\.\d{1,4}\.\d{1,4}$') { throw "Bad release version." }
-
-        $app = Join-Path $versions $version
-        if (Test-Path $app) {
-            Write-Host "Reinstalling version $version."
-            Remove-Item -Recurse -Force $app
-        }
-        Move-Item $unpacked[0].FullName $app
-
-        Say "Installing RoleHawk $version (Python 3.12 and packages)..."
-        Push-Location (Join-Path $app "backend")
-        try {
-            Invoke-Native "Installing packages" { & $uv sync --quiet --frozen --no-dev --python 3.12 }
-        } finally {
-            Pop-Location
-        }
-        $exe = Join-Path $app "backend\.venv\Scripts\rolehawk.exe"
-
-        Say "Installing Chromium (PDF export and autofill)..."
-        Invoke-Native "Installing Chromium" { & $exe install-browser }
-
         $pointer = Join-Path $AppHome "current"
-        Set-Content -Path "$pointer.partial" -Value $version -NoNewline -Encoding Ascii
-        Move-Item -Force "$pointer.partial" $pointer
+        $installed = if (Test-Path $pointer) { (Get-Content $pointer -Raw).Trim() } else { "" }
+        $installedExe = $null
+        $installedSha = ""
+        if ($installed -match '^\d{1,4}\.\d{1,4}\.\d{1,4}$') {
+            $installedExe = Join-Path $versions "$installed\backend\.venv\Scripts\rolehawk.exe"
+            $marker = Join-Path $versions "$installed\.release-sha256"
+            if (Test-Path $marker) { $installedSha = (Get-Content $marker -Raw).Trim() }
+        }
+        if ($env:ROLEHAWK_REINSTALL -ne "1" -and $installedExe -and (Test-Path $installedExe) -and $installedSha -eq $expected) {
+            $version = $installed
+            $exe = $installedExe
+            Say "RoleHawk $version is already installed and up to date. Skipping the download."
+        } else {
+            Say "Downloading the latest release..."
+            Invoke-WebRequest -UseBasicParsing "$Base/rolehawk.zip" -OutFile $zip
+            $actual = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+            if ($expected -ne $actual) { throw "The download doesn't match its checksum. Try again." }
+
+            # Python's zipfile (through uv) unpacks it: it drops absolute paths and '..' from
+            # member names, and never creates links.
+            $unpackTo = Join-Path $tmp "x"
+            Invoke-Native "Unpacking" { & $uv run --quiet --no-project --python 3.12 python -m zipfile -e $zip $unpackTo }
+            $unpacked = @(Get-ChildItem -Directory $unpackTo -Filter "rolehawk-*")
+            if ($unpacked.Count -ne 1 -or -not (Test-Path (Join-Path $unpacked[0].FullName "VERSION"))) {
+                throw "The release has an unexpected layout."
+            }
+            $version = (Get-Content (Join-Path $unpacked[0].FullName "VERSION") -Raw).Trim()
+            if ($version -notmatch '^\d{1,4}\.\d{1,4}\.\d{1,4}$') { throw "Bad release version." }
+
+            $app = Join-Path $versions $version
+            if (Test-Path $app) {
+                Write-Host "Reinstalling version $version."
+                Remove-Item -Recurse -Force $app
+            }
+            Move-Item $unpacked[0].FullName $app
+
+            Say "Installing RoleHawk $version (Python 3.12 and packages)..."
+            Push-Location (Join-Path $app "backend")
+            try {
+                Invoke-Native "Installing packages" { & $uv sync --quiet --frozen --no-dev --python 3.12 }
+            } finally {
+                Pop-Location
+            }
+            $exe = Join-Path $app "backend\.venv\Scripts\rolehawk.exe"
+
+            Say "Installing Chromium (PDF export and autofill)..."
+            Invoke-Native "Installing Chromium" { & $exe install-browser }
+
+            Set-Content -Path "$pointer.partial" -Value $version -NoNewline -Encoding Ascii
+            Move-Item -Force "$pointer.partial" $pointer
+            # Written last: its presence means this version installed completely.
+            Set-Content -Path (Join-Path $app ".release-sha256") -Value $expected -NoNewline -Encoding Ascii
+        }
 
         Say "Setting up your data folder..."
         Invoke-Native "Setting up the data folder" { & $exe db upgrade }
@@ -168,9 +190,14 @@ function Install-RoleHawk {
 
     Write-Host ""
     Say "RoleHawk $version is installed."
-    Write-Host "Start it any time with 'rolehawk' or the RoleHawk shortcut on your Desktop."
+    Write-Host "To start it again later (after you stop it, close this window, or restart your"
+    Write-Host "computer), you don't need to reinstall. Use the RoleHawk shortcut on your Desktop"
+    Write-Host "or Start menu, or run:"
+    Write-Host ""
+    Write-Host "    rolehawk"
+    Write-Host ""
+    if ($pathNote) { Write-Host "$pathNote In this window, run: $launcher" }
     Write-Host "Update with 'rolehawk update'. Diagnostics: 'rolehawk doctor'."
-    if ($pathNote) { Write-Host $pathNote }
     if ($env:ROLEHAWK_NO_START -ne "1") {
         Write-Host ""
         Say "Starting RoleHawk (press Ctrl+C to stop)..."
