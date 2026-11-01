@@ -1,0 +1,850 @@
+/* RoleHawk site. Built from the app's own design (frontend/src/index.css and the components
+   in frontend/src): the same tokens with the same names, the espresso sidebar, the page
+   header, the italic phase headings over an ink rule, the card lift, and the pill buttons.
+   Fonts are the app's three faces, self-hosted under fonts/ (SIL Open Font License).
+   If the app's tokens change, change them here too. */
+
+@font-face {
+  font-family: "Newsreader Variable";
+  src: url("fonts/newsreader-latin-opsz-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader Variable";
+  src: url("fonts/newsreader-latin-opsz-italic.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Public Sans Variable";
+  src: url("fonts/public-sans-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Light tokens: copied from the app's :root. */
+:root {
+  color-scheme: light;
+  --radius: 0.5rem;
+  --background: oklch(0.965 0.014 80);
+  --foreground: oklch(0.23 0.014 55);
+  --card: oklch(0.99 0.006 80);
+  --foreground-2: oklch(0.36 0.016 55);
+  --muted: oklch(0.945 0.016 78);
+  --muted-foreground: oklch(0.46 0.018 55);
+  --border: oklch(0.87 0.018 75);
+  --ring: oklch(0.52 0.13 40);
+  --primary: oklch(0.52 0.13 40);
+  --primary-foreground: oklch(0.985 0.008 60);
+  --primary-text: oklch(0.52 0.13 40);
+  --accent: oklch(0.94 0.016 78);
+  --sidebar: oklch(0.25 0.014 55);
+  --sidebar-foreground: oklch(0.95 0.012 80);
+  --sidebar-muted: oklch(0.85 0.012 80);
+  --sidebar-active: oklch(0.33 0.016 55);
+  --sidebar-badge: oklch(0.8 0.1 50);
+  --sidebar-live: oklch(0.8 0.1 150);
+  --shadow-color: oklch(0.4 0.03 55 / 0.07);
+  --shadow-card: 0 0 0 1px var(--border), 0 3px 8px var(--shadow-color);
+
+  --font-sans: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* Dark tokens: copied from the app's .dark. Applied by the theme toggle (html.dark), or by the
+   system setting when the visitor hasn't picked one (html without .light). */
+:root.dark {
+  color-scheme: dark;
+  --background: oklch(0.2 0.012 55);
+  --foreground: oklch(0.93 0.012 80);
+  --card: oklch(0.245 0.013 55);
+  --foreground-2: oklch(0.82 0.012 78);
+  --muted: oklch(0.27 0.013 55);
+  --muted-foreground: oklch(0.73 0.015 70);
+  --border: oklch(0.33 0.014 55);
+  --ring: oklch(0.74 0.11 45);
+  --primary: oklch(0.74 0.11 45);
+  --primary-foreground: oklch(0.2 0.03 45);
+  --primary-text: oklch(0.74 0.11 45);
+  --accent: oklch(0.27 0.013 55);
+  --sidebar: oklch(0.155 0.01 55);
+  --sidebar-foreground: oklch(0.94 0.012 80);
+  --sidebar-muted: oklch(0.8 0.012 78);
+  --sidebar-active: oklch(0.26 0.013 55);
+  --shadow-color: oklch(0 0 0 / 0.3);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: oklch(0.2 0.012 55);
+    --foreground: oklch(0.93 0.012 80);
+    --card: oklch(0.245 0.013 55);
+    --foreground-2: oklch(0.82 0.012 78);
+    --muted: oklch(0.27 0.013 55);
+    --muted-foreground: oklch(0.73 0.015 70);
+    --border: oklch(0.33 0.014 55);
+    --ring: oklch(0.74 0.11 45);
+    --primary: oklch(0.74 0.11 45);
+    --primary-foreground: oklch(0.2 0.03 45);
+    --primary-text: oklch(0.74 0.11 45);
+    --accent: oklch(0.27 0.013 55);
+    --sidebar: oklch(0.155 0.01 55);
+    --sidebar-foreground: oklch(0.94 0.012 80);
+    --sidebar-muted: oklch(0.8 0.012 78);
+    --sidebar-active: oklch(0.26 0.013 55);
+    --shadow-color: oklch(0 0 0 / 0.3);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 72px;
+}
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 24px;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--primary-text);
+  text-underline-offset: 4px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip {
+  position: fixed;
+  top: -60px;
+  left: 8px;
+  z-index: 50;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.skip:focus {
+  top: 8px;
+}
+
+/* Sidebar (the app's Sidebar.tsx): espresso in both themes, 220px, fixed on desktop. */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 220px;
+  overflow-y: auto;
+  padding: 24px 14px 18px;
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+}
+@media (min-width: 768px) {
+  .sidebar {
+    display: flex;
+  }
+}
+.brand {
+  font-family: var(--font-serif);
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--sidebar-foreground);
+  text-decoration: none;
+}
+.sidebar .brand {
+  padding: 0 10px 24px;
+}
+.nav-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-links a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--sidebar-muted);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+.nav-links a:hover,
+.nav-links a[aria-current="true"] {
+  background: var(--sidebar-active);
+  color: var(--sidebar-foreground);
+}
+.nav-badge {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sidebar-badge);
+}
+.sidebar-foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 10px 0;
+}
+/* The app's "Ask Claude" pill, here as the install call to action. */
+.cream-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: var(--sidebar-foreground);
+  color: var(--sidebar);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cream-pill kbd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+.foot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 4px;
+  margin-right: -12px;
+  color: var(--sidebar-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.foot-row a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sidebar-muted);
+  text-decoration: none;
+}
+.foot-row a:hover {
+  color: var(--sidebar-foreground);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sidebar-live);
+}
+/* The app's Light / Dark switch. */
+.theme-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--sidebar-active);
+}
+.theme-toggle button {
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--sidebar-muted);
+  font: 500 12.5px var(--font-sans);
+  cursor: pointer;
+}
+.theme-toggle button[aria-pressed="true"] {
+  background: var(--sidebar-foreground);
+  color: var(--sidebar);
+}
+
+/* Below 768px the sidebar becomes a top bar with a menu (the app's MobileHeader.tsx). */
+.mobile-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+}
+.mobile-bar .brand {
+  font-size: 22px;
+}
+@media (min-width: 768px) {
+  .mobile-bar {
+    display: none;
+  }
+}
+.menu {
+  position: relative;
+}
+.menu summary {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+}
+.menu summary::-webkit-details-marker {
+  display: none;
+}
+.menu summary:hover {
+  background: var(--sidebar-active);
+}
+.menu-panel {
+  position: absolute;
+  top: 44px;
+  left: -4px;
+  width: 240px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--sidebar);
+  box-shadow: 0 12px 32px oklch(0 0 0 / 0.35);
+}
+.mobile-gh {
+  margin-left: auto;
+  color: var(--sidebar-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Main column, offset by the sidebar like the app's AppShell. */
+@media (min-width: 768px) {
+  .content {
+    padding-left: 220px;
+  }
+}
+.page {
+  max-width: 1120px;
+  padding: 0 20px 96px;
+}
+@media (min-width: 768px) {
+  .page {
+    padding: 0 32px 96px;
+  }
+}
+
+/* Page header (PageHeader.tsx): large serif title, a one-line note beside it. */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 24px;
+  padding: 28px 0 20px;
+}
+.page-header h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(40px, 6.2vw, 64px);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.page-header .note {
+  margin-bottom: 6px;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--foreground-2);
+}
+.page-header .note b {
+  font-weight: 600;
+  color: var(--foreground);
+}
+/* The Insights lead: serif 19px in the second text color, one phrase in ink. */
+.lead {
+  max-width: 760px;
+  padding-bottom: 24px;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--foreground-2);
+}
+.lead b {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Buttons (components/ui/button.tsx). */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.15s ease-out;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.btn-primary:hover {
+  background: color-mix(in oklch, var(--primary) 90%, transparent);
+}
+.btn-outline {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.btn-outline:hover {
+  background: var(--accent);
+}
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+}
+.btn svg {
+  flex: none;
+}
+.hint {
+  font-size: 13.5px;
+  color: var(--muted-foreground);
+}
+
+/* Cards (components/ui/card.tsx): the hairline ring plus soft warm shadow. */
+.card {
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+.shot {
+  margin: 0;
+  overflow: hidden;
+}
+.hero-shot {
+  margin-top: 28px;
+}
+.caption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* Section headings: the board's phase headings ("Your move", "In flight"), italic serif over
+   an ink rule with a muted note beside. */
+.section {
+  padding-top: 72px;
+}
+.phase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--foreground);
+  margin-bottom: 20px;
+}
+.phase h2 {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 500;
+  font-style: italic;
+}
+.phase span {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+/* Small caps label, as on the board's cards (company names) and the detail sheets. */
+.label {
+  font-size: 12.5px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--foreground-2);
+}
+
+/* Board-style cards in a row. */
+.card-row {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 900px) {
+  .card-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+.tile h3 {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+.tile p {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+/* The board's "next action" line. */
+.next {
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+
+/* Features */
+.feature {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--border);
+}
+.feature:last-of-type {
+  border-bottom: 0;
+}
+@media (min-width: 1000px) {
+  .feature {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    gap: 32px;
+  }
+}
+.feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.feature h3 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.feature p {
+  color: var(--foreground-2);
+}
+.extras {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+@media (min-width: 760px) {
+  .extras {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Key / value rows in a card, as in the app's detail sheets. */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px;
+}
+.rows li {
+  display: grid;
+  gap: 4px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rows li:last-child {
+  border-bottom: 0;
+}
+@media (min-width: 760px) {
+  .rows li {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+.rows .label {
+  padding-top: 3px;
+}
+.rows p {
+  color: var(--foreground-2);
+}
+.privacy-lead {
+  max-width: 760px;
+  margin-bottom: 20px;
+}
+
+/* Install */
+.cmd {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+}
+.cmd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cmd code {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.install-grid {
+  display: grid;
+  gap: 12px;
+}
+.after {
+  margin-top: 16px;
+  max-width: 760px;
+  color: var(--foreground-2);
+}
+
+/* Cost table (Discover's table: ink rule under the header, hairlines between rows). */
+.cost-grid {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 1000px) {
+  .cost-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 40px;
+  }
+}
+.cost-grid > div > p + p {
+  margin-top: 12px;
+}
+.cost-grid p {
+  color: var(--foreground-2);
+}
+.table-wrap {
+  padding: 4px 20px 16px;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+caption {
+  padding: 12px 0 8px;
+  text-align: left;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+thead th {
+  padding: 8px 0;
+  text-align: left;
+  font-weight: 500;
+  box-shadow: inset 0 -1px 0 var(--foreground);
+}
+tbody th,
+tbody td {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: baseline;
+}
+tbody th {
+  font-weight: 400;
+  padding-right: 16px;
+}
+tbody th b {
+  display: block;
+  font-weight: 600;
+}
+tbody th span {
+  color: var(--muted-foreground);
+}
+.num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+td.num {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.table-note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted-foreground) !important;
+}
+
+/* FAQ */
+.faq {
+  max-width: 820px;
+}
+.faq details {
+  border-bottom: 1px solid var(--border);
+}
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: 16px;
+  font-weight: 600;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq summary::after {
+  content: "+";
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted-foreground);
+}
+.faq details[open] summary::after {
+  content: "\2212";
+}
+.faq details p {
+  padding-bottom: 16px;
+  max-width: 68ch;
+  color: var(--foreground-2);
+}
+
+/* Footer */
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 72px;
+  padding-top: 20px;
+  border-top: 1px solid var(--foreground);
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer-links a {
+  color: var(--foreground-2);
+}
+.site-footer .fine {
+  font-size: 13px;
+  max-width: 80ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.overview-cards {
+  margin-top: 28px;
+}
+ol.card-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

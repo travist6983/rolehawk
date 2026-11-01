@@ -90,6 +90,9 @@ data/
   country_sources.toml   per-country feeds, currency, salary period
 docs/SPEC.md             product spec and build plan
 docs/BACKLOG.md          agreed ideas not yet scheduled (pick one off, delete when shipped)
+docs/media/              README and site screenshots/GIFs (made-up demo data only)
+site/                    marketing site for GitHub Pages (static; site/README.md), built by
+                         site/tools/build.py, deployed by .github/workflows/pages.yml
 .github/workflows/ci.yml lint + typecheck + tests on ubuntu, macos, windows
 .github/workflows/release.yml  build the ZIP, smoke-test install + start + update on all three
                          OSes (installer/release changes and v* tags), publish on tags
