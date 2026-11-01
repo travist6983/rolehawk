@@ -3,12 +3,68 @@
 [![CI](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml/badge.svg)](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A free, open source AI job search copilot that runs on your own computer. It builds your
-profile from your resume, finds jobs across job boards and company career pages, ranks them
-against what you want, writes a tailored CV and cover letter for each one without inventing
-anything, and tracks every application. Claude does the thinking; your data stays with you.
+**Free, local-first, and private.** RoleHawk is an open source AI job search copilot that runs
+on your own computer. It builds your profile from your resume, finds jobs across job boards and
+company career pages, ranks them against what you want, writes a tailored CV and cover letter
+for each one without inventing anything, and tracks every application. Claude does the
+thinking; your data stays with you.
 
-<!-- Demo GIF (60 seconds): docs/media/demo.gif. Recorded after the final polish pass. -->
+![RoleHawk: a pipeline board of job applications, then a tailored application opening](docs/media/hero.gif)
+
+<sub>Every screen in this README shows made-up demo data: a fictional job seeker and fictional
+companies. [Try the demo yourself](#try-the-demo).</sub>
+
+## See it in action
+
+### Your whole search on one board
+
+Every application moves from Saved to Offer on one board, by drag or keyboard. Each card shows
+its fit score and the one thing to do next: write the application, check a flagged line, send
+a follow-up after ten quiet days, or prepare for an interview.
+
+![The Pipeline board with applications from Saved to Offer](docs/media/pipeline.png)
+
+### Find and rank jobs
+
+RoleHawk searches Greenhouse, Lever, Ashby, and Workable boards for a watchlist of companies
+you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS. Add any careers page
+yourself: RoleHawk finds its feed or structured job data, shows you sample jobs, and runs it in
+a sandbox. Ranking uses one fit rubric (experience, skills, career goals, logistics, plus
+eligibility and language gates), explains every score, and shows its cost before it runs.
+
+![Discover: ranking new jobs and opening one to see why it scored the way it did](docs/media/discover.gif)
+
+### A tailored CV and cover letter, fact-checked
+
+One click writes a CV and cover letter for the posting, as Word and PDF, from ATS-friendly
+templates. Facts come from your profile only, and three checks catch anything that isn't there:
+drafts pick your roles and projects by reference, a fact check flags unknown numbers and skills,
+and an AI review marks stretches and generic lines for you to fix or keep. It also checks the
+posting's requirements against your CV, and can fill in the application form in a browser
+window, then stop. It never submits.
+
+![Writing an application and reviewing its flagged lines](docs/media/apply.gif)
+
+### See what's working
+
+Insights shows your funnel, response rate by source, weekly activity, and what you've spent on
+Claude this month. Export a self-contained HTML report to share with a mentor or career coach.
+
+![Insights: funnel, response rate by source, weekly activity, and AI spend](docs/media/insights.png)
+
+### Ask Claude from any screen
+
+Chat knows your profile, your pipeline, and the page you're on, and takes slash commands. It
+remembers what you tell it (preferences, deal breakers, stories) in plain markdown files and
+never changes them without your OK.
+
+![The chat drawer answering "What should I focus on today?"](docs/media/chat.gif)
+
+### Light or dark
+
+It follows your system setting, or pick one in the sidebar.
+
+![The Pipeline board in dark mode](docs/media/pipeline-dark.png)
 
 ## Install
 
@@ -36,30 +92,55 @@ and autofill (about 150 MB). It checks the download's SHA-256 before unpacking i
 lives separately in `~/RoleHawk` (`%USERPROFILE%\RoleHawk` on Windows). Read the
 scripts first if you like: [install.sh](scripts/install.sh), [install.ps1](scripts/install.ps1).
 
+### First run: connect Claude
+
+RoleHawk opens on a four-step setup: Connect Claude, Resume, Questions, and Job sources. It
+takes about ten minutes, and you can stop and come back any time.
+
+Connecting Claude takes about five minutes, and the app walks you through it:
+
+1. Create an account on the [Claude Platform](https://platform.claude.com/). It's free, and
+   separate from claude.ai (you can use the same email).
+2. Add some credit. $10 to $20 covers a few weeks of typical use.
+3. Create an API key named "RoleHawk" and copy it. It starts with `sk-ant-` and is shown once.
+4. Paste it into RoleHawk and choose a monthly limit. The key goes into your computer's
+   keychain, never a file.
+
+<!-- Setup screenshots go here once the Connect Claude step is simplified (separate task). -->
+
+Use Claude Code instead? Skip the key and use the skills (see
+[Use it from Claude Code](#use-it-from-claude-code)).
+
 Installed it back when it was called Offerbound? Run the install line again. RoleHawk picks up
 your existing `~/Offerbound` folder and saved API key as they are, so nothing needs moving.
 You can then delete the old `~/.offerbound` app folder and the old Offerbound shortcut.
 
-## What it does
+## Try the demo
+
+Want to look around before you set it up? A demo with a made-up job seeker runs from a copy of
+this repository, with a scripted stand-in for Claude, so it needs no API key and costs nothing.
+It uses its own folder and never touches `~/RoleHawk`. You need
+[uv](https://docs.astral.sh/uv/) and [Node](https://nodejs.org/).
+
+```bash
+git clone https://github.com/travist6983/rolehawk.git
+cd rolehawk/frontend && npm ci && npm run build
+cd ../backend && uv sync
+uv run python scripts/demo_data.py seed ~/RoleHawk-demo
+uv run python scripts/demo_data.py serve ~/RoleHawk-demo
+```
+
+Delete `~/RoleHawk-demo` when you're done.
+
+## Also in the box
 
 - **Builds your profile** from a resume (PDF, Word, or text) or a LinkedIn data export, then
   fills the gaps with a short interview. You review everything before it's saved.
-- **Finds jobs** from Greenhouse, Lever, Ashby, and Workable boards for a watchlist of
-  companies you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS. Add any
-  careers page yourself: RoleHawk finds its feed or structured job data, shows you sample
-  jobs, and runs it in a sandbox.
-- **Ranks jobs** with one fit rubric (skills, seniority, location, salary, your preferences)
-  and explains each score. Ranking shows an estimate before it runs.
-- **Writes applications**: a CV and cover letter tailored to the posting, as Word and PDF,
-  from ATS-friendly templates. Facts come from your profile only, and three checks catch
-  anything that isn't there: drafts pick your roles and projects by reference, a fact check
-  flags unknown numbers and skills, and an AI review marks the rest for you.
-- **Fills in application forms** in a browser window and stops. It never submits.
-- **Tracks the pipeline** on a board (drag or keyboard), with next actions, insights on what's
-  working, and a self-contained HTML report you can share.
-- **Remembers** what you tell it (preferences, deal-breakers, stories) in plain markdown files,
-  and never changes them without your OK.
-- **Chat** with Claude about your search from any screen, with slash commands.
+- **Follow-ups** drafted from what you actually sent, for you to send yourself. RoleHawk
+  never sends anything.
+- **Learns from results**: as replies and rejections come in, it suggests changes to your
+  preferences for you to accept or reject.
+- **Backups and updates** that never touch your data without a copy first.
 
 ## What it costs
 
