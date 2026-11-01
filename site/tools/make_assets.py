@@ -93,7 +93,7 @@ def social() -> None:
     # Screenshot card on the right, bleeding off the edge, with the app's warm shadow.
     shot = Image.open(MEDIA / "pipeline.png").convert("RGB")
     shot = shot.resize((1040, 650), Image.Resampling.LANCZOS)
-    x, y = 560, 150
+    x, y = 610, 150
     shadow = Image.new("L", (w, h), 0)
     ImageDraw.Draw(shadow).rounded_rectangle((x - 2, y + 8, x + 1040, y + 680), 18, fill=90)
     shadow = shadow.filter(ImageFilter.GaussianBlur(18))
@@ -103,27 +103,31 @@ def social() -> None:
     img.paste(shot, (x, y), mask)
     draw.rounded_rectangle((x, y, x + 1040, y + 650), 16, outline=oklch(0.87, 0.018, 75), width=2)
 
-    serif = font("newsreader-latin-opsz-normal.woff2", 92, 500, 72)
-    serif_i = font("newsreader-latin-opsz-italic.woff2", 46, 400, 48)
-    sans = font("public-sans-latin-wght-normal.woff2", 25, 450)
-    sans_b = font("public-sans-latin-wght-normal.woff2", 21, 650)
+    # Type as in the app: the sidebar wordmark, the page header title, the Insights lead in
+    # serif, and a small caps label. No accent color: the app keeps it for next actions.
+    brand = font("newsreader-latin-opsz-normal.woff2", 34, 500, 72)
+    title = font("newsreader-latin-opsz-normal.woff2", 56, 500, 72)
+    lead = font("newsreader-latin-opsz-normal.woff2", 27, 400, 24)
+    label = font("public-sans-latin-wght-normal.woff2", 17, 600)
 
-    draw.text((64, 70), "RoleHawk", font=serif, fill=INK)
-    draw.text((66, 190), "Your job search,", font=serif_i, fill=INK)
-    draw.text((66, 242), "on your computer.", font=serif_i, fill=ACCENT)
+    draw.text((64, 60), "RoleHawk", font=brand, fill=INK)
+    draw.text((62, 150), "Your job search,", font=title, fill=INK)
+    draw.text((62, 212), "on your computer.", font=title, fill=INK)
     lines = [
         "Finds and ranks jobs, writes a",
-        "tailored CV and cover letter, and",
-        "tracks every application.",
+        "tailored CV and cover letter,",
+        "and tracks every application.",
     ]
     for i, line in enumerate(lines):
-        draw.text((66, 330 + i * 36), line, font=sans, fill=INK_2)
-
-    tag = "FREE  ·  OPEN SOURCE  ·  LOCAL"
-    bbox = draw.textbbox((0, 0), tag, font=sans_b)
-    tw = bbox[2] - bbox[0]
-    draw.rounded_rectangle((64, 500, 64 + tw + 40, 548), 24, fill=ESPRESSO)
-    draw.text((84, 511), tag, font=sans_b, fill=CREAM)
+        draw.text((64, 330 + i * 38), line, font=lead, fill=INK_2)
+    x0 = 64
+    for word in ["FREE", "OPEN SOURCE", "RUNS LOCALLY"]:
+        draw.text((x0, 520), word, font=label, fill=INK_2)
+        x0 += draw.textlength(word, font=label) + 14
+        if word != "RUNS LOCALLY":
+            draw.text((x0, 520), "·", font=label, fill=INK_2)
+            x0 += draw.textlength("·", font=label) + 14
+    draw.line((64, 506, 540, 506), fill=INK, width=1)
 
     img.save(SITE / "social.png", optimize=True)
 
