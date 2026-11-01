@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 
-const STORAGE_KEY = "offerbound.theme";
+const STORAGE_KEY = "rolehawk.theme";
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
 function readPreference(): ThemePreference {

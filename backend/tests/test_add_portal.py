@@ -19,11 +19,11 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
-from offerbound.db.models import Job, Portal, SearchTarget
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest
-from offerbound.portals.custom import engine as engine_module
-from offerbound.portals.custom.definition import (
+from rolehawk.db.models import Job, Portal, SearchTarget
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest
+from rolehawk.portals.custom import engine as engine_module
+from rolehawk.portals.custom.definition import (
     FieldMap,
     HtmlDefinition,
     HtmlFields,
@@ -36,12 +36,12 @@ from offerbound.portals.custom.definition import (
     site_domain,
     split_company,
 )
-from offerbound.portals.custom.detect import ats_link, find_job_list
-from offerbound.portals.custom.engine import EngineError, Fetcher, run_definition
-from offerbound.portals.custom.generate import AiDraft
-from offerbound.portals.custom.sandbox import clean_env, run_in_sandbox
-from offerbound.portals.custom.store import parse_plugin, plugin_source
-from offerbound.services.runtime import Runtime
+from rolehawk.portals.custom.detect import ats_link, find_job_list
+from rolehawk.portals.custom.engine import EngineError, Fetcher, run_definition
+from rolehawk.portals.custom.generate import AiDraft
+from rolehawk.portals.custom.sandbox import clean_env, run_in_sandbox
+from rolehawk.portals.custom.store import parse_plugin, plugin_source
+from rolehawk.services.runtime import Runtime
 
 pytestmark = pytest.mark.anyio
 
@@ -337,7 +337,7 @@ async def test_sandbox_runs_out_of_process_with_a_timeout(site: str) -> None:
 
 
 def test_sandbox_environment_has_no_secrets() -> None:
-    env = clean_env({"PATH": "/bin", "ANTHROPIC_API_KEY": "sk-x", "OFFERBOUND_HOME": "/h",
+    env = clean_env({"PATH": "/bin", "ANTHROPIC_API_KEY": "sk-x", "ROLEHAWK_HOME": "/h",
                      "SYSTEMROOT": "C:\\Windows", "HOME": "/home/ada"})  # fmt: skip
     assert env == {"PATH": "/bin", "SYSTEMROOT": "C:\\Windows"}
 

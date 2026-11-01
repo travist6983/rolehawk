@@ -16,16 +16,16 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound import cli, keychain
-from offerbound.db.models import Company, Job, PortalKind, RiskLevel, SearchTarget
-from offerbound.db.models import Portal as PortalRow
-from offerbound.keychain import SecretName
-from offerbound.portals import scrape as scrape_module
-from offerbound.portals.base import NormalizedJob, Portal, PortalContext, RawJob
-from offerbound.portals.registry import ATS_IDS, BUILTIN
-from offerbound.portals.scrape import NoSearchTargetsError, Scraper, ScrapeSummary
-from offerbound.portals.state import CompanyIn, PortalStore
-from offerbound.services.runtime import Runtime
+from rolehawk import cli, keychain
+from rolehawk.db.models import Company, Job, PortalKind, RiskLevel, SearchTarget
+from rolehawk.db.models import Portal as PortalRow
+from rolehawk.keychain import SecretName
+from rolehawk.portals import scrape as scrape_module
+from rolehawk.portals.base import NormalizedJob, Portal, PortalContext, RawJob
+from rolehawk.portals.registry import ATS_IDS, BUILTIN
+from rolehawk.portals.scrape import NoSearchTargetsError, Scraper, ScrapeSummary
+from rolehawk.portals.state import CompanyIn, PortalStore
+from rolehawk.services.runtime import Runtime
 from tests.conftest import MemoryKeyring
 from tests.portal_web import FakeWeb, fixture_json
 from tests.test_api_setup import wait_for_task

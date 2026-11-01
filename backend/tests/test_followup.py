@@ -12,18 +12,18 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from offerbound.apply.followup import (
+from rolehawk.apply.followup import (
     FollowUpDraftOut,
     FollowUpIn,
     FollowUpLimitError,
     NotWaitingError,
 )
-from offerbound.apply.service import ApplyParams
-from offerbound.db.models import Application, FollowUpChannel, Stage, StageEvent
-from offerbound.db.types import utcnow
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest
-from offerbound.services.runtime import Runtime
+from rolehawk.apply.service import ApplyParams
+from rolehawk.db.models import Application, FollowUpChannel, Stage, StageEvent
+from rolehawk.db.types import utcnow
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest
+from rolehawk.services.runtime import Runtime
 from tests.test_api_setup import wait_for_task
 from tests.test_apply import Scripted, noop_progress, ready
 

@@ -4,9 +4,9 @@ from collections.abc import Awaitable, Callable
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.db.models import Task, TaskStatus
-from offerbound.services.events import EventBus
-from offerbound.services.tasks import (
+from rolehawk.db.models import Task, TaskStatus
+from rolehawk.services.events import EventBus
+from rolehawk.services.tasks import (
     INTERRUPTED,
     TASK_EVENT,
     TaskContext,

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from offerbound.config import ProviderKind, load_settings, update_settings, write_default_config
+from rolehawk.config import ProviderKind, load_settings, update_settings, write_default_config
 
 
 def test_defaults_when_file_missing(tmp_path: Path) -> None:
@@ -34,15 +34,15 @@ def test_values_from_file(tmp_path: Path) -> None:
 def test_env_overrides_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = tmp_path / "config.toml"
     config.write_text("[server]\nport = 9000\n", encoding="utf-8")
-    monkeypatch.setenv("OFFERBOUND_SERVER__PORT", "9100")
+    monkeypatch.setenv("ROLEHAWK_SERVER__PORT", "9100")
     assert load_settings(config).server.port == 9100
 
 
-def test_unrelated_offerbound_env_vars_are_ignored(
+def test_unrelated_rolehawk_env_vars_are_ignored(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("OFFERBOUND_SESSION_TOKEN", "x")
-    monkeypatch.setenv("OFFERBOUND_DEV_ORIGINS", "http://127.0.0.1:5173")
+    monkeypatch.setenv("ROLEHAWK_SESSION_TOKEN", "x")
+    monkeypatch.setenv("ROLEHAWK_DEV_ORIGINS", "http://127.0.0.1:5173")
     assert load_settings(tmp_path / "config.toml").server.port == 8765
 
 

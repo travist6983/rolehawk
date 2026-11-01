@@ -2,10 +2,10 @@ import json
 
 from fastapi.testclient import TestClient
 
-from offerbound import keychain
-from offerbound.keychain import SecretName
-from offerbound.llm.fake import FakeProvider, FakeReply
-from offerbound.paths import DataPaths
+from rolehawk import keychain
+from rolehawk.keychain import SecretName
+from rolehawk.llm.fake import FakeProvider, FakeReply
+from rolehawk.paths import DataPaths
 
 
 def _sse(body: str) -> list[tuple[str, object]]:
@@ -109,11 +109,11 @@ def test_commands_endpoint(client: TestClient) -> None:
 
 
 def test_not_configured_maps_to_409(paths: DataPaths) -> None:
-    from offerbound.api.app import create_app
+    from rolehawk.api.app import create_app
     from tests.conftest import BASE_URL, TEST_TOKEN
 
     app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=())
-    with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
+    with TestClient(app, base_url=BASE_URL, headers={"X-RoleHawk-Token": TEST_TOKEN}) as c:
         assert c.get("/api/llm/status").json()["configured"] is False
         session = c.post("/api/chat/sessions", json={}).json()
         events = _sse(

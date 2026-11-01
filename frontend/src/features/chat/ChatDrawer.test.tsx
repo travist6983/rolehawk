@@ -115,7 +115,7 @@ describe("ChatDrawer", () => {
     expect(within(panel).getByLabelText("Fit score 86 out of 100")).toBeInTheDocument();
     expect(within(panel).getByText("mystery card")).toBeInTheDocument(); // registry fallback
     expect(await within(panel).findByText("Prefers async-first teams")).toBeInTheDocument();
-    expect(localStorage.getItem("offerbound.chatSession")).toBe("s1");
+    expect(localStorage.getItem("rolehawk.chatSession")).toBe("s1");
   });
 
   it("accepts a memory proposal from its chip", async () => {
@@ -195,7 +195,7 @@ describe("ChatDrawer", () => {
   });
 
   it("restores the previous conversation after a reload", async () => {
-    localStorage.setItem("offerbound.chatSession", "old");
+    localStorage.setItem("rolehawk.chatSession", "old");
     server.use(
       http.get("/api/chat/sessions/old/messages", () =>
         HttpResponse.json([
@@ -226,6 +226,6 @@ describe("ChatDrawer", () => {
 
     await user.click(within(drawer()).getByRole("button", { name: "New conversation" }));
     expect(within(drawer()).queryByText("Earlier answer")).not.toBeInTheDocument();
-    expect(localStorage.getItem("offerbound.chatSession")).toBeNull();
+    expect(localStorage.getItem("rolehawk.chatSession")).toBeNull();
   });
 });

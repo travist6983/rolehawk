@@ -2,16 +2,16 @@ import json
 
 import pytest
 
-from offerbound.chat.service import ChatEvent, ViewContext
-from offerbound.chat.tools import TAINTED_BLOCK
-from offerbound.db.models import Job, MemoryProposalStatus, Portal, PortalKind, RiskLevel
-from offerbound.llm.errors import LLMUnavailableError
-from offerbound.llm.fake import FakeProvider, FakeReply
-from offerbound.llm.types import ToolCall
-from offerbound.memory.extraction import ExtractedProposals
-from offerbound.memory.files import MemoryTarget
-from offerbound.memory.proposals import ProposalIn
-from offerbound.services.runtime import Runtime
+from rolehawk.chat.service import ChatEvent, ViewContext
+from rolehawk.chat.tools import TAINTED_BLOCK
+from rolehawk.db.models import Job, MemoryProposalStatus, Portal, PortalKind, RiskLevel
+from rolehawk.llm.errors import LLMUnavailableError
+from rolehawk.llm.fake import FakeProvider, FakeReply
+from rolehawk.llm.types import ToolCall
+from rolehawk.memory.extraction import ExtractedProposals
+from rolehawk.memory.files import MemoryTarget
+from rolehawk.memory.proposals import ProposalIn
+from rolehawk.services.runtime import Runtime
 
 pytestmark = pytest.mark.anyio
 
@@ -186,7 +186,7 @@ async def test_job_in_view_taints_from_the_start(runtime: Runtime) -> None:
 
 
 async def test_run_command_read_only_vs_confirmation(runtime: Runtime) -> None:
-    from offerbound.commands.registry import CommandSpec, NoParams
+    from rolehawk.commands.registry import CommandSpec, NoParams
 
     async def wipe(_ctx: object, _params: NoParams) -> str:
         raise AssertionError("must not run from chat without confirmation")

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. Offerbound is a Python backend (FastAPI) and a React + TypeScript
+Thanks for helping. RoleHawk is a Python backend (FastAPI) and a React + TypeScript
 dashboard in one repository. Everything below works on macOS, Linux, and Windows.
 
 ## Set up
@@ -21,9 +21,9 @@ cd backend && uv run poe dev     # API on 127.0.0.1:8765; prints a launch link w
 cd frontend && npm run dev       # dashboard on 127.0.0.1:5173 (proxies /api)
 ```
 
-Open the printed launch link. Your data goes in `~/Offerbound`; point `OFFERBOUND_HOME` at a
+Open the printed launch link. Your data goes in `~/RoleHawk`; point `ROLEHAWK_HOME` at a
 scratch folder to keep development data separate. To use Claude in the app, store a key with
-`uv run offerbound llm set-key` (it goes in your OS keychain).
+`uv run rolehawk llm set-key` (it goes in your OS keychain).
 
 ## Before you open a pull request
 
@@ -33,7 +33,7 @@ npm run check        # from the root: lint, format, type checks, and tests for b
 
 - After changing an API route or model, run `npm run gen:api` (CI fails if the generated
   client is stale).
-- After changing `db/models.py`, add a migration with `uv run offerbound db revision -m "..."`
+- After changing `db/models.py`, add a migration with `uv run rolehawk db revision -m "..."`
   and read the generated file.
 - Tests never touch the network: use the recorded fixtures, `FakeProvider` for Claude, and
   `FakeWeb` for job sources.
@@ -44,7 +44,7 @@ on `main`.
 ## How the code is organized
 
 One service layer owns all logic. The dashboard (FastAPI routes), the chat drawer (chat tools),
-and Claude Code skills (`offerbound run <command> --json`) are thin callers on top of it, so a
+and Claude Code skills (`rolehawk run <command> --json`) are thin callers on top of it, so a
 command behaves the same everywhere. [CLAUDE.md](CLAUDE.md) has the folder map and the rules
 every change follows. Highlights:
 
@@ -61,19 +61,19 @@ every change follows. Highlights:
 
 ## Adding a job source
 
-Built-in sources live in `backend/src/offerbound/portals/`. Check the source's API terms and
+Built-in sources live in `backend/src/rolehawk/portals/`. Check the source's API terms and
 endpoints first and record them in `portals/SOURCES.md`; all traffic goes through
 `PoliteClient`. Add recorded responses under `backend/tests/fixtures/portals/` for the tests.
 For one company's careers page, you don't need code: use **Sources → Add a job site**.
 
 ## Releasing
 
-1. Bump the version in `backend/pyproject.toml` and `backend/src/offerbound/__init__.py`
+1. Bump the version in `backend/pyproject.toml` and `backend/src/rolehawk/__init__.py`
    (a test checks they match), then run `uv lock` in `backend/`.
 2. Merge to `main`, then tag it: `git tag v0.2.0 && git push origin v0.2.0`.
 3. The Release workflow builds the dashboard and the ZIP, installs it on Linux, macOS, and
-   Windows, starts it, tests `offerbound update`, and then publishes the GitHub release.
-   Users get it with `offerbound update`.
+   Windows, starts it, tests `rolehawk update`, and then publishes the GitHub release.
+   Users get it with `rolehawk update`.
 
 ## Reporting a security issue
 

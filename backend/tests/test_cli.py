@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from offerbound import cli
-from offerbound.paths import DataPaths
+from rolehawk import cli
+from rolehawk.paths import DataPaths
 
 
 def test_doctor_json_on_fresh_install(capsys: pytest.CaptureFixture[str]) -> None:
@@ -33,7 +33,7 @@ def test_backup_command(capsys: pytest.CaptureFixture[str]) -> None:
 def test_version(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         cli.main(["--version"])
-    assert "offerbound" in capsys.readouterr().out
+    assert "rolehawk" in capsys.readouterr().out
 
 
 def test_run_context_json(capsys: pytest.CaptureFixture[str]) -> None:

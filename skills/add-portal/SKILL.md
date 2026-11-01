@@ -1,15 +1,15 @@
 ---
-name: offerbound-add-portal
-description: Add a new job source to Offerbound from a careers page or job board URL - detect a feed or structured job data, test it (3+ jobs), show the plugin file, and enable it. Use when the user wants to search a company's careers site or a job board Offerbound doesn't cover yet.
+name: rolehawk-add-portal
+description: Add a new job source to RoleHawk from a careers page or job board URL - detect a feed or structured job data, test it (3+ jobs), show the plugin file, and enable it. Use when the user wants to search a company's careers site or a job board RoleHawk doesn't cover yet.
 ---
 
 # /add-portal (v1.0)
 
-Every Offerbound command is a backend service; this skill is a thin caller, so the result
+Every RoleHawk command is a backend service; this skill is a thin caller, so the result
 matches the Sources screen's "Add a job site" flow.
 
 A custom source is a **definition** (data), not code: an RSS/Atom feed, JSON-LD JobPosting
-data, a JSON job list with field paths, or CSS selectors. Offerbound's own engine runs it in a
+data, a JSON job list with field paths, or CSS selectors. RoleHawk's own engine runs it in a
 separate sandboxed process that may only fetch from the site's domain (never private
 addresses). The plugin file (`<data>/portals/<id>.py`) holds the definition and is read as
 data, never imported.
@@ -19,24 +19,24 @@ data, never imported.
 1. Inspect the URL:
 
    ```bash
-   offerbound run portal-inspect --param url=https://example.com/careers --json
+   rolehawk run portal-inspect --param url=https://example.com/careers --json
    ```
 
    `candidates` lists what was found, best first. A `watchlist` candidate means it's a known
    ATS board: add it with
-   `offerbound run watchlist-add --params-json '{"ats": "...", "slugs": ["..."]}' --json`.
+   `rolehawk run watchlist-add --params-json '{"ats": "...", "slugs": ["..."]}' --json`.
 
 2. If nothing was found, propose a definition yourself (this is where you help most). Read
    the page, then write a definition: `json_api` if the page loads jobs from a JSON URL on
    the same site (give `api_url`, `items_path`, and `fields` dot paths), otherwise `html`
    (`list_url`, `item_selector`, and `fields` selectors for title, and optionally link,
    location, company). Keep `id` lowercase-with-dashes and `source_url` the user's URL. Or,
-   with an API key, `offerbound run portal-draft --param url=... --json` asks Claude in the app.
+   with an API key, `rolehawk run portal-draft --param url=... --json` asks Claude in the app.
 
 3. Test it (must return at least 3 jobs):
 
    ```bash
-   offerbound run portal-test --params-json '{"definition": {...}}' --json
+   rolehawk run portal-test --params-json '{"definition": {...}}' --json
    ```
 
    Show the user `count`, a few `samples`, and the `plugin_source`. If it fails, adjust the
@@ -47,11 +47,11 @@ data, never imported.
 4. With the user's OK, add it (it's tested again first):
 
    ```bash
-   offerbound run portal-add --params-json '{"definition": {...}}' --json
+   rolehawk run portal-add --params-json '{"definition": {...}}' --json
    ```
 
    It runs with the next search. Remove one with
-   `offerbound run portal-remove --param id=<id> --json`.
+   `rolehawk run portal-remove --param id=<id> --json`.
 
 ## Rules
 

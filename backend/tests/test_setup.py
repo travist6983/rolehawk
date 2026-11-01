@@ -3,15 +3,15 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from offerbound.db.models import ProfileItem, ProfileItemKind, SearchTarget
-from offerbound.llm.fake import FakeProvider
-from offerbound.memory.files import MemoryTarget
-from offerbound.paths import DataPaths
-from offerbound.profile.documents import DocumentError
-from offerbound.profile.extraction import ExtractedSetup
-from offerbound.profile.interview import AnswerError, AnswerValue
-from offerbound.profile.model import Experience, Profile
-from offerbound.services.runtime import Runtime, open_runtime
+from rolehawk.db.models import ProfileItem, ProfileItemKind, SearchTarget
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.memory.files import MemoryTarget
+from rolehawk.paths import DataPaths
+from rolehawk.profile.documents import DocumentError
+from rolehawk.profile.extraction import ExtractedSetup
+from rolehawk.profile.interview import AnswerError, AnswerValue
+from rolehawk.profile.model import Experience, Profile
+from rolehawk.services.runtime import Runtime, open_runtime
 
 FIXTURES = Path(__file__).parent / "fixtures" / "resumes"
 
@@ -258,8 +258,8 @@ async def test_user_edited_draft_wins(runtime: Runtime) -> None:
 
 
 async def test_hand_edits_and_accepted_proposals_refresh_derived_tables(runtime: Runtime) -> None:
-    from offerbound.db.models import ProposalOp
-    from offerbound.memory.proposals import ProposalIn
+    from rolehawk.db.models import ProposalOp
+    from rolehawk.memory.proposals import ProposalIn
 
     runtime.profiles.save_raw(
         MemoryTarget.PREFERENCES, "# Preferences\n\n## Target titles\n\n- Designer\n- Writer\n"

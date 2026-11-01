@@ -16,14 +16,14 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from offerbound.apply.autofill import (
+from rolehawk.apply.autofill import (
     Applicant,
     Autofiller,
     AutofillReport,
     applicant_from,
     application_url,
 )
-from offerbound.apply.drafts import (
+from rolehawk.apply.drafts import (
     ApplicationDraft,
     CvDraft,
     LetterDraft,
@@ -32,15 +32,15 @@ from offerbound.apply.drafts import (
     build_cv,
     build_letter,
 )
-from offerbound.apply.review import ReviewFlag, ReviewResult
-from offerbound.apply.service import ApplyParams, DocumentsIn, ProfileIncompleteError
-from offerbound.apply.truth import check_cv, check_letter, numbers_in
-from offerbound.db.models import Application, Job, Stage
-from offerbound.db.types import utcnow
-from offerbound.fit.rubric import FitBatch
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest, Task
-from offerbound.profile.model import (
+from rolehawk.apply.review import ReviewFlag, ReviewResult
+from rolehawk.apply.service import ApplyParams, DocumentsIn, ProfileIncompleteError
+from rolehawk.apply.truth import check_cv, check_letter, numbers_in
+from rolehawk.db.models import Application, Job, Stage
+from rolehawk.db.types import utcnow
+from rolehawk.fit.rubric import FitBatch
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest, Task
+from rolehawk.profile.model import (
     Certification,
     Contact,
     Education,
@@ -48,8 +48,8 @@ from offerbound.profile.model import (
     Profile,
     Project,
 )
-from offerbound.rendering.text import docx_text, pdf_text
-from offerbound.services.runtime import Runtime
+from rolehawk.rendering.text import docx_text, pdf_text
+from rolehawk.services.runtime import Runtime
 from tests.fits import fit_of
 from tests.test_api_setup import wait_for_task
 
@@ -685,8 +685,8 @@ async def test_autofill_reports_pages_without_a_form(
 
 
 def test_autofill_never_clicks_or_submits() -> None:
-    source = (Path(__file__).parents[1] / "src/offerbound/apply/autofill.py").read_text()
-    js = (Path(__file__).parents[1] / "src/offerbound/apply/tag_fields.js").read_text()
+    source = (Path(__file__).parents[1] / "src/rolehawk/apply/autofill.py").read_text()
+    js = (Path(__file__).parents[1] / "src/rolehawk/apply/tag_fields.js").read_text()
     for forbidden in (".click(", ".press(", ".submit(", "requestSubmit", "dispatch_event"):
         assert forbidden not in source
         assert forbidden not in js

@@ -2,16 +2,16 @@ import logging
 
 import pytest
 
-from offerbound import keychain
-from offerbound.keychain import REDACTED, RedactingFilter, SecretName
+from rolehawk import keychain
+from rolehawk.keychain import REDACTED, RedactingFilter, SecretName
 
 
-def test_round_trip_uses_offerbound_service(isolated_env: object) -> None:
+def test_round_trip_uses_rolehawk_service(isolated_env: object) -> None:
     keychain.set_secret(SecretName.ANTHROPIC_API_KEY, "sk-ant-abc123456789")
     assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == "sk-ant-abc123456789"
     assert keychain.has_secret(SecretName.ANTHROPIC_API_KEY)
     store = getattr(isolated_env, "store")  # noqa: B009
-    assert ("offerbound", "anthropic_api_key") in store
+    assert ("rolehawk", "anthropic_api_key") in store
 
 
 def test_delete(isolated_env: object) -> None:
@@ -19,6 +19,17 @@ def test_delete(isolated_env: object) -> None:
     assert keychain.delete_secret(SecretName.NOTION_TOKEN) is True
     assert keychain.delete_secret(SecretName.NOTION_TOKEN) is False
     assert keychain.get_secret(SecretName.NOTION_TOKEN) is None
+
+
+def test_pre_rename_secret_is_still_read_and_deleted(isolated_env: object) -> None:
+    import keyring
+
+    keyring.set_password("offerbound", "anthropic_api_key", "sk-ant-legacy123456")
+    assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == "sk-ant-legacy123456"
+    keychain.set_secret(SecretName.ANTHROPIC_API_KEY, "sk-ant-new1234567890")
+    assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) == "sk-ant-new1234567890"
+    assert keychain.delete_secret(SecretName.ANTHROPIC_API_KEY) is True
+    assert keychain.get_secret(SecretName.ANTHROPIC_API_KEY) is None
 
 
 def test_empty_secret_rejected() -> None:
@@ -35,9 +46,9 @@ def test_redact_known_values_and_token_shapes() -> None:
 
 
 def test_logging_filter_redacts_args(caplog: pytest.LogCaptureFixture) -> None:
-    logger = logging.getLogger("offerbound.test")
+    logger = logging.getLogger("rolehawk.test")
     caplog.handler.addFilter(RedactingFilter(["s3cr3t-value"]))
-    with caplog.at_level(logging.INFO, logger="offerbound.test"):
+    with caplog.at_level(logging.INFO, logger="rolehawk.test"):
         logger.info("calling with %s", "s3cr3t-value")
     assert "s3cr3t-value" not in caplog.text
     assert REDACTED in caplog.text
@@ -49,7 +60,7 @@ def test_stored_secret_values_lists_only_set_secrets() -> None:
 
 
 def test_session_token_redacted_from_logs(caplog: pytest.LogCaptureFixture) -> None:
-    from offerbound.logging_setup import _redactor, register_secret
+    from rolehawk.logging_setup import _redactor, register_secret
 
     register_secret("launch-token-xyz")
     caplog.handler.addFilter(_redactor)

@@ -3,15 +3,15 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.config import LLMSettings
-from offerbound.db.models import LLMCall
-from offerbound.llm import models
-from offerbound.llm.errors import LLMNotConfiguredError, SpendCapExceededError
-from offerbound.llm.fake import FakeProvider, FakeReply
-from offerbound.llm.meter import SpendMeter, estimate_tokens, month_start
-from offerbound.llm.routing import route, route_table
-from offerbound.llm.service import LLMService
-from offerbound.llm.types import Message, StreamDone, SystemBlock, Task, TextDelta, Usage
+from rolehawk.config import LLMSettings
+from rolehawk.db.models import LLMCall
+from rolehawk.llm import models
+from rolehawk.llm.errors import LLMNotConfiguredError, SpendCapExceededError
+from rolehawk.llm.fake import FakeProvider, FakeReply
+from rolehawk.llm.meter import SpendMeter, estimate_tokens, month_start
+from rolehawk.llm.routing import route, route_table
+from rolehawk.llm.service import LLMService
+from rolehawk.llm.types import Message, StreamDone, SystemBlock, Task, TextDelta, Usage
 
 
 def test_cost_uses_model_pricing_and_cache_rates() -> None:

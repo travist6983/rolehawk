@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from offerbound import cli
-from offerbound.llm.fake import FakeProvider
-from offerbound.paths import DataPaths
+from rolehawk import cli
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.paths import DataPaths
 from tests.test_setup import extracted
 
 FIXTURES = Path(__file__).parent / "fixtures" / "resumes"
@@ -64,11 +64,11 @@ def test_paste_text_and_bad_uploads(client: TestClient) -> None:
 
 
 def test_extract_without_claude_explains(paths: DataPaths) -> None:
-    from offerbound.api.app import create_app
+    from rolehawk.api.app import create_app
     from tests.conftest import BASE_URL, TEST_TOKEN
 
     app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=())
-    with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
+    with TestClient(app, base_url=BASE_URL, headers={"X-RoleHawk-Token": TEST_TOKEN}) as c:
         doc = c.post("/api/setup/documents/text", json={"text": "Ada, Engineer at Acme"}).json()
         task = wait_for_task(
             c, c.post("/api/setup/extract", json={"document_ids": [doc["id"]]}).json()["task_id"]
@@ -140,8 +140,8 @@ def test_setup_commands_for_skills(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_chat_cannot_run_file_reading_commands(client: TestClient, fake: FakeProvider) -> None:
-    from offerbound.llm.fake import FakeReply
-    from offerbound.llm.types import ToolCall
+    from rolehawk.llm.fake import FakeReply
+    from rolehawk.llm.types import ToolCall
 
     session = client.post("/api/chat/sessions", json={}).json()
     fake.queue(

@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import pytest
 
-from offerbound.profile.conflicts import find_conflicts, resolve
-from offerbound.profile.extraction import ExtractedSetup
-from offerbound.profile.merge import merge_profile, title_key
-from offerbound.profile.model import Contact, Education, Experience, Preferences, Profile
-from offerbound.services.runtime import Runtime
+from rolehawk.profile.conflicts import find_conflicts, resolve
+from rolehawk.profile.extraction import ExtractedSetup
+from rolehawk.profile.merge import merge_profile, title_key
+from rolehawk.profile.model import Contact, Education, Experience, Preferences, Profile
+from rolehawk.services.runtime import Runtime
 
 SOURCES = ("your profile", "resume.pdf")
 

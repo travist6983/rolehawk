@@ -13,8 +13,8 @@ from typing import Any
 import httpx2
 import pytest
 
-from offerbound.portals.ats import Ashby, Greenhouse, Lever, Workable
-from offerbound.portals.base import (
+from rolehawk.portals.ats import Ashby, Greenhouse, Lever, Workable
+from rolehawk.portals.base import (
     CompanyRef,
     NormalizedJob,
     Portal,
@@ -22,11 +22,11 @@ from offerbound.portals.base import (
     PortalError,
     SearchQuery,
 )
-from offerbound.portals.feeds import Adzuna, RemoteOK, USAJobs, WeWorkRemotely
-from offerbound.portals.http import USER_AGENT, HostPacer, HttpError, PoliteClient
-from offerbound.portals.matching import title_matches, tokens
-from offerbound.portals.registry import ATS_IDS, BUILTIN, get_portal
-from offerbound.portals.text import (
+from rolehawk.portals.feeds import Adzuna, RemoteOK, USAJobs, WeWorkRemotely
+from rolehawk.portals.http import USER_AGENT, HostPacer, HttpError, PoliteClient
+from rolehawk.portals.matching import title_matches, tokens
+from rolehawk.portals.registry import ATS_IDS, BUILTIN, get_portal
+from rolehawk.portals.text import (
     html_to_text,
     job_hash,
     looks_remote,
@@ -314,7 +314,7 @@ async def test_client_retries_transport_errors() -> None:
 
 async def test_default_client_identifies_itself() -> None:
     http = PoliteClient()
-    assert USER_AGENT.startswith("Offerbound/")
+    assert USER_AGENT.startswith("RoleHawk/")
     assert http._client.headers["User-Agent"] == USER_AGENT
     await http.aclose()
 

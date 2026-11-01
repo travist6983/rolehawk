@@ -4,9 +4,9 @@ import pytest
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.chat.pipeline_query import QueryRejectedError, run_query
-from offerbound.db.models import Application, Job, Portal, PortalKind, RiskLevel, Stage
-from offerbound.paths import DataPaths
+from rolehawk.chat.pipeline_query import QueryRejectedError, run_query
+from rolehawk.db.models import Application, Job, Portal, PortalKind, RiskLevel, Stage
+from rolehawk.paths import DataPaths
 
 
 @pytest.fixture
@@ -80,7 +80,7 @@ def test_row_cap(db: Path) -> None:
 
 
 def test_runaway_query_times_out(db: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from offerbound.chat import pipeline_query
+    from rolehawk.chat import pipeline_query
 
     monkeypatch.setattr(pipeline_query, "TIME_LIMIT_S", 0.05)
     sql = (

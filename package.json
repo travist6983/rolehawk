@@ -1,5 +1,5 @@
 {
-  "name": "offerbound-ai-job-search",
+  "name": "rolehawk",
   "private": true,
   "description": "Root task shortcuts. Each runs the matching task in backend/ (uv + poe) and frontend/ (npm).",
   "scripts": {

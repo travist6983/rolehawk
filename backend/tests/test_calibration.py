@@ -8,18 +8,18 @@ from datetime import timedelta
 import pytest
 from pydantic import BaseModel
 
-from offerbound.db.models import Application, ProposalOp, Stage, StageEvent, StageEventSource
-from offerbound.db.types import utcnow
-from offerbound.insights.calibration import (
+from rolehawk.db.models import Application, ProposalOp, Stage, StageEvent, StageEventSource
+from rolehawk.db.types import utcnow
+from rolehawk.insights.calibration import (
     CalibrationOut,
     Finding,
     NotEnoughResultsError,
     PreferenceEdit,
 )
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest
-from offerbound.memory.files import MemoryTarget
-from offerbound.services.runtime import Runtime
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest
+from rolehawk.memory.files import MemoryTarget
+from rolehawk.services.runtime import Runtime
 from tests.test_rank import add_jobs
 
 pytestmark = pytest.mark.anyio

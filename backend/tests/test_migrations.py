@@ -7,12 +7,12 @@ from sqlalchemy import Engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.db import fts, migrate
-from offerbound.db.autogen import include_object
-from offerbound.db.engine import make_engine
-from offerbound.db.models import Application, Base, Job, Portal, PortalKind, RiskLevel, Stage
-from offerbound.paths import DataPaths
-from offerbound.services import backup
+from rolehawk.db import fts, migrate
+from rolehawk.db.autogen import include_object
+from rolehawk.db.engine import make_engine
+from rolehawk.db.models import Application, Base, Job, Portal, PortalKind, RiskLevel, Stage
+from rolehawk.paths import DataPaths
+from rolehawk.services import backup
 
 CORE_TABLES = {
     "profile_items",

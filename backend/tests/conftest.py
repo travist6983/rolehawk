@@ -11,13 +11,13 @@ from pydantic import BaseModel
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from offerbound.api.app import create_app
-from offerbound.db import migrate
-from offerbound.db.engine import make_engine, make_session_factory
-from offerbound.llm.fake import FakeProvider
-from offerbound.llm.types import LLMRequest
-from offerbound.paths import DataPaths
-from offerbound.services.runtime import Runtime, open_runtime
+from rolehawk.api.app import create_app
+from rolehawk.db import migrate
+from rolehawk.db.engine import make_engine, make_session_factory
+from rolehawk.llm.fake import FakeProvider
+from rolehawk.llm.types import LLMRequest
+from rolehawk.paths import DataPaths
+from rolehawk.services.runtime import Runtime, open_runtime
 
 TEST_TOKEN = "test-session-token"  # noqa: S105
 BASE_URL = "http://127.0.0.1:8765"
@@ -49,10 +49,10 @@ def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Me
     import os
 
     for name in list(os.environ):
-        if name.startswith("OFFERBOUND_"):
+        if name.startswith("ROLEHAWK_"):
             monkeypatch.delenv(name)
-    monkeypatch.setenv("OFFERBOUND_HOME", str(tmp_path / "Offerbound"))
-    monkeypatch.setenv("OFFERBOUND_WEB_DIR", str(tmp_path / "no-frontend"))  # deterministic
+    monkeypatch.setenv("ROLEHAWK_HOME", str(tmp_path / "RoleHawk"))
+    monkeypatch.setenv("ROLEHAWK_WEB_DIR", str(tmp_path / "no-frontend"))  # deterministic
     previous = keyring.get_keyring()
     backend = MemoryKeyring()
     keyring.set_keyring(backend)
@@ -62,7 +62,7 @@ def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Me
 
 @pytest.fixture
 def paths(tmp_path: Path) -> DataPaths:
-    data = DataPaths(tmp_path / "Offerbound")
+    data = DataPaths(tmp_path / "RoleHawk")
     data.ensure()
     return data
 
@@ -84,8 +84,8 @@ def sessions(engine: Engine) -> sessionmaker[Session]:
 def fake() -> FakeProvider:
     """Scripted Claude. Fact extraction and summaries return nothing unless a test queues
     structured replies."""
-    from offerbound.memory.extraction import ExtractedProposals
-    from offerbound.memory.sessions import SessionSummary
+    from rolehawk.memory.extraction import ExtractedProposals
+    from rolehawk.memory.sessions import SessionSummary
 
     def default(_request: LLMRequest, schema: type[BaseModel]) -> BaseModel:
         if schema is ExtractedProposals:
@@ -100,7 +100,7 @@ def fake() -> FakeProvider:
 @pytest.fixture
 def client(paths: DataPaths, fake: FakeProvider) -> Iterator[TestClient]:
     app = create_app(paths=paths, token=TEST_TOKEN, extra_origins=(), provider=fake)
-    with TestClient(app, base_url=BASE_URL, headers={"X-Offerbound-Token": TEST_TOKEN}) as c:
+    with TestClient(app, base_url=BASE_URL, headers={"X-RoleHawk-Token": TEST_TOKEN}) as c:
         yield c
 
 

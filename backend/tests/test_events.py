@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-from offerbound.services import events as events_module
-from offerbound.services.events import EventBus
-from offerbound.services.stream import sse_events
+from rolehawk.services import events as events_module
+from rolehawk.services.events import EventBus
+from rolehawk.services.stream import sse_events
 
 pytestmark = pytest.mark.anyio
 

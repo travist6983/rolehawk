@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import pytest
 
-from offerbound.profile import documents
-from offerbound.profile.documents import DocumentError, DocumentKind, parse_document
+from rolehawk.profile import documents
+from rolehawk.profile.documents import DocumentError, DocumentKind, parse_document
 
 FIXTURES = Path(__file__).parent / "fixtures" / "resumes"
 

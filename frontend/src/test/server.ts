@@ -19,7 +19,7 @@ import {
 /** Default API: a connected install with an empty pipeline. Tests override per case. */
 export const handlers = [
   http.get("/api/session", () =>
-    HttpResponse.json({ token: TEST_TOKEN, data_root: "/Users/ada/Offerbound", version: "0.1.0" }),
+    HttpResponse.json({ token: TEST_TOKEN, data_root: "/Users/ada/RoleHawk", version: "0.1.0" }),
   ),
   http.post("/api/session", () => new HttpResponse(null, { status: 204 })),
   http.get("/api/tasks", () => HttpResponse.json([])),

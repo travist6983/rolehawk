@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from offerbound.geo import detect
+from rolehawk.geo import detect
 
 
 @pytest.mark.parametrize(

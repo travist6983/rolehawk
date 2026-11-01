@@ -1,4 +1,4 @@
-"""The installed app: layout, release download and unpacking, and `offerbound update`.
+"""The installed app: layout, release download and unpacking, and `rolehawk update`.
 No network: release assets are served by an httpx2 MockTransport."""
 
 from __future__ import annotations
@@ -15,27 +15,27 @@ from pathlib import Path
 import httpx2
 import pytest
 
-from offerbound.cli import main
-from offerbound.install.layout import InstallLayout, browser_hint, parse_version, running_from
-from offerbound.install.release import (
+from rolehawk.cli import main
+from rolehawk.install.layout import InstallLayout, browser_hint, parse_version, running_from
+from rolehawk.install.release import (
     ReleaseError,
     ReleaseInfo,
     download,
     extract,
     fetch_info,
 )
-from offerbound.install.skills import bundled_skills_dir, install_skills, released_skills
-from offerbound.install.update import UpdateError, Updater
+from rolehawk.install.skills import bundled_skills_dir, install_skills, released_skills
+from rolehawk.install.update import UpdateError, Updater
 
 BASE = "https://releases.test/latest/download"
 
 
 def release_zip(version: str, extra: dict[str, bytes] | None = None, top: str = "") -> bytes:
-    top = top or f"offerbound-{version}"
+    top = top or f"rolehawk-{version}"
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr(f"{top}/VERSION", version)
-        archive.writestr(f"{top}/backend/pyproject.toml", '[project]\nname = "offerbound"\n')
+        archive.writestr(f"{top}/backend/pyproject.toml", '[project]\nname = "rolehawk"\n')
         archive.writestr(f"{top}/frontend/dist/index.html", "<!doctype html>")
         for name, data in (extra or {}).items():
             archive.writestr(name, data)
@@ -56,7 +56,7 @@ class FakeReleases:
         self.requests.append(str(request.url))
         if str(request.url) == f"{BASE}/release.json":
             return httpx2.Response(200, json=self.info)
-        if str(request.url) == f"{BASE}/offerbound.zip":
+        if str(request.url) == f"{BASE}/rolehawk.zip":
             return httpx2.Response(200, content=self.payload)
         return httpx2.Response(404)
 
@@ -80,7 +80,7 @@ def test_layout_pointer_and_paths(tmp_path: Path) -> None:
 
     exe = layout.executable("0.2.0")
     assert exe.parts[-5:-2] == ("0.2.0", "backend", ".venv")
-    assert exe.name == ("offerbound.exe" if os.name == "nt" else "offerbound")
+    assert exe.name == ("rolehawk.exe" if os.name == "nt" else "rolehawk")
     assert parse_version("1.10.0") > parse_version("1.9.9")
 
 
@@ -89,7 +89,7 @@ def test_running_from_knows_installed_releases(tmp_path: Path) -> None:
     assert browser_hint().startswith("uv run playwright install")
 
     app = tmp_path / "home" / "versions" / "0.3.1"
-    module = app / "backend" / "src" / "offerbound" / "install" / "layout.py"
+    module = app / "backend" / "src" / "rolehawk" / "install" / "layout.py"
     module.parent.mkdir(parents=True)
     module.touch()
     assert running_from(str(module)) is None  # no VERSION file: not a release
@@ -107,7 +107,7 @@ def test_download_checks_the_checksum(tmp_path: Path) -> None:
     with releases.client() as client:
         info = fetch_info(client, BASE)
         path = download(client, BASE, info, tmp_path)
-        assert path.name == "offerbound-0.2.0.zip"
+        assert path.name == "rolehawk-0.2.0.zip"
         assert path.read_bytes() == releases.payload
 
         tampered = info.model_copy(update={"sha256": "0" * 64})
@@ -125,16 +125,16 @@ def test_release_info_is_validated(tmp_path: Path) -> None:
 
 def test_extract_unpacks_the_top_folder(tmp_path: Path) -> None:
     zip_path = tmp_path / "r.zip"
-    zip_path.write_bytes(release_zip("0.2.0", {"offerbound-0.2.0/data/x.csv": b"slug\n"}))
+    zip_path.write_bytes(release_zip("0.2.0", {"rolehawk-0.2.0/data/x.csv": b"slug\n"}))
     extract(zip_path, tmp_path / "out", "0.2.0")
     assert (tmp_path / "out" / "VERSION").read_text(encoding="utf-8") == "0.2.0"
     assert (tmp_path / "out" / "data" / "x.csv").is_file()
     with pytest.raises(ReleaseError, match="already exists"):
         extract(zip_path, tmp_path / "out", "0.2.0")
-    with pytest.raises(ReleaseError, match=r"outside offerbound-0\.2\.1"):
+    with pytest.raises(ReleaseError, match=r"outside rolehawk-0\.2\.1"):
         extract(zip_path, tmp_path / "other", "0.2.1")
     mislabeled = tmp_path / "m.zip"
-    mislabeled.write_bytes(release_zip("0.2.0", top="offerbound-0.2.1"))
+    mislabeled.write_bytes(release_zip("0.2.0", top="rolehawk-0.2.1"))
     with pytest.raises(ReleaseError, match="doesn't match"):
         extract(mislabeled, tmp_path / "other", "0.2.1")
 
@@ -142,9 +142,9 @@ def test_extract_unpacks_the_top_folder(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "name",
     [
-        "offerbound-0.2.0/../escape.txt",
-        "/etc/offerbound.txt",
-        "offerbound-0.2.0\\..\\escape.txt",
+        "rolehawk-0.2.0/../escape.txt",
+        "/etc/rolehawk.txt",
+        "rolehawk-0.2.0\\..\\escape.txt",
         "elsewhere/file.txt",
         "C:/Windows/file.txt",
     ],
@@ -161,8 +161,8 @@ def test_extract_refuses_paths_that_escape(tmp_path: Path, name: str) -> None:
 def test_extract_refuses_links(tmp_path: Path) -> None:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
-        archive.writestr("offerbound-0.2.0/VERSION", "0.2.0")
-        link = zipfile.ZipInfo("offerbound-0.2.0/link")
+        archive.writestr("rolehawk-0.2.0/VERSION", "0.2.0")
+        link = zipfile.ZipInfo("rolehawk-0.2.0/link")
         link.external_attr = (stat.S_IFLNK | 0o777) << 16
         archive.writestr(link, "/etc/passwd")
     zip_path = tmp_path / "r.zip"
@@ -268,7 +268,7 @@ def test_a_failed_step_keeps_the_old_version(tmp_path: Path) -> None:
 
 def test_update_refuses_a_bad_download(tmp_path: Path) -> None:
     layout = installed(tmp_path, "0.1.0", current="0.1.0")
-    evil = release_zip("0.2.0", {"offerbound-0.2.0/../../outside.txt": b"x"})
+    evil = release_zip("0.2.0", {"rolehawk-0.2.0/../../outside.txt": b"x"})
     with pytest.raises(ReleaseError):
         updater(layout, FakeReleases("0.2.0", evil), Recorder()).update()
     assert layout.current_version() == "0.1.0"
@@ -291,15 +291,15 @@ def test_release_info_round_trips() -> None:
 
 def test_only_shipped_skills_are_installed(tmp_path: Path) -> None:
     names = [name for name, _path in released_skills(bundled_skills_dir())]
-    assert "offerbound-setup" in names
-    assert "offerbound-add-portal" in names
-    assert "offerbound-gmail-sync" not in names  # v1.1: its commands don't exist yet
+    assert "rolehawk-setup" in names
+    assert "rolehawk-add-portal" in names
+    assert "rolehawk-gmail-sync" not in names  # v1.1: its commands don't exist yet
 
     dest = tmp_path / "skills"
     (dest / "someone-elses").mkdir(parents=True)
     installed = install_skills(bundled_skills_dir(), dest)
     assert sorted(f.name for f in installed) == sorted(names)
-    assert (dest / "offerbound-setup" / "SKILL.md").read_text(encoding="utf-8").startswith("---")
+    assert (dest / "rolehawk-setup" / "SKILL.md").read_text(encoding="utf-8").startswith("---")
     assert (dest / "someone-elses").is_dir()  # other skills untouched
     assert install_skills(bundled_skills_dir(), dest) == installed  # safe to run again
 
@@ -309,14 +309,14 @@ def test_cli_install_skills_respects_claude_config_dir(
 ) -> None:
     monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
     assert main(["install-skills"]) == 0
-    assert (tmp_path / "claude" / "skills" / "offerbound-rank" / "SKILL.md").is_file()
+    assert (tmp_path / "claude" / "skills" / "rolehawk-rank" / "SKILL.md").is_file()
     assert "Restart Claude Code" in capsys.readouterr().out
 
 
 def test_package_version_matches_pyproject() -> None:
     import tomllib
 
-    from offerbound import __version__
+    from rolehawk import __version__
 
     pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
     data = tomllib.loads(pyproject.read_text(encoding="utf-8"))

@@ -606,7 +606,7 @@ export function DocumentsTab({
             ) : (
               <p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
                 PDF isn't available (Chromium isn't installed); the Word file is ready. Run{" "}
-                <code>offerbound doctor</code> for the fix.
+                <code>rolehawk doctor</code> for the fix.
               </p>
             )}
           </div>

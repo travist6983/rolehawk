@@ -1,12 +1,12 @@
-"""Build the release assets (the install scripts and `offerbound update` read these).
+"""Build the release assets (the install scripts and `rolehawk update` read these).
 
     npm --prefix frontend run build
     uv run --no-project --python 3.12 python scripts/build_release.py --out dist/release
 
 Writes three files to --out:
-    offerbound.zip         offerbound-<version>/ with VERSION, backend/ (no tests), data/,
+    rolehawk.zip         rolehawk-<version>/ with VERSION, backend/ (no tests), data/,
                            skills/, frontend/dist/, README.md, LICENSE, DISCLAIMER.md
-    offerbound.zip.sha256  "<sha256>  offerbound.zip"
+    rolehawk.zip.sha256  "<sha256>  rolehawk.zip"
     release.json           {"version", "sha256", "size"}
 
 Only git-tracked files go in (never .venv, caches, or local data), plus the frontend build.
@@ -61,9 +61,9 @@ def entry(name: str) -> zipfile.ZipInfo:
 
 
 def build(out: Path, version: str) -> dict[str, object]:
-    top = f"offerbound-{version}"
+    top = f"rolehawk-{version}"
     out.mkdir(parents=True, exist_ok=True)
-    zip_path = out / "offerbound.zip"
+    zip_path = out / "rolehawk.zip"
     names = sorted(set(tracked_files()) | set(frontend_files()))
     with zipfile.ZipFile(zip_path, "w") as archive:
         archive.writestr(entry(f"{top}/VERSION"), version)
@@ -71,7 +71,7 @@ def build(out: Path, version: str) -> dict[str, object]:
             archive.writestr(entry(f"{top}/{name}"), (ROOT / name).read_bytes())
     payload = zip_path.read_bytes()
     digest = hashlib.sha256(payload).hexdigest()
-    (out / "offerbound.zip.sha256").write_text(f"{digest}  offerbound.zip\n", encoding="utf-8")
+    (out / "rolehawk.zip.sha256").write_text(f"{digest}  rolehawk.zip\n", encoding="utf-8")
     info: dict[str, object] = {"version": version, "sha256": digest, "size": len(payload)}
     (out / "release.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     return info | {"files": len(names) + 1}
