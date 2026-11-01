@@ -8,7 +8,7 @@ from rolehawk.llm.fake import FakeProvider
 from rolehawk.memory.files import MemoryTarget
 from rolehawk.paths import DataPaths
 from rolehawk.profile.documents import DocumentError
-from rolehawk.profile.extraction import ExtractedSetup
+from rolehawk.profile.extraction import ExtractedSetup, ExtractionOut
 from rolehawk.profile.interview import AnswerError, AnswerValue
 from rolehawk.profile.model import Experience, Profile
 from rolehawk.services.runtime import Runtime, open_runtime
@@ -208,11 +208,16 @@ def extracted() -> ExtractedSetup:
     )
 
 
+def extracted_reply() -> ExtractionOut:
+    """What Claude sends back: the wire form of `extracted()`."""
+    return ExtractionOut.from_setup(extracted())
+
+
 async def test_extract_then_apply_and_rerun_without_duplicates(runtime: Runtime) -> None:
     fake = fake_of(runtime)
     doc = runtime.setup.add_document("cv.txt", (FIXTURES / "ada_example.txt").read_bytes())
 
-    fake.queue_structured(extracted())
+    fake.queue_structured(extracted_reply())
     draft = await runtime.setup.extract([doc.id], task_id=None)
     request, _schema = fake.structured_requests[-1]
     assert (
@@ -229,7 +234,7 @@ async def test_extract_then_apply_and_rerun_without_duplicates(runtime: Runtime)
     assert "### Senior Frontend Engineer | Northwind Payments" in profile_md
 
     # Re-running setup with the same CV edits instead of duplicating.
-    fake.queue_structured(extracted())
+    fake.queue_structured(extracted_reply())
     await runtime.setup.extract([doc.id], task_id=None)
     again = runtime.setup.apply_draft()
     assert again.added == {}
@@ -284,3 +289,25 @@ async def test_hand_edits_and_accepted_proposals_refresh_derived_tables(runtime:
     with runtime.sessions() as session:
         names = [i.data["name"] for i in session.scalars(select(ProfileItem))]
     assert names == ["Figma"]
+
+
+@pytest.mark.parametrize(
+    "links",
+    [
+        ["https://www.linkedin.com/in/sam-example", " ", "https://github.com/sam-example"],
+        # Older clients and the CLI send one comma-separated string; it still works.
+        "https://www.linkedin.com/in/sam-example, https://github.com/sam-example",
+        # So does an item holding a pasted comma-separated pair.
+        ["https://www.linkedin.com/in/sam-example, https://github.com/sam-example"],
+    ],
+)
+async def test_contact_links_are_a_list(runtime: Runtime, links: str | list[str]) -> None:
+    state = runtime.setup.interview_state()
+    assert state.question is not None
+    [field] = [f for f in state.question.fields if f.name == "links"]
+    assert field.kind == "list"
+    runtime.setup.answer("basics.contact", {"name": "Sam Rivera", "links": links})
+    assert runtime.profiles.load_profile().contact.links == [
+        "https://www.linkedin.com/in/sam-example",
+        "https://github.com/sam-example",
+    ]

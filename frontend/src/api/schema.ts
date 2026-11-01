@@ -1370,7 +1370,7 @@ export interface components {
             question_id: string;
             /** Value */
             value: string | string[] | {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
         };
         /** ApiKeyIn */
@@ -2601,7 +2601,7 @@ export interface components {
              * @default text
              * @enum {string}
              */
-            kind: "text" | "textarea";
+            kind: "text" | "textarea" | "list";
             /**
              * Required
              * @default false
@@ -3561,7 +3561,7 @@ export interface components {
             fields: components["schemas"]["FormField"][];
             /** Value */
             value: string | string[] | {
-                [key: string]: string;
+                [key: string]: string | string[];
             } | null;
         };
         /** QuietApplication */

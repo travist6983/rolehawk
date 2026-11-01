@@ -12,7 +12,11 @@
 #
 # Optional settings: ROLEHAWK_APP_HOME (install folder), ROLEHAWK_BIN_DIR (where the
 # `rolehawk` command goes), ROLEHAWK_RELEASE_URL (where the release files come from),
-# ROLEHAWK_NO_START=1 (don't start the app at the end), ROLEHAWK_NO_SHORTCUT=1.
+# ROLEHAWK_NO_START=1 (don't start the app at the end), ROLEHAWK_NO_SHORTCUT=1,
+# ROLEHAWK_REINSTALL=1 (download and install again even when this release is installed).
+#
+# Running it again is safe: when the newest release is already installed it skips the
+# download, refreshes the command and shortcut, and starts the app.
 #
 # Everything is inside main(), called on the last line, so a partial download runs nothing.
 
@@ -137,48 +141,62 @@ main() {
   fi
   echo "Using uv at $uv"
 
-  local tmp
+  # Global, not local: the EXIT trap runs after main has returned.
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
 
-  say "Downloading the latest release..."
-  curl -fsSL --retry 3 -o "$tmp/rolehawk.zip" "$base/rolehawk.zip" ||
-    fail "couldn't download $base/rolehawk.zip"
+  # The checksum file is tiny: fetch it first, so a rerun with this release already
+  # installed (say, after the app was stopped) skips the download and the package install.
   curl -fsSL --retry 3 -o "$tmp/rolehawk.zip.sha256" "$base/rolehawk.zip.sha256" ||
-    fail "couldn't download the checksum file"
-  local expected actual
+    fail "couldn't download $base/rolehawk.zip.sha256"
+  local expected version="" exe=""
   expected="$(cut -d' ' -f1 <"$tmp/rolehawk.zip.sha256")"
-  actual="$(sha256_of "$tmp/rolehawk.zip")"
-  [ "$expected" = "$actual" ] || fail "the download doesn't match its checksum. Try again."
+  local installed
+  installed="$(cat "$home/current" 2>/dev/null || true)"
+  if [ "${ROLEHAWK_REINSTALL:-}" != 1 ] && [[ "$installed" =~ ^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$ ]] &&
+    [ -x "$home/versions/$installed/backend/.venv/bin/rolehawk" ] &&
+    [ "$(cat "$home/versions/$installed/.release-sha256" 2>/dev/null || true)" = "$expected" ]; then
+    version="$installed"
+    exe="$home/versions/$version/backend/.venv/bin/rolehawk"
+    say "RoleHawk $version is already installed and up to date. Skipping the download."
+  else
+    say "Downloading the latest release..."
+    curl -fsSL --retry 3 -o "$tmp/rolehawk.zip" "$base/rolehawk.zip" ||
+      fail "couldn't download $base/rolehawk.zip"
+    local actual
+    actual="$(sha256_of "$tmp/rolehawk.zip")"
+    [ "$expected" = "$actual" ] || fail "the download doesn't match its checksum. Try again."
 
-  # Python's zipfile (through uv) unpacks it, so `unzip` isn't needed. It drops absolute
-  # paths and '..' from member names, and never creates links.
-  "$uv" run --quiet --no-project --python 3.12 python -m zipfile -e "$tmp/rolehawk.zip" "$tmp/x"
-  local unpacked=("$tmp"/x/rolehawk-*)
-  if [ "${#unpacked[@]}" -ne 1 ] || [ ! -f "${unpacked[0]}/VERSION" ]; then
-    fail "the release has an unexpected layout."
+    # Python's zipfile (through uv) unpacks it, so `unzip` isn't needed. It drops absolute
+    # paths and '..' from member names, and never creates links.
+    "$uv" run --quiet --no-project --python 3.12 python -m zipfile -e "$tmp/rolehawk.zip" "$tmp/x"
+    local unpacked=("$tmp"/x/rolehawk-*)
+    if [ "${#unpacked[@]}" -ne 1 ] || [ ! -f "${unpacked[0]}/VERSION" ]; then
+      fail "the release has an unexpected layout."
+    fi
+    version="$(cat "${unpacked[0]}/VERSION")"
+    [[ "$version" =~ ^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$ ]] || fail "bad release version."
+
+    local app="$home/versions/$version"
+    mkdir -p "$home/versions"
+    if [ -d "$app" ]; then
+      echo "Reinstalling version $version."
+      rm -rf "$app"
+    fi
+    mv "${unpacked[0]}" "$app"
+
+    say "Installing RoleHawk $version (Python 3.12 and packages)..."
+    (cd "$app/backend" && "$uv" sync --quiet --frozen --no-dev --python 3.12)
+    exe="$app/backend/.venv/bin/rolehawk"
+
+    say "Installing Chromium (PDF export and autofill)..."
+    "$exe" install-browser
+
+    printf '%s' "$version" >"$home/current.partial"
+    mv -f "$home/current.partial" "$home/current"
+    # Written last: its presence means this version installed completely.
+    printf '%s' "$expected" >"$app/.release-sha256"
   fi
-  local version
-  version="$(cat "${unpacked[0]}/VERSION")"
-  [[ "$version" =~ ^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$ ]] || fail "bad release version."
-
-  local app="$home/versions/$version"
-  mkdir -p "$home/versions"
-  if [ -d "$app" ]; then
-    echo "Reinstalling version $version."
-    rm -rf "$app"
-  fi
-  mv "${unpacked[0]}" "$app"
-
-  say "Installing RoleHawk $version (Python 3.12 and packages)..."
-  (cd "$app/backend" && "$uv" sync --quiet --frozen --no-dev --python 3.12)
-  local exe="$app/backend/.venv/bin/rolehawk"
-
-  say "Installing Chromium (PDF export and autofill)..."
-  "$exe" install-browser
-
-  printf '%s' "$version" >"$home/current.partial"
-  mv -f "$home/current.partial" "$home/current"
 
   say "Setting up your data folder..."
   "$exe" db upgrade
@@ -217,9 +235,14 @@ main() {
   trap - EXIT
   echo
   say "RoleHawk $version is installed."
-  echo "Start it any time with 'rolehawk' or the RoleHawk shortcut on your Desktop."
+  echo "To start it again later (after you stop it, close this window, or restart your"
+  echo "computer), you don't need to reinstall. Use the RoleHawk shortcut on your Desktop,"
+  echo "or run:"
+  echo
+  echo "    rolehawk"
+  echo
+  [ -z "$path_note" ] || echo "$path_note In this window, run: $bindir/rolehawk"
   echo "Update with 'rolehawk update'. Diagnostics: 'rolehawk doctor'."
-  [ -z "$path_note" ] || echo "$path_note"
   if [ "${ROLEHAWK_NO_START:-}" != 1 ]; then
     echo
     say "Starting RoleHawk (press Ctrl+C to stop)..."

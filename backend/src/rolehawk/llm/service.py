@@ -8,10 +8,11 @@ from collections.abc import AsyncIterator, Callable, Sequence
 from pydantic import BaseModel
 
 from rolehawk.config import LLMSettings
-from rolehawk.llm.errors import LLMNotConfiguredError
+from rolehawk.llm.errors import LLMNotConfiguredError, LLMSchemaError
 from rolehawk.llm.meter import Estimate, SpendMeter
 from rolehawk.llm.provider import LLMProvider
 from rolehawk.llm.routing import Route, route
+from rolehawk.llm.schema import check_output_schema
 from rolehawk.llm.types import (
     Completion,
     LLMRequest,
@@ -156,6 +157,10 @@ class LLMService:
     ) -> Structured[T]:
         """Like `structured`, plus the model that actually answered (it can differ from the
         requested one when the API falls back) and the usage."""
+        try:
+            check_output_schema(schema)
+        except ValueError as exc:
+            raise LLMSchemaError(str(exc)) from exc
         provider = await self._preflight()
         result = await provider.structured(self._request(task, system, messages), schema)
         await self._record(command, provider, result.model, result.usage, task_id)

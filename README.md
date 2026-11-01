@@ -82,9 +82,20 @@ curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/i
 irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex
 ```
 
-When it finishes, RoleHawk opens in your browser with three steps to get started. After
-that, start it with the **RoleHawk** shortcut on your Desktop or by typing `rolehawk` in
-a terminal.
+When it finishes, RoleHawk opens in your browser with three steps to get started.
+
+**Starting it again.** You install once. After you stop RoleHawk (Ctrl+C), close its window,
+or restart your computer, start it with the **RoleHawk** shortcut on your Desktop, or type
+this in a terminal:
+
+```bash
+rolehawk
+```
+
+If `rolehawk` isn't found yet, open a new terminal window. Running the install line again is
+also safe: when you already have the newest release it skips the download and just starts the
+app. If RoleHawk is already running in another window (or another app has its port), it
+starts on the next free port and prints the new link.
 
 The installer puts everything in your home folder: [uv](https://docs.astral.sh/uv/) (which
 brings Python 3.12) if you don't have it, the app in `~/.rolehawk`, and Chromium for PDFs
@@ -238,8 +249,10 @@ Start with `rolehawk doctor`. Each line says what's wrong and how to fix it.
   PATH). Or use the Desktop shortcut.
 - **The browser didn't open**: copy the `Open:` link printed in the terminal into your browser.
   The link includes the session token, so use the full link.
-- **"Address already in use"**: RoleHawk is already running in another window, or another
-  app uses port 8765. Change it with `rolehawk start --port 8766`.
+- **"Port 8765 is busy"**: RoleHawk is already running in another window, or another app
+  uses port 8765. RoleHawk starts on the next free port and prints the link to open. To stop
+  the other copy, press Ctrl+C in its window. To choose a port yourself, use
+  `rolehawk start --port 8766`.
 - **PDF export fails**: run `rolehawk install-browser`. On Linux, Chromium may also need
   system libraries; `rolehawk doctor` prints the exact command (it needs sudo).
 - **The API key isn't saved (Linux)**: the keychain needs a Secret Service such as GNOME

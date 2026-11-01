@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import stat
 import zipfile
 from collections.abc import Sequence
@@ -227,6 +228,9 @@ def test_update_installs_next_to_the_running_version(tmp_path: Path) -> None:
         [exe, "install-browser"],
         [exe, "db", "upgrade"],
     ]
+    # The installers compare this with the published checksum to skip a re-download.
+    marker = layout.release_marker("0.2.0").read_text(encoding="ascii")
+    assert re.fullmatch(r"[0-9a-f]{64}", marker)
     # The running version stays (Windows can't delete it); older ones go.
     assert sorted(p.name for p in layout.versions.iterdir()) == ["0.1.0", "0.2.0"]
     assert not list(layout.downloads.iterdir())

@@ -248,6 +248,67 @@ describe("Onboarding", () => {
     expect(screen.getByRole("button", { name: "I don't have work experience yet" })).toBeEnabled();
   });
 
+  it("collects links as a list with add and remove buttons", async () => {
+    let sent: unknown = null;
+    server.use(
+      http.get("/api/setup/interview", () =>
+        HttpResponse.json(
+          interviewState({
+            question: question({
+              id: "basics.contact",
+              prompt: "How should employers reach you?",
+              kind: "form",
+              choices: [],
+              fields: [
+                {
+                  name: "name",
+                  label: "Full name",
+                  kind: "text",
+                  required: true,
+                  placeholder: null,
+                },
+                {
+                  name: "links",
+                  label: "Links (LinkedIn, GitHub, site)",
+                  kind: "list",
+                  required: false,
+                  placeholder: "https://www.linkedin.com/in/you",
+                },
+              ],
+            }),
+          }),
+        ),
+      ),
+      http.post("/api/setup/interview/answer", async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({ detail: "stop here" }, { status: 422 });
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=interview");
+    await user.type(await screen.findByLabelText(/Full name/), "Ada Example");
+    await user.type(
+      screen.getByRole("textbox", { name: "Links (LinkedIn, GitHub, site)" }),
+      "github.com/ada",
+    );
+    expect(screen.queryByRole("button", { name: /Remove link/ })).not.toBeInTheDocument();
+
+    const add = screen.getByRole("button", { name: "Add another link" });
+    await user.click(add);
+    await user.type(screen.getByLabelText("Link 2"), "example.com/wrong");
+    await user.click(add);
+    await user.type(screen.getByLabelText("Link 3"), "ada.example.com");
+    await user.click(add); // left empty: not sent
+    await user.click(screen.getByRole("button", { name: "Remove link 2" }));
+    expect(screen.getByLabelText("Link 2")).toHaveValue("ada.example.com");
+
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("stop here");
+    expect(sent).toEqual({
+      question_id: "basics.contact",
+      value: { name: "Ada Example", links: ["github.com/ada", "ada.example.com"] },
+    });
+  });
+
   it("celebrates when the interview is complete", async () => {
     server.use(
       http.get("/api/setup/interview", () =>

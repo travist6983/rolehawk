@@ -31,7 +31,8 @@ from rolehawk.profile.parsing import (
 )
 
 QuestionKind = Literal["single", "multi", "text", "list", "form"]
-AnswerValue = str | list[str] | dict[str, str]
+# A form answer maps field names to text, or to a list for `kind="list"` fields (links).
+AnswerValue = str | list[str] | dict[str, str | list[str]]
 
 MAX_METRIC_QUESTIONS = 3
 
@@ -48,7 +49,8 @@ class Choice(_Out):
 class FormField(_Out):
     name: str
     label: str
-    kind: Literal["text", "textarea"] = "text"
+    # "list": one input per item with add and remove buttons; the answer is a list.
+    kind: Literal["text", "textarea", "list"] = "text"
     required: bool = False
     placeholder: str | None = None
 
@@ -152,7 +154,8 @@ def open_questions(
                     FormField(
                         name="links",
                         label="Links (LinkedIn, GitHub, site)",
-                        placeholder="comma separated",
+                        kind="list",
+                        placeholder="https://www.linkedin.com/in/you",
                     ),
                 ],
             )
@@ -406,6 +409,7 @@ def _items(value: AnswerValue) -> list[str]:
 
 
 def _form(value: AnswerValue, required: list[str]) -> dict[str, str]:
+    """The form's text fields (list fields are read with `_form_list`)."""
     if not isinstance(value, dict):
         raise AnswerError("Expected a form.")
     form = {k: v.strip() for k, v in value.items() if isinstance(v, str)}
@@ -413,6 +417,17 @@ def _form(value: AnswerValue, required: list[str]) -> dict[str, str]:
         if not form.get(name):
             raise AnswerError(f"{name.replace('_', ' ').capitalize()} is required.")
     return form
+
+
+def _form_list(value: AnswerValue, name: str) -> list[str]:
+    """A list field. Older clients (and the CLI) send one comma-separated string, and an item
+    can hold several pasted at once; both are split the same way, blanks dropped."""
+    raw = value.get(name) if isinstance(value, dict) else None
+    if isinstance(raw, str):
+        return split_list(raw)
+    if isinstance(raw, list):
+        return dedupe([part for item in raw if isinstance(item, str) for part in split_list(item)])
+    return []
 
 
 def _dates(text: str | None) -> tuple[str | None, str | None, bool]:
@@ -443,7 +458,7 @@ def apply_answer(
             email=form.get("email") or profile.contact.email,
             phone=profile.contact.phone,
             location=form.get("location") or profile.contact.location,
-            links=dedupe([*profile.contact.links, *split_list(form.get("links", ""))]),
+            links=dedupe([*profile.contact.links, *_form_list(value, "links")]),
         )
     elif question_id == "role.add":
         form = _form(value, ["title"])

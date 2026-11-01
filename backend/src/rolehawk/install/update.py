@@ -121,6 +121,7 @@ class Updater:
 
         previous = self.layout.current_version()
         self.layout.set_current(version)
+        self.layout.release_marker(version).write_text(info.sha256, encoding="ascii")
         self._prune(keep={version, previous, self.running_version})
         zip_path.unlink(missing_ok=True)
         return version

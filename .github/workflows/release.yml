@@ -89,6 +89,16 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           rolehawk --version
 
+          # Running the install line again reuses the installed release: no download, the
+          # version folder isn't rebuilt (the sentinel survives), and the command still works.
+          installed="$HOME/.rolehawk/versions/$(cat "$HOME/.rolehawk/current")"
+          test -f "$installed/.release-sha256"
+          touch "$installed/sentinel"
+          bash < scripts/install.sh | tee reinstall.txt
+          grep -q "already installed and up to date" reinstall.txt
+          test -f "$installed/sentinel"
+          rolehawk --version
+
           rolehawk doctor --json > doctor.json || true
           python3 .github/scripts/check_doctor.py doctor.json
 
@@ -125,6 +135,16 @@ jobs:
           $env:Path = "$bin;$env:Path"
           rolehawk --version
           if ($LASTEXITCODE -ne 0) { throw "the rolehawk command doesn't run" }
+
+          # Running the install line again reuses the installed release: no download, and the
+          # version folder isn't rebuilt (the sentinel survives).
+          $installed = Join-Path $env:USERPROFILE (".rolehawk\versions\" + (Get-Content (Join-Path $env:USERPROFILE ".rolehawk\current") -Raw).Trim())
+          if (-not (Test-Path (Join-Path $installed ".release-sha256"))) { throw "no release marker" }
+          Set-Content -Path (Join-Path $installed "sentinel") -Value "x"
+          Get-Content scripts/install.ps1 -Raw | Invoke-Expression
+          if (-not (Test-Path (Join-Path $installed "sentinel"))) { throw "the reinstall downloaded again" }
+          rolehawk --version
+          if ($LASTEXITCODE -ne 0) { throw "the rolehawk command doesn't run after a reinstall" }
 
           rolehawk doctor --json | Out-File -Encoding utf8 doctor.json
           python .github/scripts/check_doctor.py doctor.json
