@@ -59,9 +59,13 @@ scripts first if you like: [install.sh](scripts/install.sh), [install.ps1](scrip
 
 ## What it costs
 
-Offerbound is free. The AI runs on your own [Anthropic API key](https://console.anthropic.com/),
-so you pay Anthropic for what you use. Ranking uses Claude Haiku 5.5 and costs cents; writing
-applications uses Claude Opus 5.5 and is most of the bill.
+Offerbound is free. The AI runs on your own API key from the
+[Claude Platform](https://platform.claude.com/), so you pay Anthropic for what you use (a
+Claude Pro or Max subscription can't be used by other apps). The first screen walks you
+through making a key and setting a monthly limit; it takes about five minutes.
+
+Ranking uses Claude Haiku 5.5 and costs cents; writing applications uses Claude Opus 5.5 and
+is most of the bill.
 
 | How you use it (per week) | About per month |
 | --- | --- |

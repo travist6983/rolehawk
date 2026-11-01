@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -24,12 +24,64 @@ describe("Onboarding", () => {
       ),
     );
     const { user } = await renderApp("/onboarding");
-    expect(await screen.findByText("Claude connection")).toBeInTheDocument();
+    expect(await screen.findByText("Get your key (about 5 minutes)")).toBeInTheDocument();
     expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Connect Claude");
-    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Connect/ })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: /Claude Code instead/ }));
     expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Questions");
+  });
+
+  it("walks through getting a key, then saves it with a monthly limit", async () => {
+    let configured = false;
+    let key: unknown = null;
+    let settings: unknown = null;
+    server.use(
+      http.get("/api/llm/status", () =>
+        HttpResponse.json(
+          llmStatus(
+            configured
+              ? { configured: true, key_source: "keychain", monthly_cap_usd: 50 }
+              : { configured: false, key_source: "none", monthly_cap_usd: null },
+          ),
+        ),
+      ),
+      http.put("/api/llm/key", async ({ request }) => {
+        key = await request.json();
+        configured = true;
+        return HttpResponse.json(llmStatus({ configured: true, key_source: "keychain" }));
+      }),
+      http.patch("/api/llm/settings", async ({ request }) => {
+        settings = await request.json();
+        return HttpResponse.json(llmStatus({ configured: true, monthly_cap_usd: 50 }));
+      }),
+    );
+    const { user } = await renderApp("/onboarding");
+    const steps = await screen.findByRole("list", { name: "Steps to connect Claude" });
+    expect(within(steps).getByRole("link", { name: /Open API keys/ })).toHaveAttribute(
+      "href",
+      "https://platform.claude.com/settings/keys",
+    );
+    expect(within(steps).getByRole("link", { name: /Open Billing/ })).toHaveAttribute(
+      "href",
+      "https://platform.claude.com/settings/billing",
+    );
+    expect(screen.getByRole("radio", { name: "$25 a month" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await user.click(screen.getByRole("radio", { name: "$50 a month" }));
+    await user.type(screen.getByLabelText("Your API key"), "sk-ant-test-1234567890");
+    await user.click(screen.getByRole("button", { name: /Connect/ }));
+    await waitFor(() => {
+      expect(key).toEqual({ api_key: "sk-ant-test-1234567890" });
+    });
+    await waitFor(() => {
+      expect(settings).toEqual({ monthly_cap_usd: 50 });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Resume");
+    });
   });
 
   it("answers single-choice questions with one click and shows the next question", async () => {

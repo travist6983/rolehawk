@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const CONSOLE_KEYS_URL = "https://console.anthropic.com/settings/keys";
+import { CLAUDE_KEYS_URL } from "./claudeLinks";
 
 export function ConnectionCard({ status }: { status: LLMStatus }) {
   const [key, setKey] = useState("");
@@ -73,13 +73,12 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
         </form>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <a
-            href={CONSOLE_KEYS_URL}
+            href={CLAUDE_KEYS_URL}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-primary-text underline-offset-4 hover:underline"
           >
-            Get a key from the Anthropic Console{" "}
-            <ExternalLinkIcon className="size-3.5" aria-hidden />
+            Get a key on the Claude Platform <ExternalLinkIcon className="size-3.5" aria-hidden />
           </a>
           {fromKeychain && (
             <Button
