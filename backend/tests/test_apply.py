@@ -37,7 +37,7 @@ from offerbound.apply.service import ApplyParams, DocumentsIn, ProfileIncomplete
 from offerbound.apply.truth import check_cv, check_letter, numbers_in
 from offerbound.db.models import Application, Job, Stage
 from offerbound.db.types import utcnow
-from offerbound.fit.rubric import FitBatch, JobFit
+from offerbound.fit.rubric import FitBatch
 from offerbound.llm.fake import FakeProvider
 from offerbound.llm.types import LLMRequest, Task
 from offerbound.profile.model import (
@@ -50,6 +50,7 @@ from offerbound.profile.model import (
 )
 from offerbound.rendering.text import docx_text, pdf_text
 from offerbound.services.runtime import Runtime
+from tests.fits import fit_of
 from tests.test_api_setup import wait_for_task
 
 pytestmark = pytest.mark.anyio
@@ -156,13 +157,7 @@ class Scripted:
         if schema is FitBatch:
             self.prompts["fit"].append(prompt)
             job_id = int(JOB_ID.findall(prompt)[0])
-            return FitBatch(
-                jobs=[
-                    JobFit(
-                        job_id=job_id, score=self.score, reasons=["Strong React"], must_have_gaps=[]
-                    )
-                ]
-            )
+            return FitBatch(jobs=[fit_of(job_id, self.score, ["Strong React"])])
         if schema is ApplicationDraft:
             self.prompts["draft"].append(prompt)
             return self.drafts.pop(0) if len(self.drafts) > 1 else self.drafts[0]

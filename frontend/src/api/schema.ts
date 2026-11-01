@@ -1363,6 +1363,20 @@ export interface components {
             file: string;
         };
         /**
+         * Breakdown
+         * @description The four parts of a fit score, 0 to 100 each.
+         */
+        Breakdown: {
+            /** Experience */
+            experience: number;
+            /** Skills */
+            skills: number;
+            /** Career */
+            career: number;
+            /** Logistics */
+            logistics: number;
+        };
+        /**
          * Bundle
          * @description application.json: the documents as data, their review flags, and their files.
          */
@@ -2230,6 +2244,7 @@ export interface components {
             threshold: number;
             /** Passes */
             passes: boolean;
+            gates: components["schemas"]["Gates"] | null;
         };
         /** Flag */
         Flag: {
@@ -2300,6 +2315,34 @@ export interface components {
             count: number;
             /** Rate From Previous */
             rate_from_previous: number | null;
+        };
+        /** Gate */
+        Gate: {
+            /**
+             * Verdict
+             * @description pass, check, or fail
+             * @enum {string}
+             */
+            verdict: "pass" | "check" | "fail";
+            /**
+             * Quote
+             * @description The posting's exact words; empty if silent
+             * @default
+             */
+            quote: string;
+        };
+        /**
+         * Gates
+         * @description What's stored with a score: the two gates and any deal breaker.
+         */
+        Gates: {
+            eligibility: components["schemas"]["Gate"];
+            language: components["schemas"]["Gate"];
+            /**
+             * Deal Breaker
+             * @default
+             */
+            deal_breaker: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2501,6 +2544,10 @@ export interface components {
             scored_at: string | null;
             /** Score Model */
             score_model: string | null;
+            /** @description The four parts behind the score */
+            breakdown: components["schemas"]["Breakdown"] | null;
+            /** @description Eligibility and language gates, deal breaker */
+            gates: components["schemas"]["Gates"] | null;
             stage: components["schemas"]["Stage"] | null;
             /** Dismissed */
             dismissed: boolean;
@@ -2565,6 +2612,10 @@ export interface components {
             scored_at: string | null;
             /** Score Model */
             score_model: string | null;
+            /** @description The four parts behind the score */
+            breakdown: components["schemas"]["Breakdown"] | null;
+            /** @description Eligibility and language gates, deal breaker */
+            gates: components["schemas"]["Gates"] | null;
             stage: components["schemas"]["Stage"] | null;
             /** Dismissed */
             dismissed: boolean;
@@ -2941,6 +2992,10 @@ export interface components {
             work_authorization?: string | null;
             /** Deal Breakers */
             deal_breakers?: string[];
+            /** Energizing */
+            energizing?: string[];
+            /** Draining */
+            draining?: string[];
         };
         /** Preferences */
         "Preferences-Output": {
@@ -2961,6 +3016,10 @@ export interface components {
             work_authorization: string | null;
             /** Deal Breakers */
             deal_breakers: string[];
+            /** Energizing */
+            energizing: string[];
+            /** Draining */
+            draining: string[];
         };
         /** Profile */
         "Profile-Input": {

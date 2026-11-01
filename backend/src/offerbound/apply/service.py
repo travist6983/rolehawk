@@ -54,6 +54,7 @@ from offerbound.db.models import (
 )
 from offerbound.db.types import utcnow
 from offerbound.fit.ranker import Ranker
+from offerbound.fit.rubric import Gates
 from offerbound.jobs.store import JobDetail, JobStore
 from offerbound.llm.meter import estimate_tokens
 from offerbound.llm.service import LLMService
@@ -82,11 +83,14 @@ class UnknownJobError(KeyError):
 
 
 class FitView(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     score: int
     reasons: list[str]
     must_have_gaps: list[str]
     threshold: int
     passes: bool
+    gates: Gates | None = None
 
 
 class ApplyParams(BaseModel):
@@ -257,9 +261,12 @@ class ApplyService:
             )
         if row is None:
             return None
-        return self._fit_view(row.score, row.reasons, row.must_have_gaps)
+        gates = Gates.model_validate(row.gates) if row.gates else None
+        return self._fit_view(row.score, row.reasons, row.must_have_gaps, gates)
 
-    def _fit_view(self, score: int, reasons: list[str], gaps: list[str]) -> FitView:
+    def _fit_view(
+        self, score: int, reasons: list[str], gaps: list[str], gates: Gates | None = None
+    ) -> FitView:
         threshold = self._settings().search.fit_threshold
         return FitView(
             score=score,
@@ -267,6 +274,7 @@ class ApplyService:
             must_have_gaps=list(gaps),
             threshold=threshold,
             passes=score >= threshold,
+            gates=gates,
         )
 
     def folder(self, application_id: int) -> Path:
@@ -323,7 +331,9 @@ class ApplyService:
         fit = await asyncio.to_thread(self.latest_fit, job.id)
         if fit is None:
             scored = await self._ranker.score_one(job.id, task_id)
-            fit = self._fit_view(scored.score, scored.reasons, scored.must_have_gaps)
+            fit = self._fit_view(
+                scored.score, scored.reasons, scored.must_have_gaps, Gates.of(scored)
+            )
         if not fit.passes and not params.force:
             return ApplyOutcome(
                 status="below_threshold", job_id=job.id, application_id=None, fit=fit, flags=[]

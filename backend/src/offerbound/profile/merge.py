@@ -158,5 +158,7 @@ def merge_preferences(current: Preferences, incoming: Preferences) -> Preference
         salary_floor=current.salary_floor or incoming.salary_floor,
         work_authorization=_fill(current.work_authorization, incoming.work_authorization),
         deal_breakers=dedupe([*current.deal_breakers, *incoming.deal_breakers]),
+        energizing=dedupe([*current.energizing, *incoming.energizing]),
+        draining=dedupe([*current.draining, *incoming.draining]),
         extra_sections={**incoming.extra_sections, **current.extra_sections},
     )

@@ -166,6 +166,8 @@ export const emptyPreferences = (): Preferences => ({
   salary_floor: null,
   work_authorization: null,
   deal_breakers: [],
+  energizing: [],
+  draining: [],
 });
 
 export const sampleProfile = (): Profile => ({
@@ -352,6 +354,12 @@ export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
   must_have_gaps: ["dbt"],
   scored_at: "2026-10-31T10:00:00Z",
   score_model: "claude-haiku-5-5",
+  breakdown: { experience: 90, skills: 80, career: 85, logistics: 90 },
+  gates: {
+    eligibility: { verdict: "pass", quote: "" },
+    language: { verdict: "pass", quote: "" },
+    deal_breaker: "",
+  },
   stage: null,
   dismissed: false,
   integrity: "clean",
@@ -442,6 +450,7 @@ export const applyPlan = (overrides: Partial<ApplyPlan> = {}): ApplyPlan => ({
     must_have_gaps: ["dbt"],
     threshold: 60,
     passes: true,
+    gates: null,
   },
   threshold: 60,
   application_id: null,

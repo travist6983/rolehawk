@@ -100,6 +100,32 @@ describe("DiscoverPage", () => {
     );
   });
 
+  it("shows the score's parts and the eligibility check with the posting's words", async () => {
+    const gates = {
+      eligibility: { verdict: "fail" as const, quote: "Must be a U.S. citizen." },
+      language: { verdict: "check" as const, quote: "Fluent German required." },
+      deal_breaker: "",
+    };
+    server.use(
+      http.get("/api/jobs", () =>
+        HttpResponse.json(jobPage([jobRow({ score: 39, gates })], { ranked: 1 })),
+      ),
+      http.get("/api/jobs/1", () => HttpResponse.json(jobDetail({ score: 39, gates }))),
+    );
+    const { user } = await renderApp("/discover");
+    expect(await screen.findByText("Not eligible")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Senior Data Analyst" }));
+    const sheet = await screen.findByRole("dialog");
+    const checks = within(sheet).getByRole("list", { name: "Fit checks" });
+    expect(checks).toHaveTextContent("You may not be eligible");
+    expect(checks).toHaveTextContent("The posting says: “Must be a U.S. citizen.”");
+    expect(checks).toHaveTextContent("Language bar may be above your level");
+    expect(within(sheet).getByRole("meter", { name: "Experience" })).toHaveAttribute(
+      "aria-valuenow",
+      "90",
+    );
+  });
+
   it("warns about parts of a posting aimed at AI tools", async () => {
     withJobs();
     server.use(

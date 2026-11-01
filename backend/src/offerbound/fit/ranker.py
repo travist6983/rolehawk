@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from offerbound.db.models import Job, JobScore, SearchTarget
 from offerbound.fit.filters import FilterCounts, build_rules, candidates
-from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, JobFit
+from offerbound.fit.rubric import FIT_RUBRIC, FitBatch, Gates, JobFit
 from offerbound.llm.errors import (
     LLMError,
     LLMNotConfiguredError,
@@ -37,7 +37,7 @@ BATCH_SIZE = 20
 CONCURRENCY = 4
 MAX_JOBS_PER_RUN = 1_000
 DESCRIPTION_CHARS = 5_000  # per job; postings rarely put requirements past this
-OUTPUT_TOKENS_PER_JOB = 150
+OUTPUT_TOKENS_PER_JOB = 260  # four parts, two gates with quotes, reasons, gaps
 
 Progress = Callable[[float | None, str | None], Awaitable[None]]
 
@@ -267,6 +267,8 @@ class Ranker:
                         score=fit.score,
                         reasons=fit.reasons,
                         must_have_gaps=fit.must_have_gaps,
+                        breakdown=fit.breakdown.model_dump(),
+                        gates=Gates.of(fit).model_dump(),
                         model=model,
                     )
                 )

@@ -351,6 +351,10 @@ def parse_preferences(markdown: str, default_currency: str = "USD") -> Preferenc
             prefs.work_authorization = " ".join(items) or None
         elif key in {"deal-breakers", "deal breakers", "dealbreakers"}:
             prefs.deal_breakers = dedupe(items)
+        elif key in {"work that energizes me", "energizing work", "what energizes me"}:
+            prefs.energizing = dedupe(items)
+        elif key in {"work that drains me", "draining work", "what drains me"}:
+            prefs.draining = dedupe(items)
         elif text := _text(lines):
             prefs.extra_sections[name.strip()] = text
     return prefs
@@ -373,6 +377,8 @@ def render_preferences(prefs: Preferences) -> str:
         "Work authorization", [prefs.work_authorization] if prefs.work_authorization else []
     )
     out += section("Deal-breakers", prefs.deal_breakers)
+    out += section("Work that energizes me", prefs.energizing)
+    out += section("Work that drains me", prefs.draining)
     for name, text in prefs.extra_sections.items():
         out += [f"## {name}", "", text, ""]
     return _join(out)

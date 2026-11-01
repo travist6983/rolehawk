@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { whereText } from "./discoverText";
+import { gateNote, whereText } from "./discoverText";
 
 const ROW_HEIGHT = 60;
 const LOAD_MORE_WITHIN = 30; // rows from the end
@@ -115,6 +115,7 @@ export function JobTable({
             const job = rows[item.index];
             if (!job) return null;
             const checked = selected.has(job.id);
+            const gate = gateNote(job);
             return (
               <tr
                 key={job.id}
@@ -170,6 +171,16 @@ export function JobTable({
                         <BookmarkIcon aria-hidden />{" "}
                         {job.stage === "saved" ? "Saved" : "In pipeline"}
                       </Badge>
+                    )}
+                    {gate && (
+                      <span
+                        className={cn(
+                          "shrink-0 text-[10px] font-medium",
+                          gate.fail ? "text-destructive" : "text-caution",
+                        )}
+                      >
+                        {gate.label}
+                      </span>
                     )}
                     {job.integrity === "warning" && (
                       <span

@@ -83,3 +83,50 @@ export function safeUrl(url: string): string | null {
     return null;
   }
 }
+
+/** The four parts behind a fit score, with their weights (backend fit/rubric.py WEIGHTS). */
+export const FIT_PARTS = [
+  { key: "experience", label: "Experience", weight: 35, hint: "Role, seniority, and domain" },
+  { key: "skills", label: "Skills", weight: 30, hint: "The posting's must-haves" },
+  { key: "career", label: "Career fit", weight: 20, hint: "Your goals and the work you enjoy" },
+  { key: "logistics", label: "Logistics", weight: 15, hint: "Location, salary, schedule" },
+] as const;
+
+export type GateVerdict = "pass" | "check" | "fail";
+
+/** How a gate verdict reads, per gate. */
+export function gateText(gate: "eligibility" | "language", verdict: GateVerdict): string {
+  if (gate === "eligibility") {
+    return {
+      pass: "You can hold this job",
+      check: "Check you can hold this job",
+      fail: "You may not be eligible",
+    }[verdict];
+  }
+  return {
+    pass: "Language requirements met",
+    check: "Language bar may be above your level",
+    fail: "Needs a language you don't list",
+  }[verdict];
+}
+
+/** A short table note when a gate failed or needs checking ("Not eligible", "Check language"). */
+export function gateNote(job: JobRow): { label: string; fail: boolean } | null {
+  const gates = job.gates;
+  if (!gates) return null;
+  if (gates.eligibility.verdict === "fail") return { label: "Not eligible", fail: true };
+  if (gates.language.verdict === "fail") return { label: "Language", fail: true };
+  if (gates.deal_breaker) return { label: "Deal-breaker", fail: true };
+  if (gates.eligibility.verdict === "check") return { label: "Check eligibility", fail: false };
+  if (gates.language.verdict === "check") return { label: "Check language", fail: false };
+  return null;
+}
+
+/** Whether gates are worth showing outside the job sheet (anything but a clean pass). */
+export function needsAttention(gates: NonNullable<JobRow["gates"]>): boolean {
+  return (
+    gates.eligibility.verdict !== "pass" ||
+    gates.language.verdict !== "pass" ||
+    gates.deal_breaker !== ""
+  );
+}

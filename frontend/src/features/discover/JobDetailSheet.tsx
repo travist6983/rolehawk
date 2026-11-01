@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 
 import { safeUrl, whereText } from "./discoverText";
+import { FitBreakdown, FitGates } from "./FitDetails";
 import { IntegrityNotice } from "./IntegrityNotice";
 
 function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
@@ -52,6 +53,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
           <span className="text-xs text-muted-foreground">ranked {timeAgo(job.scored_at)}</span>
         )}
       </div>
+      {job.gates && <FitGates gates={job.gates} />}
       {job.reasons.length > 0 && (
         <div>
           <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why</h3>
@@ -78,6 +80,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
           <p className="mt-1 text-muted-foreground">None found.</p>
         )}
       </div>
+      {job.breakdown && <FitBreakdown breakdown={job.breakdown} />}
     </section>
   );
 }

@@ -199,6 +199,17 @@ def open_questions(
             )
         )
 
+    if not profile.languages:
+        ask(
+            Question(
+                id="profile.languages",
+                prompt="Which languages do you work in, and how well?",
+                help="With your level, so jobs that need another language can be flagged.",
+                kind="text",
+                placeholder="English (native); Spanish (B2)",
+            )
+        )
+
     if not profile.education:
         ask(
             Question(
@@ -306,6 +317,26 @@ def open_questions(
                 choices=[Choice(value=d, label=d) for d in DEAL_BREAKERS],
                 allow_other=True,
                 skip_label="None",
+            )
+        )
+
+    if not prefs.energizing:
+        ask(
+            Question(
+                id="prefs.energizing",
+                prompt="What kind of work gives you energy?",
+                help="Used to score how well a job fits what you want to do, not just can do.",
+                kind="text",
+                placeholder="Building tools from scratch; mentoring; talking to customers",
+            )
+        )
+    if not prefs.draining:
+        ask(
+            Question(
+                id="prefs.draining",
+                prompt="And what kind of work drains you?",
+                kind="text",
+                placeholder="Maintaining legacy systems; heavy travel",
             )
         )
 
@@ -480,6 +511,12 @@ def apply_answer(
         prefs.work_authorization = _text(value)
     elif question_id == "prefs.deal_breakers":
         prefs.deal_breakers = _items(value)
+    elif question_id == "prefs.energizing":
+        prefs.energizing = _items(value)
+    elif question_id == "prefs.draining":
+        prefs.draining = _items(value)
+    elif question_id == "profile.languages":
+        profile.languages = dedupe([*profile.languages, *_items(value)])
     elif question_id.startswith("role.dates."):
         role = next((e for e in profile.experience if _role_dates_id(e) == question_id), None)
         if role is None:

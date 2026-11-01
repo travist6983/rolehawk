@@ -22,6 +22,7 @@ from offerbound.db.models import (
     StageEventSource,
 )
 from offerbound.db.types import utcnow
+from offerbound.fit.rubric import Breakdown, Gates
 from offerbound.portals.integrity import IntegrityView, Verdict
 
 MAX_PAGE = 500
@@ -62,6 +63,8 @@ class JobRow(BaseModel):
     must_have_gaps: list[str]
     scored_at: datetime | None
     score_model: str | None
+    breakdown: Breakdown | None = Field(description="The four parts behind the score")
+    gates: Gates | None = Field(description="Eligibility and language gates, deal breaker")
     stage: Stage | None
     dismissed: bool
     integrity: Verdict = Field(description="clean, cleaned (hidden text removed), or warning")
@@ -132,6 +135,8 @@ class JobStore:
                 score.c.must_have_gaps,
                 score.c.created_at,
                 score.c.model,
+                score.c.breakdown,
+                score.c.gates,
                 Application.stage,
                 Application.id,
                 Portal.name,
@@ -144,7 +149,9 @@ class JobStore:
 
     @staticmethod
     def _row(values: Any) -> dict[str, Any]:
-        job, score, reasons, gaps, scored_at, model, stage, app_id, source = values
+        job, score, reasons, gaps, scored_at, model, breakdown, gates, stage, app_id, source = (
+            values
+        )
         report = IntegrityView.of(job.integrity)
         return {
             "id": job.id,
@@ -163,6 +170,8 @@ class JobStore:
             "must_have_gaps": gaps or [],
             "scored_at": scored_at,
             "score_model": model,
+            "breakdown": Breakdown.model_validate(breakdown) if breakdown else None,
+            "gates": Gates.model_validate(gates) if gates else None,
             "stage": stage,
             "dismissed": job.dismissed_at is not None,
             "integrity": report.verdict if report else "clean",

@@ -3517,6 +3517,35 @@
         ],
         "title": "Body_upload_document_api_setup_documents_post"
       },
+      "Breakdown": {
+        "properties": {
+          "experience": {
+            "type": "integer",
+            "title": "Experience"
+          },
+          "skills": {
+            "type": "integer",
+            "title": "Skills"
+          },
+          "career": {
+            "type": "integer",
+            "title": "Career"
+          },
+          "logistics": {
+            "type": "integer",
+            "title": "Logistics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "experience",
+          "skills",
+          "career",
+          "logistics"
+        ],
+        "title": "Breakdown",
+        "description": "The four parts of a fit score, 0 to 100 each."
+      },
       "Bundle": {
         "properties": {
           "version": {
@@ -6268,6 +6297,16 @@
           "passes": {
             "type": "boolean",
             "title": "Passes"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6276,7 +6315,8 @@
           "reasons",
           "must_have_gaps",
           "threshold",
-          "passes"
+          "passes",
+          "gates"
         ],
         "title": "FitView"
       },
@@ -6444,6 +6484,55 @@
           "rate_from_previous"
         ],
         "title": "FunnelStep"
+      },
+      "Gate": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "check",
+              "fail"
+            ],
+            "title": "Verdict",
+            "description": "pass, check, or fail"
+          },
+          "quote": {
+            "type": "string",
+            "title": "Quote",
+            "description": "The posting's exact words; empty if silent",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "quote"
+        ],
+        "title": "Gate"
+      },
+      "Gates": {
+        "properties": {
+          "eligibility": {
+            "$ref": "#/components/schemas/Gate"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Gate"
+          },
+          "deal_breaker": {
+            "type": "string",
+            "title": "Deal Breaker",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "eligibility",
+          "language",
+          "deal_breaker"
+        ],
+        "title": "Gates",
+        "description": "What's stored with a score: the two gates and any deal breaker."
       },
       "HTTPValidationError": {
         "properties": {
@@ -6972,6 +7061,28 @@
             ],
             "title": "Score Model"
           },
+          "breakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Breakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The four parts behind the score"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Eligibility and language gates, deal breaker"
+          },
           "stage": {
             "anyOf": [
               {
@@ -7042,6 +7153,8 @@
           "must_have_gaps",
           "scored_at",
           "score_model",
+          "breakdown",
+          "gates",
           "stage",
           "dismissed",
           "integrity",
@@ -7200,6 +7313,28 @@
             ],
             "title": "Score Model"
           },
+          "breakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Breakdown"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The four parts behind the score"
+          },
+          "gates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gates"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Eligibility and language gates, deal breaker"
+          },
           "stage": {
             "anyOf": [
               {
@@ -7243,6 +7378,8 @@
           "must_have_gaps",
           "scored_at",
           "score_model",
+          "breakdown",
+          "gates",
           "stage",
           "dismissed",
           "integrity"
@@ -8167,6 +8304,20 @@
             },
             "type": "array",
             "title": "Deal Breakers"
+          },
+          "energizing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Energizing"
+          },
+          "draining": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Draining"
           }
         },
         "additionalProperties": false,
@@ -8249,6 +8400,20 @@
             },
             "type": "array",
             "title": "Deal Breakers"
+          },
+          "energizing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Energizing"
+          },
+          "draining": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Draining"
           }
         },
         "additionalProperties": false,
@@ -8261,7 +8426,9 @@
           "country",
           "salary_floor",
           "work_authorization",
-          "deal_breakers"
+          "deal_breakers",
+          "energizing",
+          "draining"
         ],
         "title": "Preferences"
       },

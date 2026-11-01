@@ -241,6 +241,9 @@ class JobScore(Base):
     score: Mapped[int] = mapped_column(Integer)
     must_have_gaps: Mapped[list[str]] = mapped_column(JSON, default=list)
     reasons: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # fit/rubric.py: the four parts behind the score, and the eligibility/language gates.
+    breakdown: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    gates: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     model: Mapped[str] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
