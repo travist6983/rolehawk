@@ -121,7 +121,7 @@ export const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(functio
           aria-activedescendant={
             menuOpen && matches.length > 0 ? optionId(listId, active) : undefined
           }
-          className="max-h-40 min-h-[42px] resize-none rounded-[21px] bg-card px-4 py-2.5 text-[15px] shadow-none md:text-[15px] dark:bg-card"
+          className="max-h-40 min-h-[42px] resize-none rounded-[21px] bg-card px-4 py-2.5 text-[15px] shadow-none placeholder-shown:[field-sizing:fixed] placeholder-shown:overflow-hidden placeholder-shown:text-ellipsis placeholder-shown:whitespace-nowrap md:text-[15px] dark:bg-card"
         />
         {busy ? (
           <Button type="button" size="icon" variant="outline" aria-label="Stop" onClick={onStop}>

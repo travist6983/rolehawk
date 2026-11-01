@@ -26,7 +26,7 @@ export function ThemeToggle() {
               setPreference(value);
             }}
             className={cn(
-              "cursor-pointer rounded-full px-[9px] py-[3px] text-[13px] font-medium",
+              "cursor-pointer rounded-full px-[7px] py-[3px] text-[12.5px] font-medium",
               on ? "bg-sidebar-foreground text-sidebar" : "text-sidebar-muted",
             )}
           >

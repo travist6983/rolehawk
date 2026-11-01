@@ -83,7 +83,7 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 export function ConnectionStatus() {
   const { status } = useEventStream();
   return (
-    <span className="flex items-center gap-[7px] text-[13px] font-medium" role="status">
+    <span className="flex items-center gap-1.5 text-[12.5px] font-medium" role="status">
       <span
         aria-hidden
         className={cn(
@@ -141,7 +141,7 @@ export function SidebarFooter() {
     <div className="mt-auto flex flex-col gap-3.5 px-2.5">
       <RankingProgress />
       <AskClaude />
-      <div className="flex items-center justify-between text-sidebar-muted">
+      <div className="-mr-3 flex flex-wrap items-center justify-between gap-x-1 gap-y-2 text-sidebar-muted">
         <ConnectionStatus />
         <ThemeToggle />
       </div>

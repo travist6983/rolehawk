@@ -111,7 +111,7 @@ export function HorizontalBars({
   label: string;
   max?: number;
 }) {
-  const height = Math.max(data.length * (BAR_SIZE + 14) + 16, 80);
+  const height = Math.max(data.length * (BAR_SIZE + 18) + 16, 80);
   return (
     <div role="img" aria-label={label} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -122,6 +122,7 @@ export function HorizontalBars({
             type="category"
             dataKey="label"
             width={110}
+            interval={0}
             tick={AXIS}
             tickLine={false}
             axisLine={{ stroke: "var(--chart-grid)" }}
