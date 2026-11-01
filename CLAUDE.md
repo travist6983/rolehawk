@@ -96,6 +96,7 @@ site/                    marketing site for GitHub Pages (static; site/README.md
 .github/workflows/ci.yml lint + typecheck + tests on ubuntu, macos, windows
 .github/workflows/release.yml  build the ZIP, smoke-test install + start + update on all three
                          OSes (installer/release changes and v* tags), publish on tags
+.github/workflows/auto-release.yml  after green CI on main, release v<version> if untagged
 ```
 
 ## Commands
@@ -180,5 +181,6 @@ Run `npm run check` from the root before you call a chunk done.
   folder and the launcher reads the `current` pointer, so nothing overwrites a running version
   (Windows locks it). `rolehawk update` moves the pointer only after sync, browser, backup,
   and migrations succeed. Unpacking refuses absolute paths, `..`, and links. Bump the version
-  in `pyproject.toml` and `rolehawk/__init__.py` together, then tag `v<version>`.
+  in `pyproject.toml` and `rolehawk/__init__.py` together inside the PR that changes the app;
+  once it merges and CI passes on main, `auto-release.yml` tags `v<version>` and publishes.
 - **Destructive actions** (/reset) back up first, need the scope typed, and are `chat_allowed=False`.

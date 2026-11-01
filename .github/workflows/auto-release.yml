@@ -1,0 +1,83 @@
+name: Auto release
+
+# Publishes a release on its own: when CI passes on a push to main and the version in
+# backend/pyproject.toml has no v<version> tag yet, this runs the Release workflow for that
+# commit, which tests the install on every OS and then creates the tag and the GitHub release.
+# A merge that doesn't bump the version (docs, site) finds its tag already there and does
+# nothing. On a pull request it only prints what it would do.
+#
+# The release is created here, not by pushing a tag, because a tag pushed with the workflow's
+# own token doesn't start other workflows. No extra secrets are needed.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - .github/workflows/auto-release.yml
+      - .github/workflows/release.yml
+      - .github/scripts/release_plan.py
+      - backend/pyproject.toml
+      - backend/src/rolehawk/__init__.py
+
+concurrency:
+  # One release at a time on main; pull requests get their own group.
+  group: auto-release-${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: plan release
+    # Only CI runs for pushes to this repository's main, never a fork's branch named main.
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      release: ${{ steps.plan.outputs.release }}
+      sha: ${{ steps.plan.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Decide whether this commit publishes a release
+        id: plan
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          python3 .github/scripts/release_plan.py | tee -a "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - name: Say what happens next
+        env:
+          TAG: ${{ steps.plan.outputs.tag }}
+          RELEASE: ${{ steps.plan.outputs.release }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$RELEASE" != true ]; then
+            msg="$TAG is already released, so this merge publishes nothing."
+          elif [ "$EVENT" = pull_request ]; then
+            msg="Dry run: merging this would publish $TAG once CI passes on main."
+          else
+            msg="Publishing $TAG from this commit."
+          fi
+          echo "$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+
+  release:
+    name: release
+    needs: plan
+    if: github.event_name == 'workflow_run' && needs.plan.outputs.release == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.plan.outputs.tag }}
+      sha: ${{ needs.plan.outputs.sha }}

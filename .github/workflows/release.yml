@@ -3,7 +3,9 @@ name: Release
 # Builds the release ZIP and smoke-tests the real install scripts on every OS: install from a
 # local copy of the release files, start the app, then `rolehawk update` to a build labeled
 # one patch version higher. A v* tag also publishes the files as a GitHub release (the install
-# lines download .../releases/latest/download/rolehawk.zip).
+# lines download .../releases/latest/download/rolehawk.zip). Auto release (auto-release.yml)
+# calls this with a tag and a commit once CI passes on main with a version that has no tag yet;
+# the publish step then creates the tag itself.
 
 on:
   push:
@@ -16,10 +18,22 @@ on:
       - backend/pyproject.toml
       - backend/uv.lock
       - .github/workflows/release.yml
+      - .github/workflows/auto-release.yml
+      - .github/scripts/release_plan.py
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag to create and publish, v<version>
+        type: string
+        required: true
+      sha:
+        description: The commit on main to build and tag
+        type: string
+        required: true
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -31,6 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
       - name: Check the install script
         run: shellcheck scripts/install.sh
       - uses: actions/setup-node@v4
@@ -45,9 +61,11 @@ jobs:
           npm run build
       - uses: astral-sh/setup-uv@v6
       - name: Build the release files
+        env:
+          TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
         run: |
           tag=()
-          if [ "$GITHUB_REF_TYPE" = tag ]; then tag=(--tag "$GITHUB_REF_NAME"); fi
+          if [ -n "$TAG" ]; then tag=(--tag "$TAG"); fi
           uv run --no-project --python 3.12 python scripts/build_release.py --out dist/release "${tag[@]}"
           next=$(python3 -c "import json; v = json.load(open('dist/release/release.json'))['version'].split('.'); v[2] = str(int(v[2]) + 1); print('.'.join(v))")
           uv run --no-project --python 3.12 python scripts/build_release.py --out dist/next --version "$next"
@@ -71,6 +89,8 @@ jobs:
       ROLEHAWK_RELEASE_URL: http://127.0.0.1:8799
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
       - uses: actions/download-artifact@v4
         with:
           name: release
@@ -180,7 +200,7 @@ jobs:
 
   publish:
     name: publish release
-    if: github.ref_type == 'tag'
+    if: github.ref_type == 'tag' || inputs.tag
     needs: smoke
     runs-on: ubuntu-latest
     permissions:
@@ -193,7 +213,10 @@ jobs:
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          # With a new tag, the release creates it on this commit (a pushed tag already exists).
+          SHA: ${{ inputs.sha || github.sha }}
         run: >
-          gh release create "$GITHUB_REF_NAME"
+          gh release create "$TAG"
           dist/release/rolehawk.zip dist/release/rolehawk.zip.sha256 dist/release/release.json
-          --repo "$GITHUB_REPOSITORY" --title "RoleHawk $GITHUB_REF_NAME" --generate-notes
+          --repo "$GITHUB_REPOSITORY" --target "$SHA" --title "RoleHawk $TAG" --generate-notes
