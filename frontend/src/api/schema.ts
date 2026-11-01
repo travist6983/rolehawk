@@ -1241,6 +1241,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calibration Status
+         * @description Applications with a result, and whether there are enough to learn from.
+         */
+        get: operations["calibration_status_api_calibration_get"];
+        put?: never;
+        /**
+         * Calibrate
+         * @description Patterns in what got interviews, with preference edits as pending proposals.
+         */
+        post: operations["calibrate_api_calibration_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports": {
         parameters: {
             query?: never;
@@ -1533,6 +1557,36 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** CalibrationResult */
+        CalibrationResult: {
+            /** Findings */
+            findings: components["schemas"]["Finding"][];
+            /** Proposals */
+            proposals: components["schemas"]["ProposalView"][];
+            /** Resolved */
+            resolved: number;
+            /**
+             * Ran At
+             * Format: date-time
+             */
+            ran_at: string;
+        };
+        /** CalibrationStatus */
+        CalibrationStatus: {
+            /** Resolved */
+            resolved: number;
+            /** Positive */
+            positive: number;
+            /** Negative */
+            negative: number;
+            /**
+             * Needed
+             * @description Results needed before patterns mean much
+             */
+            needed: number;
+            /** Ready */
+            ready: boolean;
         };
         /** CancelOut */
         CancelOut: {
@@ -2398,6 +2452,24 @@ export interface components {
              * @default 0
              */
             excluded: number;
+        };
+        /** Finding */
+        Finding: {
+            /**
+             * Pattern
+             * @description One sentence, written to the job seeker
+             */
+            pattern: string;
+            /**
+             * Application Ids
+             * @description The applications that show it
+             */
+            application_ids: number[];
+            /**
+             * Strength
+             * @enum {string}
+             */
+            strength: "firm" | "worth watching";
         };
         /** FitView */
         FitView: {
@@ -6269,6 +6341,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Insights"];
+                };
+            };
+        };
+    };
+    calibration_status_api_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationStatus"];
+                };
+            };
+        };
+    };
+    calibrate_api_calibration_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationResult"];
                 };
             };
         };

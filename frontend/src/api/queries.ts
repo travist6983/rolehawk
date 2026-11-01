@@ -808,6 +808,26 @@ export function useCloseStale() {
   });
 }
 
+export type CalibrationResult = Schemas["CalibrationResult"];
+
+export function useCalibrationStatus() {
+  return useQuery({
+    queryKey: ["calibration"] as const,
+    queryFn: () => unwrap(api.GET("/api/calibration")),
+  });
+}
+
+/** Finds patterns in results; preference edits come back as pending proposals. */
+export function useCalibrate() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/calibration")),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.proposals });
+    },
+  });
+}
+
 /** Optimistic: the card moves at once; the server records the stage event. */
 export function useMoveApplication() {
   const client = useQueryClient();

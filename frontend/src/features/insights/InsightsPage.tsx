@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { usd } from "@/lib/format";
 
+import { CalibrationCard } from "./CalibrationCard";
 import { ChartCard, Columns, HorizontalBars } from "./Charts";
 import { compactNumber, pct, weekLabel } from "./insightsText";
 
@@ -172,6 +173,7 @@ export default function InsightsPage() {
           />
           <SpendTile spend={data.spend} />
         </div>
+        <CalibrationCard />
         <div className="grid gap-6 xl:grid-cols-2">
           <ChartCard
             title="Pipeline funnel"

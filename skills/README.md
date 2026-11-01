@@ -38,6 +38,7 @@ Built-in commands available today:
 | `application-keep-flag` | Keep a flagged line as written (stretch, style, or skipped-requirement flags only) |
 | `followups`, `followup-draft`, `followup-log` | Quiet applications, a follow-up draft from the documents sent (never sent), log one the user sent (see `followup/SKILL.md`) |
 | `stale-applications`, `close-stale` | Applications with no reply in 60+ days; close chosen ones as Ghosted |
+| `calibration-status`, `calibrate` | Learn from results: patterns in what got interviews, as preference proposals the user accepts |
 | `pipeline`, `insights` | The board by stage with next actions; funnel, response rate by source, weekly activity, spend |
 | `html-report` | Self-contained HTML report in the reports folder (see `html-report/SKILL.md`) |
 | `reset` | Delete a scope of data after a zipped backup; typed confirmation (see `reset/SKILL.md`) |

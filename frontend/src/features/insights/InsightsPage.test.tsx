@@ -66,6 +66,54 @@ describe("Insights", () => {
 });
 
 describe("insights helpers", () => {
+  it("finds patterns in results and offers preference edits to accept", async () => {
+    server.use(
+      http.get("/api/insights", () => HttpResponse.json(insights())),
+      http.get("/api/calibration", () =>
+        HttpResponse.json({ resolved: 4, positive: 2, negative: 2, needed: 3, ready: true }),
+      ),
+      http.post("/api/calibration", () =>
+        HttpResponse.json({
+          findings: [
+            {
+              pattern: "Both interviews were analytics engineering roles.",
+              application_ids: [1, 2],
+              strength: "worth watching",
+            },
+          ],
+          proposals: [
+            {
+              id: 5,
+              target: "preferences",
+              op: "add",
+              section: "Target titles",
+              text: "Analytics Engineer",
+              old_text: null,
+              reason: "Your two interviews were analytics engineering roles.",
+              source: "calibration",
+              session_id: null,
+              status: "pending",
+              created_at: "2026-10-31T12:00:00Z",
+              resolved_at: null,
+            },
+          ],
+          resolved: 4,
+          ran_at: "2026-10-31T12:00:00Z",
+        }),
+      ),
+    );
+    const { user } = await renderApp("/insights");
+    const card = await screen.findByRole("region", { name: "Learn from your results" });
+    expect(card).toHaveTextContent("2 of your 4 finished applications got an interview");
+    await user.click(within(card).getByRole("button", { name: "Find patterns" }));
+    expect(
+      await within(card).findByText("Both interviews were analytics engineering roles."),
+    ).toBeVisible();
+    expect(within(card).getByText("Worth watching")).toBeVisible();
+    expect(card).toHaveTextContent("Analytics Engineer");
+    expect(within(card).getByRole("button", { name: /accept/i })).toBeVisible();
+  });
+
   it("formats numbers", () => {
     expect(pct(null)).toBe("–");
     expect(pct(2 / 3)).toBe("67%");

@@ -3257,6 +3257,48 @@
         }
       }
     },
+    "/api/calibration": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Calibration Status",
+        "description": "Applications with a result, and whether there are enough to learn from.",
+        "operationId": "calibration_status_api_calibration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Calibrate",
+        "description": "Patterns in what got interviews, with preference edits as pending proposals.",
+        "operationId": "calibrate_api_calibration_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/reports": {
       "post": {
         "tags": [
@@ -3976,6 +4018,75 @@
         ],
         "title": "Bundle",
         "description": "application.json: the documents as data, their review flags, and their files."
+      },
+      "CalibrationResult": {
+        "properties": {
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalView"
+            },
+            "type": "array",
+            "title": "Proposals"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "ran_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ran At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "findings",
+          "proposals",
+          "resolved",
+          "ran_at"
+        ],
+        "title": "CalibrationResult"
+      },
+      "CalibrationStatus": {
+        "properties": {
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "positive": {
+            "type": "integer",
+            "title": "Positive"
+          },
+          "negative": {
+            "type": "integer",
+            "title": "Negative"
+          },
+          "needed": {
+            "type": "integer",
+            "title": "Needed",
+            "description": "Results needed before patterns mean much"
+          },
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resolved",
+          "positive",
+          "negative",
+          "needed",
+          "ready"
+        ],
+        "title": "CalibrationStatus"
       },
       "CancelOut": {
         "properties": {
@@ -6728,6 +6839,38 @@
         "type": "object",
         "title": "FilterCounts",
         "description": "Jobs skipped before scoring, by reason."
+      },
+      "Finding": {
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "title": "Pattern",
+            "description": "One sentence, written to the job seeker"
+          },
+          "application_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Application Ids",
+            "description": "The applications that show it"
+          },
+          "strength": {
+            "type": "string",
+            "enum": [
+              "firm",
+              "worth watching"
+            ],
+            "title": "Strength"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pattern",
+          "application_ids",
+          "strength"
+        ],
+        "title": "Finding"
       },
       "FitView": {
         "properties": {

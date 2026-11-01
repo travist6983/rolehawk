@@ -7,6 +7,11 @@ from fastapi.responses import FileResponse
 
 from offerbound.api.deps import RuntimeDep
 from offerbound.insights.board import Board
+from offerbound.insights.calibration import (
+    CalibrationResult,
+    CalibrationStatus,
+    NotEnoughResultsError,
+)
 from offerbound.insights.service import ReportFile
 from offerbound.insights.stats import Insights
 from offerbound.services.reset import ConfirmationError, ResetIn, ResetResult, ScopeView, scopes
@@ -23,6 +28,21 @@ async def pipeline(runtime: RuntimeDep) -> Board:
 @router.get("/api/insights")
 async def insights(runtime: RuntimeDep) -> Insights:
     return await asyncio.to_thread(runtime.insights.insights)
+
+
+@router.get("/api/calibration")
+async def calibration_status(runtime: RuntimeDep) -> CalibrationStatus:
+    """Applications with a result, and whether there are enough to learn from."""
+    return await asyncio.to_thread(runtime.calibration.status)
+
+
+@router.post("/api/calibration")
+async def calibrate(runtime: RuntimeDep) -> CalibrationResult:
+    """Patterns in what got interviews, with preference edits as pending proposals."""
+    try:
+        return await runtime.calibration.run()
+    except NotEnoughResultsError:
+        raise HTTPException(status_code=409, detail=NotEnoughResultsError.user_message) from None
 
 
 @router.post("/api/reports")

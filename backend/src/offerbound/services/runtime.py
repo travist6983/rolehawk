@@ -16,6 +16,7 @@ from offerbound.apply.service import ApplyService
 from offerbound.commands.add_portal import register_add_portal
 from offerbound.commands.apply import register_apply
 from offerbound.commands.builtin import register_builtin
+from offerbound.commands.calibration import register_calibration
 from offerbound.commands.documents import register_documents
 from offerbound.commands.followup import register_followup
 from offerbound.commands.insights import register_insights
@@ -28,6 +29,7 @@ from offerbound.db import migrate
 from offerbound.db.engine import make_engine, make_session_factory
 from offerbound.fit.ranker import Ranker
 from offerbound.insights.board import BoardService
+from offerbound.insights.calibration import CalibrationService
 from offerbound.insights.service import ReportService
 from offerbound.insights.stats import InsightsService
 from offerbound.jobs.store import JobStore
@@ -85,6 +87,7 @@ class Runtime:
     autofill: Autofiller
     board: BoardService
     insights: InsightsService
+    calibration: CalibrationService
     reports: ReportService
     reset: ResetService
     backup_path: Path | None = None
@@ -151,6 +154,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_apply(commands)
     register_insights(commands)
     register_followup(commands)
+    register_calibration(commands)
     register_add_portal(commands)
 
     runtime_ref: list[Runtime] = []
@@ -219,6 +223,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         autofill=Autofiller(headless=False),
         board=board,
         insights=insights,
+        calibration=CalibrationService(sessions, llm, memory),
         reports=ReportService(paths, board, insights, lambda: profiles.load_profile().contact.name),
         reset=ResetService(paths, sessions, files, portals),
         backup_path=backup_path,

@@ -16,7 +16,7 @@ from offerbound.db.types import utcnow
 from offerbound.memory import edits
 from offerbound.memory.files import MemoryFiles, MemoryTarget
 
-ProposalSource = Literal["chat", "extraction", "setup", "expand", "skill"]
+ProposalSource = Literal["chat", "extraction", "setup", "expand", "skill", "calibration"]
 
 
 class ProposalNotFoundError(LookupError):
