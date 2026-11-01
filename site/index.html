@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Everything this page loads comes from this site: no trackers, no third-party scripts or fonts. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <title>RoleHawk: a free AI job search copilot that runs on your computer</title>
+    <meta
+      name="description"
+      content="RoleHawk is a free, open source AI job search copilot. It finds and ranks jobs, writes a tailored CV and cover letter for each one without inventing anything, and tracks every application. Your data stays on your computer."
+    />
+    <link rel="canonical" href="https://travist6983.github.io/rolehawk/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RoleHawk" />
+    <meta property="og:title" content="RoleHawk: your job search, on your computer" />
+    <meta
+      property="og:description"
+      content="Free and open source. Finds and ranks jobs, writes a tailored CV and cover letter without inventing anything, and tracks every application. Powered by Claude, on your own key."
+    />
+    <meta property="og:url" content="https://travist6983.github.io/rolehawk/" />
+    <meta property="og:image" content="https://travist6983.github.io/rolehawk/social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="RoleHawk: your job search, on your computer. A pipeline board of job applications."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RoleHawk: your job search, on your computer" />
+    <meta
+      name="twitter:description"
+      content="Free, open source AI job search copilot. Finds, ranks, tailors, and tracks. Never invents a fact, never submits for you."
+    />
+    <meta name="twitter:image" content="https://travist6983.github.io/rolehawk/social.png" />
+    <meta
+      name="twitter:image:alt"
+      content="RoleHawk: your job search, on your computer. A pipeline board of job applications."
+    />
+
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon-180.png" />
+    <meta name="theme-color" content="#f8f3e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1511" media="(prefers-color-scheme: dark)" />
+
+    <link
+      rel="preload"
+      href="fonts/newsreader-latin-opsz-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/public-sans-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="wordmark" href="./" aria-label="RoleHawk home">RoleHawk</a>
+        <nav aria-label="Main">
+          <ul class="nav">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#privacy">Privacy</a></li>
+            <li><a href="#cost">Cost</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <!-- Comparison page: add <li><a href="compare.html">Compare</a></li> here once it exists. -->
+          </ul>
+        </nav>
+        <a class="btn btn-small btn-quiet" href="https://github.com/travist6983/rolehawk">
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+            <path
+              fill="currentColor"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Hero -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="wrap">
+          <p class="eyebrow">Free and open source <span aria-hidden="true">·</span> Runs on your computer</p>
+          <h1 id="hero-title">
+            Your job search,<br />
+            <em>on your computer.</em>
+          </h1>
+          <p class="lede">
+            RoleHawk is an AI job search copilot. It reads your resume, finds and ranks jobs from
+            company career pages and job boards, writes a tailored CV and cover letter for each one
+            without inventing anything, and tracks every application. Claude does the thinking. Your
+            data stays in a folder you own.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#install">Install it free</a>
+            <a class="btn btn-quiet" href="https://github.com/travist6983/rolehawk">View on GitHub</a>
+          </div>
+          <p class="fine">macOS, Windows, and Linux. MIT license. No account to make.</p>
+
+          <figure class="shot shot-hero">
+            <picture class="anim">
+              <source srcset="stills/hero.png" media="(prefers-reduced-motion: reduce)" />
+              <img
+                src="media/hero.gif"
+                data-anim="media/hero.gif"
+                data-still="stills/hero.png"
+                width="1440"
+                height="779"
+                fetchpriority="high"
+                alt="The RoleHawk pipeline board with applications from Saved to Offer. A card opens to its tailored application, with a CV preview and a fit score."
+              />
+            </picture>
+          </figure>
+          <p class="demo-note">
+            Every screen on this page shows made-up demo data: a fictional job seeker and fictional
+            companies.
+            <button class="link-btn" type="button" data-motion-toggle data-paused="false" hidden>
+              Pause animations
+            </button>
+          </p>
+        </div>
+      </section>
+
+      <!-- Three promises -->
+      <section class="promises" aria-label="What RoleHawk will and won't do">
+        <div class="wrap promise-grid">
+          <div class="promise">
+            <h2>Never invents a fact</h2>
+            <p>
+              Employers, titles, dates, degrees, and numbers come only from your profile. Three
+              checks flag anything that doesn't match before you use it.
+            </p>
+          </div>
+          <div class="promise">
+            <h2>Never submits for you</h2>
+            <p>
+              It drafts documents and can fill in an application form, then stops. You read it and
+              press submit yourself.
+            </p>
+          </div>
+          <div class="promise">
+            <h2>Never phones home</h2>
+            <p>
+              No RoleHawk account, server, analytics, or telemetry. It talks only to Claude on your
+              key and the job sources you turn on.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section id="features" class="features" aria-labelledby="features-title">
+        <div class="wrap">
+          <p class="eyebrow">What it does</p>
+          <h2 id="features-title" class="section-title">From a resume to an offer, in one place</h2>
+
+          <article class="feature">
+            <div class="feature-text">
+              <h3>Your whole search on one board</h3>
+              <p>
+                Every application moves from Saved to Offer, by drag or keyboard. Each card shows its
+                fit score and the one thing to do next: write the application, check a flagged line,
+                send a follow-up after ten quiet days, or prepare for an interview.
+              </p>
+            </div>
+            <figure class="shot">
+              <picture>
+                <source srcset="media/pipeline-dark.png" media="(prefers-color-scheme: dark)" />
+                <img
+                  src="media/pipeline.png"
+                  width="1440"
+                  height="900"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The Pipeline board: columns for Saved, Applying, Applied, Screen, Interview, Offer, and Closed, each card with a fit score and its next step."
+                />
+              </picture>
+            </figure>
+          </article>
+
+          <article class="feature">
+            <div class="feature-text">
+              <h3>Find and rank jobs that fit</h3>
+              <p>
+                RoleHawk searches Greenhouse, Lever, Ashby, and Workable boards for a watchlist of
+                companies you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS. Add any
+                careers page yourself. One fit rubric scores experience, skills, goals, and logistics,
+                explains every score, and shows the cost before it runs.
+              </p>
+            </div>
+            <figure class="shot">
+              <picture class="anim">
+                <source srcset="stills/discover.png" media="(prefers-reduced-motion: reduce)" />
+                <img
+                  src="media/discover.gif"
+                  data-anim="media/discover.gif"
+                  data-still="stills/discover.png"
+                  width="1440"
+                  height="779"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Discover: ranking new jobs, then opening one to see why it scored the way it did."
+                />
+              </picture>
+            </figure>
+          </article>
+
+          <article class="feature">
+            <div class="feature-text">
+              <h3>A tailored CV and cover letter, fact checked</h3>
+              <p>
+                One click writes both, as Word and PDF, from templates that applicant tracking systems
+                can read. Drafts pick your roles by reference, a fact check flags unknown numbers and
+                skills, and an AI review marks stretches and generic lines for you to fix or keep. It
+                checks the posting's requirements against your CV too.
+              </p>
+            </div>
+            <figure class="shot">
+              <picture class="anim">
+                <source srcset="stills/apply.png" media="(prefers-reduced-motion: reduce)" />
+                <img
+                  src="media/apply.gif"
+                  data-anim="media/apply.gif"
+                  data-still="stills/apply.png"
+                  width="1440"
+                  height="779"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Writing an application: the CV and cover letter appear, then two flagged lines are reviewed."
+                />
+              </picture>
+            </figure>
+          </article>
+
+          <article class="feature">
+            <div class="feature-text">
+              <h3>See what's working</h3>
+              <p>
+                Insights shows your funnel, response rate by source, weekly activity, and what you've
+                spent on Claude this month. Export a self-contained report to share with a mentor or
+                career coach.
+              </p>
+            </div>
+            <figure class="shot">
+              <img
+                src="media/insights.png"
+                width="1440"
+                height="900"
+                loading="lazy"
+                decoding="async"
+                alt="Insights: an application funnel, response rate by source, weekly activity, and AI spend for the month."
+              />
+            </figure>
+          </article>
+
+          <article class="feature">
+            <div class="feature-text">
+              <h3>Ask Claude from any screen</h3>
+              <p>
+                Chat knows your profile, your pipeline, and the page you're on. It remembers what you
+                tell it, like preferences, deal breakers, and stories, in plain markdown files, and
+                never changes them without your OK.
+              </p>
+            </div>
+            <figure class="shot">
+              <picture class="anim">
+                <source srcset="stills/chat.png" media="(prefers-reduced-motion: reduce)" />
+                <img
+                  src="media/chat.gif"
+                  data-anim="media/chat.gif"
+                  data-still="stills/chat.png"
+                  width="1440"
+                  height="779"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The chat drawer answering “What should I focus on today?” with three next steps from the pipeline."
+                />
+              </picture>
+            </figure>
+          </article>
+
+          <ul class="extras">
+            <li>
+              <strong>Builds your profile</strong> from a resume (PDF, Word, or text) or a LinkedIn
+              data export, then fills the gaps with a short interview. You review everything first.
+            </li>
+            <li>
+              <strong>Follow-ups</strong> drafted from what you actually sent, for you to send
+              yourself.
+            </li>
+            <li>
+              <strong>Learns from results.</strong> As replies and rejections come in, it suggests
+              changes to your preferences for you to accept or reject.
+            </li>
+            <li>
+              <strong>Light or dark</strong>, following your system. Backups and updates never touch
+              your data without a copy first.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Privacy -->
+      <section id="privacy" class="privacy" aria-labelledby="privacy-title">
+        <div class="wrap privacy-grid">
+          <div>
+            <p class="eyebrow eyebrow-dark">Local first, on purpose</p>
+            <h2 id="privacy-title" class="section-title">
+              Your resume, your pipeline, and your key stay with you
+            </h2>
+            <p class="privacy-lede">
+              A job search is personal. RoleHawk runs on your own computer and keeps everything in a
+              folder you can open, read, back up, or delete.
+            </p>
+          </div>
+          <ul class="checks">
+            <li>
+              <strong>Runs on 127.0.0.1.</strong> A random token in the launch link keeps other web
+              pages out of it.
+            </li>
+            <li>
+              <strong>Talks to a short list.</strong> Anthropic with your key, the job sources you
+              turn on, employer pages you open with autofill, and GitHub when you update. Settings
+              lists every one.
+            </li>
+            <li>
+              <strong>Your key goes in the keychain</strong> of your operating system, never a file.
+            </li>
+            <li>
+              <strong>Plain files.</strong> Your profile and memory are markdown, plus one SQLite
+              database. Copy the folder to move it.
+            </li>
+            <li>
+              <strong>Postings can't boss Claude around.</strong> Hidden text is stripped, and lines
+              aimed at AI tools are shown to you, never obeyed.
+            </li>
+            <li>
+              <strong>Open source.</strong> Read every line on GitHub under the MIT license.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="how" aria-labelledby="how-title">
+        <div class="wrap">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title" class="section-title">Running in about ten minutes</h2>
+          <ol class="steps">
+            <li>
+              <span class="step-num" aria-hidden="true">1</span>
+              <h3>Install with one line</h3>
+              <p>
+                About three minutes, no admin rights, and no Python or Node to set up yourself. It
+                opens in your browser when it's done.
+              </p>
+            </li>
+            <li>
+              <span class="step-num" aria-hidden="true">2</span>
+              <h3>Connect Claude</h3>
+              <p>
+                Make an API key on the Claude Platform, add $10 to $20 of credit, paste it in, and
+                set a monthly limit. The app walks you through it. Use Claude Code? Skip the key and
+                use the built-in skills.
+              </p>
+            </li>
+            <li>
+              <span class="step-num" aria-hidden="true">3</span>
+              <h3>Add your resume and search</h3>
+              <p>
+                Import a resume or LinkedIn export, review your profile, pick your target roles, and
+                let it find and rank jobs. Then write your first application.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Install -->
+      <section id="install" class="install" aria-labelledby="install-title">
+        <div class="wrap">
+          <p class="eyebrow">Install</p>
+          <h2 id="install-title" class="section-title">One line in a terminal</h2>
+          <div class="install-grid">
+            <div class="cmd">
+              <p class="cmd-label">macOS or Linux, in Terminal</p>
+              <div class="cmd-box">
+                <code id="cmd-unix">curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.sh | bash</code>
+                <button class="copy" type="button" data-copy="cmd-unix" hidden>Copy</button>
+              </div>
+            </div>
+            <div class="cmd">
+              <p class="cmd-label">Windows, in PowerShell</p>
+              <div class="cmd-box">
+                <code id="cmd-win">irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex</code>
+                <button class="copy" type="button" data-copy="cmd-win" hidden>Copy</button>
+              </div>
+            </div>
+          </div>
+          <p class="sr-status" role="status" aria-live="polite"></p>
+          <p class="install-note">
+            Everything installs in your home folder, and the installer checks the download's
+            checksum before unpacking it.
+            <a href="https://github.com/travist6983/rolehawk/tree/main/scripts">Read the scripts first</a>
+            if you like. Want to look around before setting it up?
+            <a href="https://github.com/travist6983/rolehawk#try-the-demo">Run the demo</a>, which
+            needs no API key.
+          </p>
+        </div>
+      </section>
+
+      <!-- Cost -->
+      <section id="cost" class="cost" aria-labelledby="cost-title">
+        <div class="wrap cost-grid">
+          <div>
+            <p class="eyebrow">What it costs</p>
+            <h2 id="cost-title" class="section-title">RoleHawk is free. Claude is pay as you go.</h2>
+            <p>
+              The AI runs on your own API key from the Claude Platform, so you pay Anthropic only for
+              what you use. Ranking uses Claude Haiku and costs cents. Writing applications uses
+              Claude Opus and is most of the bill.
+            </p>
+            <p>
+              Batch commands show an estimate before they run, Insights shows what you've spent, and a
+              monthly cap in Settings stops new AI calls when you reach it.
+            </p>
+          </div>
+          <div class="table-card">
+            <table>
+              <caption>
+                Rough monthly cost to Anthropic, by how you use it each week
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Each week</th>
+                  <th scope="col" class="num">Per month</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">
+                    <span class="row-name">Light</span>
+                    <span class="row-desc">20 jobs ranked, 3 applications, a little chat</span>
+                  </th>
+                  <td class="num">$3 to $6</td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                    <span class="row-name">Typical</span>
+                    <span class="row-desc">50 jobs ranked, 10 applications, some chat</span>
+                  </th>
+                  <td class="num">$12 to $25</td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                    <span class="row-name">Heavy</span>
+                    <span class="row-desc">200 jobs ranked, 25 applications, daily chat</span>
+                  </th>
+                  <td class="num">$30 to $60</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-note">
+              Estimates from the app's own pricing table. The range covers how much Claude thinks on
+              each task.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="faq" aria-labelledby="faq-title">
+        <div class="wrap faq-wrap">
+          <p class="eyebrow">Questions</p>
+          <h2 id="faq-title" class="section-title">FAQ</h2>
+
+          <details>
+            <summary>Is it really free?</summary>
+            <p>
+              Yes. RoleHawk is open source under the MIT license, with no paid plan and no account.
+              The only cost is the Claude usage you choose to run on your own API key, shown above.
+            </p>
+          </details>
+          <details>
+            <summary>Can I use my Claude Pro or Max subscription?</summary>
+            <p>
+              Not inside the app, because other apps can't sign in with a Claude subscription. If you
+              use Claude Code, though, you can run every RoleHawk command there through its skills,
+              and the reasoning happens in your Claude Code session.
+            </p>
+          </details>
+          <details>
+            <summary>Does it apply to jobs automatically?</summary>
+            <p>
+              No. It drafts documents and fills in forms, then stops so you can check everything and
+              press submit yourself.
+            </p>
+          </details>
+          <details>
+            <summary>Will it make things up on my CV?</summary>
+            <p>
+              It's built not to. Employers, titles, dates, degrees, certifications, and numbers come
+              only from your profile. Anything the checks can't match is highlighted for you before
+              you use the document.
+            </p>
+          </details>
+          <details>
+            <summary>Does it work without an API key?</summary>
+            <p>
+              Partly. Importing a LinkedIn export, the setup interview, job search, the pipeline,
+              insights, and reports all work. Reading a resume, ranking, writing, and chat need
+              Claude.
+            </p>
+          </details>
+          <details>
+            <summary>Does it search LinkedIn or Indeed?</summary>
+            <p>
+              Not yet. Searching them breaks their terms, so they'll come later as opt-in,
+              clearly marked experimental sources. Many of the same jobs are on the companies' own
+              boards, which RoleHawk does search.
+            </p>
+          </details>
+          <details>
+            <summary>Where is my data, and how do I move it?</summary>
+            <p>
+              In a RoleHawk folder in your home folder: your profile and memory as markdown files,
+              your documents, backups, and one SQLite database. Copy the folder to move it.
+            </p>
+          </details>
+          <details>
+            <summary>Which countries does it support?</summary>
+            <p>
+              Any. Job sources are filtered by the countries you search in, and Adzuna covers 19
+              countries when you add its free key.
+            </p>
+          </details>
+          <details>
+            <summary>Who makes it?</summary>
+            <p>
+              RoleHawk is built by
+              <a href="https://github.com/travist6983">Travis Terry</a>, a software engineer. It's
+              open source, so issues, ideas, and pull requests are welcome on
+              <a href="https://github.com/travist6983/rolehawk">GitHub</a>.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <!-- Closing call to action -->
+      <section class="closing" aria-labelledby="closing-title">
+        <div class="wrap closing-inner">
+          <h2 id="closing-title">Spend your time on the jobs worth it.</h2>
+          <div class="cta-row cta-center">
+            <a class="btn btn-primary" href="#install">Install it free</a>
+            <a class="btn btn-quiet btn-on-dark" href="https://github.com/travist6983/rolehawk">View on GitHub</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-row">
+        <p class="wordmark wordmark-small">RoleHawk</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/travist6983/rolehawk">GitHub</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/LICENSE">MIT license</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/DISCLAIMER.md">Disclaimer</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/SECURITY.md">Security</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/issues">Report an issue</a></li>
+          <!-- Comparison page: add <li><a href="compare.html">How it compares</a></li> here once it exists. -->
+        </ul>
+        <p class="footer-fine">
+          RoleHawk is an independent open source project, not affiliated with or endorsed by
+          Anthropic. Claude is a trademark of Anthropic. This page uses no cookies and no tracking.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
