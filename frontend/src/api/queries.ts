@@ -239,7 +239,7 @@ export function useApplyDraft() {
   const client = useQueryClient();
   const invalidate = useInvalidateProfile();
   return useMutation({
-    mutationFn: (edited: Schemas["ExtractedSetup"]) =>
+    mutationFn: (edited: Schemas["ApplyDraftIn"]) =>
       unwrap(api.POST("/api/setup/draft/apply", { body: edited })),
     onSuccess: () => {
       client.setQueryData(setupKeys.draft, null);

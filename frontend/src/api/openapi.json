@@ -1124,7 +1124,7 @@
           "setup"
         ],
         "summary": "Apply Draft",
-        "description": "Applies the stored draft, or the edited version the user reviewed.",
+        "description": "Applies the stored draft, or the edited version the user reviewed, with the version\npicked for each conflict.",
         "operationId": "apply_draft_api_setup_draft_apply_post",
         "requestBody": {
           "content": {
@@ -1132,7 +1132,7 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/ExtractedSetup"
+                    "$ref": "#/components/schemas/ApplyDraftIn"
                   },
                   {
                     "type": "null"
@@ -3516,6 +3516,27 @@
         ],
         "title": "ApplicationDetail"
       },
+      "ApplyDraftIn": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile-Input"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences-Input"
+          },
+          "resolutions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Resolutions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ApplyDraftIn",
+        "description": "The reviewed draft, plus the version picked for each conflict (option index by id).\nA conflict without a pick keeps the existing version."
+      },
       "ApplyMethod": {
         "type": "string",
         "enum": [
@@ -3650,6 +3671,12 @@
             },
             "type": "object",
             "title": "Updated"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved",
+            "description": "Conflicts settled with the user's pick",
+            "default": 0
           },
           "completeness": {
             "$ref": "#/components/schemas/Completeness"
@@ -4790,6 +4817,70 @@
           "missing"
         ],
         "title": "Completeness"
+      },
+      "Conflict": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "title",
+              "dates",
+              "degree",
+              "contact"
+            ],
+            "title": "Kind"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "subject",
+          "question",
+          "options"
+        ],
+        "title": "Conflict"
+      },
+      "ConflictOption": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "patch": {
+            "$ref": "#/components/schemas/Patch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "source",
+          "patch"
+        ],
+        "title": "ConflictOption"
       },
       "Contact-Input": {
         "properties": {
@@ -6072,6 +6163,20 @@
             "type": "array",
             "title": "Document Ids"
           },
+          "document_conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/Conflict"
+            },
+            "type": "array",
+            "title": "Document Conflicts"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/Conflict"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -6082,6 +6187,9 @@
         "required": [
           "profile",
           "preferences",
+          "document_ids",
+          "document_conflicts",
+          "conflicts",
           "created_at"
         ],
         "title": "Draft"
@@ -6492,18 +6600,6 @@
           "document_ids"
         ],
         "title": "ExtractIn"
-      },
-      "ExtractedSetup": {
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile-Input"
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/Preferences-Input"
-          }
-        },
-        "type": "object",
-        "title": "ExtractedSetup"
       },
       "FieldMap": {
         "properties": {
@@ -8498,6 +8594,59 @@
           "title"
         ],
         "title": "NormalizedJob"
+      },
+      "Patch": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "role",
+              "education",
+              "contact",
+              "none"
+            ],
+            "title": "Kind"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company",
+            "default": ""
+          },
+          "titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Titles"
+          },
+          "institution": {
+            "type": "string",
+            "title": "Institution",
+            "default": ""
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "Patch"
       },
       "PlanIn": {
         "properties": {

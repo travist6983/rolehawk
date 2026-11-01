@@ -478,7 +478,8 @@ export interface paths {
         put?: never;
         /**
          * Apply Draft
-         * @description Applies the stored draft, or the edited version the user reviewed.
+         * @description Applies the stored draft, or the edited version the user reviewed, with the version
+         *     picked for each conflict.
          */
         post: operations["apply_draft_api_setup_draft_apply_post"];
         delete?: never;
@@ -1356,6 +1357,19 @@ export interface components {
             history: components["schemas"]["StageEventView"][];
         };
         /**
+         * ApplyDraftIn
+         * @description The reviewed draft, plus the version picked for each conflict (option index by id).
+         *     A conflict without a pick keeps the existing version.
+         */
+        ApplyDraftIn: {
+            profile?: components["schemas"]["Profile-Input"];
+            preferences?: components["schemas"]["Preferences-Input"];
+            /** Resolutions */
+            resolutions?: {
+                [key: string]: number;
+            };
+        };
+        /**
          * ApplyMethod
          * @enum {string}
          */
@@ -1409,6 +1423,12 @@ export interface components {
             updated: {
                 [key: string]: number;
             };
+            /**
+             * Resolved
+             * @description Conflicts settled with the user's pick
+             * @default 0
+             */
+            resolved: number;
             completeness: components["schemas"]["Completeness"];
         };
         /** AtsCheck */
@@ -1775,6 +1795,30 @@ export interface components {
             score: number;
             /** Missing */
             missing: string[];
+        };
+        /** Conflict */
+        Conflict: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "title" | "dates" | "degree" | "contact";
+            /** Subject */
+            subject: string;
+            /** Question */
+            question: string;
+            /** Options */
+            options: components["schemas"]["ConflictOption"][];
+        };
+        /** ConflictOption */
+        ConflictOption: {
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            patch: components["schemas"]["Patch"];
         };
         /** Contact */
         "Contact-Input": {
@@ -2157,7 +2201,11 @@ export interface components {
             profile: components["schemas"]["Profile-Output"];
             preferences: components["schemas"]["Preferences-Output"];
             /** Document Ids */
-            document_ids?: number[];
+            document_ids: number[];
+            /** Document Conflicts */
+            document_conflicts: components["schemas"]["Conflict"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["Conflict"][];
             /**
              * Created At
              * Format: date-time
@@ -2287,11 +2335,6 @@ export interface components {
         ExtractIn: {
             /** Document Ids */
             document_ids: number[];
-        };
-        /** ExtractedSetup */
-        ExtractedSetup: {
-            profile?: components["schemas"]["Profile-Input"];
-            preferences?: components["schemas"]["Preferences-Input"];
         };
         /** FieldMap */
         FieldMap: {
@@ -3036,6 +3079,30 @@ export interface components {
             /** Closes At */
             closes_at?: string | null;
             integrity?: components["schemas"]["PostingIntegrity"] | null;
+        };
+        /** Patch */
+        Patch: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "role" | "education" | "contact" | "none";
+            /**
+             * Company
+             * @default
+             */
+            company: string;
+            /** Titles */
+            titles?: string[];
+            /**
+             * Institution
+             * @default
+             */
+            institution: string;
+            /** Values */
+            values?: {
+                [key: string]: string | boolean | null;
+            };
         };
         /** PlanIn */
         PlanIn: {
@@ -4748,7 +4815,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["ExtractedSetup"] | null;
+                "application/json": components["schemas"]["ApplyDraftIn"] | null;
             };
         };
         responses: {

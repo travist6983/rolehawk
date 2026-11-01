@@ -10,7 +10,13 @@ from offerbound.commands.runner import CommandStarted, run_command
 from offerbound.profile.documents import MAX_UPLOAD_BYTES, DocumentError
 from offerbound.profile.extraction import ExtractedSetup
 from offerbound.profile.interview import AnswerError, AnswerValue, InterviewState
-from offerbound.profile.setup import ApplyResult, DocumentView, Draft, NoDraftError
+from offerbound.profile.setup import (
+    ApplyDraftIn,
+    ApplyResult,
+    DocumentView,
+    Draft,
+    NoDraftError,
+)
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
@@ -85,10 +91,13 @@ async def discard_draft(runtime: RuntimeDep) -> Response:
 
 
 @router.post("/draft/apply")
-async def apply_draft(runtime: RuntimeDep, body: ExtractedSetup | None = None) -> ApplyResult:
-    """Applies the stored draft, or the edited version the user reviewed."""
+async def apply_draft(runtime: RuntimeDep, body: ApplyDraftIn | None = None) -> ApplyResult:
+    """Applies the stored draft, or the edited version the user reviewed, with the version
+    picked for each conflict."""
+    edited = ExtractedSetup(profile=body.profile, preferences=body.preferences) if body else None
+    picks = body.resolutions if body else {}
     try:
-        return await asyncio.to_thread(runtime.setup.apply_draft, body)
+        return await asyncio.to_thread(runtime.setup.apply_draft, edited, picks)
     except NoDraftError:
         raise HTTPException(status_code=404, detail="No setup draft to apply") from None
 
