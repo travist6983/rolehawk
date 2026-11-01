@@ -587,6 +587,8 @@ export type ApplyPlan = Schemas["ApplyPlan"];
 export type ApplicationDetail = Schemas["ApplicationDetail"];
 export type Bundle = Schemas["Bundle"];
 export type Flag = Schemas["Flag"];
+export type RequirementView = Schemas["RequirementView"];
+export type AtsReport = Schemas["AtsReport"];
 export type CvDocument = Schemas["CvDocument-Output"];
 export type CoverLetter = Schemas["CoverLetter-Output"];
 export type Stage = Schemas["Stage"];
@@ -653,6 +655,20 @@ export function useSaveDocuments(id: number) {
     mutationFn: (body: Schemas["DocumentsIn"]) =>
       unwrap(
         api.PUT("/api/applications/{application_id}/documents", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess,
+  });
+}
+
+export function useKeepFlag(id: number) {
+  const onSuccess = useSetApplication(id);
+  return useMutation({
+    mutationFn: (body: Schemas["FlagRef"]) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/flags/keep", {
           params: { path: { application_id: id } },
           body,
         }),

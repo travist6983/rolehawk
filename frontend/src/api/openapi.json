@@ -2699,6 +2699,59 @@
         }
       }
     },
+    "/api/applications/{application_id}/flags/keep": {
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Keep Flag",
+        "description": "Keep a flagged line as written; it stays hidden when the checks run again.",
+        "operationId": "keep_flag_api_applications__application_id__flags_keep_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagRef"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/applications/{application_id}/regenerate": {
       "post": {
         "tags": [
@@ -3320,6 +3373,54 @@
         ],
         "title": "ApplyResult"
       },
+      "AtsCheck": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "passed",
+          "detail"
+        ],
+        "title": "AtsCheck"
+      },
+      "AtsReport": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "docx"
+            ],
+            "title": "Source"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/AtsCheck"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "checks"
+        ],
+        "title": "AtsReport"
+      },
       "AutofillReport": {
         "properties": {
           "url": {
@@ -3477,6 +3578,30 @@
             "title": "Pdf Unavailable",
             "default": false
           },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementView"
+            },
+            "type": "array",
+            "title": "Requirements"
+          },
+          "ats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AtsReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kept": {
+            "items": {
+              "$ref": "#/components/schemas/FlagRef"
+            },
+            "type": "array",
+            "title": "Kept"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -3496,6 +3621,9 @@
           "model",
           "files",
           "pdf_unavailable",
+          "requirements",
+          "ats",
+          "kept",
           "updated_at"
         ],
         "title": "Bundle",
@@ -6206,6 +6334,37 @@
         ],
         "title": "Flag"
       },
+      "FlagRef": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "enum": [
+              "cv",
+              "cover_letter"
+            ],
+            "title": "Document"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document",
+          "location",
+          "text"
+        ],
+        "title": "FlagRef",
+        "description": "Which flag: the same document, line, and quoted text."
+      },
       "FormField": {
         "properties": {
           "name": {
@@ -8844,6 +9003,105 @@
           "size"
         ],
         "title": "ReportFile"
+      },
+      "RequirementView": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "title": "Requirement",
+            "description": "Short, as the posting says it: \"3+ years of SQL\""
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "required",
+              "preferred"
+            ],
+            "title": "Priority",
+            "description": "required, or preferred (nice to have)"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Terms",
+            "description": "The posting's own keywords for it, exactly as written, e.g. ['SQL']"
+          },
+          "also": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Also",
+            "description": "Other names for the same thing, e.g. ['Amazon Web Services'] for 'AWS'"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "covered",
+                  "synonym",
+                  "missing_have",
+                  "gap"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "matched": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched",
+            "description": "The term found in the CV"
+          },
+          "addressed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Addressed",
+            "description": "From the AI review"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement",
+          "priority",
+          "terms",
+          "also",
+          "keyword",
+          "matched",
+          "addressed",
+          "note"
+        ],
+        "title": "RequirementView",
+        "description": "A requirement with what the checks found: keyword coverage in the CV's text layer\nand, from the AI review, whether the documents address it."
       },
       "ResetIn": {
         "properties": {

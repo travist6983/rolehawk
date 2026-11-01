@@ -17,7 +17,7 @@ from offerbound.apply.drafts import (
     indexed_profile,
 )
 from offerbound.apply.review import REVIEW_RULES
-from offerbound.apply.service import ApplyParams, DocumentsIn, StagePatch
+from offerbound.apply.service import ApplyParams, DocumentsIn, FlagRef, StagePatch
 from offerbound.apply.style import check_style, polish
 from offerbound.apply.truth import check_cv, check_letter
 from offerbound.commands.registry import CommandContext, CommandRegistry, CommandSpec
@@ -52,6 +52,10 @@ class RegenerateParams(BaseModel):
     instruction: str | None = Field(default=None, max_length=1_000)
 
 
+class KeepFlagParams(FlagRef):
+    application_id: int
+
+
 class SaveDraftParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
     job_id: int
@@ -82,6 +86,12 @@ async def _update(ctx: CommandContext, params: UpdateParams) -> dict[str, Any]:
 async def _documents(ctx: CommandContext, params: DocumentsParams) -> dict[str, Any]:
     edits = DocumentsIn(cv=params.cv, cover_letter=params.cover_letter)
     detail = await ctx.runtime.applications.save_documents(params.application_id, edits)
+    return detail.model_dump(mode="json")
+
+
+async def _keep_flag(ctx: CommandContext, params: KeepFlagParams) -> dict[str, Any]:
+    ref = FlagRef(document=params.document, location=params.location, text=params.text)
+    detail = await asyncio.to_thread(ctx.runtime.applications.keep_flag, params.application_id, ref)
     return detail.model_dump(mode="json")
 
 
@@ -131,7 +141,7 @@ async def _apply_save(ctx: CommandContext, params: SaveDraftParams) -> dict[str,
     application_id = await asyncio.to_thread(service.ensure_application, job.id)
     fit = await asyncio.to_thread(service.latest_fit, job.id)
     bundle = await service.render_documents(
-        application_id, job.id, cv, letter, flags, fit, EXTERNAL_MODEL
+        application_id, job.id, cv, letter, flags, fit, EXTERNAL_MODEL, params.draft.requirements
     )
     return {
         "application_id": application_id,
@@ -186,6 +196,16 @@ def register_apply(registry: CommandRegistry) -> None:
             "and re-renders the files.",
             _documents,
             DocumentsParams,
+            read_only=False,
+        )
+    )
+    registry.register(
+        CommandSpec(
+            "application-keep-flag",
+            "Keep a flagged line as written (stretch, style, or skipped-requirement flags only; "
+            "unsupported facts must be fixed).",
+            _keep_flag,
+            KeepFlagParams,
             read_only=False,
         )
     )

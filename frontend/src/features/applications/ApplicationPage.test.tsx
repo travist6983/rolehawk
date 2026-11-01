@@ -184,6 +184,70 @@ describe("Application page", () => {
     expect(screen.queryByText("1 line to check")).not.toBeInTheDocument();
   });
 
+  it("shows requirements and the ATS check on the Checks tab", async () => {
+    server.use(http.get("/api/applications/7", () => HttpResponse.json(applicationDetail())));
+    const { user } = await renderApp("/applications/7");
+    await user.click(await screen.findByRole("tab", { name: "Checks" }));
+    const table = screen.getByRole("table");
+    const rows = within(table).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("SQL");
+    expect(rows[1]).toHaveTextContent("Matched");
+    expect(rows[2]).toHaveTextContent("Not in your profile");
+    expect(rows[2]).toHaveTextContent("Skipped");
+    const ats = screen.getByRole("region", { name: "How an ATS reads your CV" });
+    expect(ats).toHaveTextContent("Plain hyphens in dates (failed)");
+    expect(ats).toHaveTextContent("Readable text (passed)");
+  });
+
+  it("keeps, softens, or drops a stretch", async () => {
+    const stretch = {
+      document: "cv" as const,
+      location: "experience.0.bullets.1",
+      text: "Cut reporting time in half",
+      issue: "The profile says you helped; 'cut' claims it alone.",
+      source: "review" as const,
+      kind: "stretch" as const,
+    };
+    let kept: unknown = null;
+    server.use(
+      http.get("/api/applications/7", () =>
+        HttpResponse.json(applicationDetail({ documents: bundle({ flags: [stretch] }) })),
+      ),
+      http.post("/api/applications/7/flags/keep", async ({ request }) => {
+        kept = await request.json();
+        return HttpResponse.json(applicationDetail({ documents: bundle({ flags: [] }) }));
+      }),
+    );
+    const { user } = await renderApp("/applications/7");
+    const flag = await screen.findByText(/Stretch:/);
+    const item = flag.closest("li");
+    if (!item) throw new Error("no flag item");
+
+    await user.click(within(item).getByRole("button", { name: "Soften" }));
+    expect(screen.getByLabelText("What should change? (optional)")).toHaveValue(
+      `Soften this line so I can defend it in an interview: "Cut reporting time in half" (${stretch.issue})`,
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await user.click(within(item).getByRole("button", { name: "Drop line" }));
+    expect(screen.getByLabelText(/Data Analyst, Northwind/)).toHaveValue(
+      "Built the revenue dashboard",
+    );
+    expect(screen.getByRole("button", { name: "Save and update files" })).toBeEnabled();
+
+    await user.click(within(item).getByRole("button", { name: "Keep as written" }));
+    await waitFor(() => {
+      expect(kept).toEqual({
+        document: "cv",
+        location: "experience.0.bullets.1",
+        text: "Cut reporting time in half",
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/Stretch:/)).not.toBeInTheDocument();
+    });
+  });
+
   it("switches to the cover letter", async () => {
     server.use(http.get("/api/applications/7", () => HttpResponse.json(applicationDetail())));
     const { user } = await renderApp("/applications/7");

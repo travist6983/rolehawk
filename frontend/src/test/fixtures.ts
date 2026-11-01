@@ -523,6 +523,40 @@ export const bundle = (overrides: Partial<Bundle> = {}): Bundle => ({
     cover_letter: { pdf: "/data/7/ada-example-cover-letter.pdf" },
   },
   pdf_unavailable: false,
+  requirements: [
+    {
+      requirement: "SQL",
+      priority: "required",
+      terms: ["SQL"],
+      also: [],
+      keyword: "covered",
+      matched: "SQL",
+      addressed: true,
+      note: "Shown in the Northwind role.",
+    },
+    {
+      requirement: "dbt",
+      priority: "required",
+      terms: ["dbt"],
+      also: ["data build tool"],
+      keyword: "gap",
+      matched: null,
+      addressed: false,
+      note: "Neither document mentions dbt.",
+    },
+  ],
+  ats: {
+    source: "pdf",
+    checks: [
+      { name: "Readable text", passed: true, detail: "The text layer extracts cleanly." },
+      {
+        name: "Plain hyphens in dates",
+        passed: false,
+        detail: "Dates joined by a typographic dash can be dropped on import: 2021 – 2023",
+      },
+    ],
+  },
+  kept: [],
   updated_at: "2026-10-31T12:00:00Z",
   ...overrides,
 });

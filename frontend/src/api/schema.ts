@@ -1031,6 +1031,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/applications/{application_id}/flags/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep Flag
+         * @description Keep a flagged line as written; it stays hidden when the checks run again.
+         */
+        post: operations["keep_flag_api_applications__application_id__flags_keep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/applications/{application_id}/regenerate": {
         parameters: {
             query?: never;
@@ -1293,6 +1313,25 @@ export interface components {
             };
             completeness: components["schemas"]["Completeness"];
         };
+        /** AtsCheck */
+        AtsCheck: {
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: boolean;
+            /** Detail */
+            detail: string;
+        };
+        /** AtsReport */
+        AtsReport: {
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "pdf" | "docx";
+            /** Checks */
+            checks: components["schemas"]["AtsCheck"][];
+        };
         /** AutofillReport */
         AutofillReport: {
             /** Url */
@@ -1352,6 +1391,11 @@ export interface components {
              * @default false
              */
             pdf_unavailable: boolean;
+            /** Requirements */
+            requirements: components["schemas"]["RequirementView"][];
+            ats: components["schemas"]["AtsReport"] | null;
+            /** Kept */
+            kept: components["schemas"]["FlagRef"][];
             /**
              * Updated At
              * Format: date-time
@@ -2211,6 +2255,21 @@ export interface components {
              * @enum {string}
              */
             kind: "unsupported" | "stretch" | "unaddressed" | "style" | "ats";
+        };
+        /**
+         * FlagRef
+         * @description Which flag: the same document, line, and quoted text.
+         */
+        FlagRef: {
+            /**
+             * Document
+             * @enum {string}
+             */
+            document: "cv" | "cover_letter";
+            /** Location */
+            location: string;
+            /** Text */
+            text: string;
         };
         /** FormField */
         FormField: {
@@ -3138,6 +3197,48 @@ export interface components {
             path: string;
             /** Size */
             size: number;
+        };
+        /**
+         * RequirementView
+         * @description A requirement with what the checks found: keyword coverage in the CV's text layer
+         *     and, from the AI review, whether the documents address it.
+         */
+        RequirementView: {
+            /**
+             * Requirement
+             * @description Short, as the posting says it: "3+ years of SQL"
+             */
+            requirement: string;
+            /**
+             * Priority
+             * @description required, or preferred (nice to have)
+             * @enum {string}
+             */
+            priority: "required" | "preferred";
+            /**
+             * Terms
+             * @description The posting's own keywords for it, exactly as written, e.g. ['SQL']
+             */
+            terms: string[];
+            /**
+             * Also
+             * @description Other names for the same thing, e.g. ['Amazon Web Services'] for 'AWS'
+             */
+            also: string[];
+            /** Keyword */
+            keyword: ("covered" | "synonym" | "missing_have" | "gap") | null;
+            /**
+             * Matched
+             * @description The term found in the CV
+             */
+            matched: string | null;
+            /**
+             * Addressed
+             * @description From the AI review
+             */
+            addressed: boolean | null;
+            /** Note */
+            note: string | null;
         };
         /** ResetIn */
         ResetIn: {
@@ -5425,6 +5526,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DocumentsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    keep_flag_api_applications__application_id__flags_keep_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlagRef"];
             };
         };
         responses: {

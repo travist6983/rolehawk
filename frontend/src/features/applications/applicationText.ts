@@ -1,6 +1,13 @@
 /** Pure helpers for /apply and the application screen. */
 
-import type { Flag, Stage } from "@/api/queries";
+import type {
+  CoverLetter,
+  CvDocument,
+  Flag,
+  RegenerateSection,
+  RequirementView,
+  Stage,
+} from "@/api/queries";
 
 export const STAGE_LABELS: Record<Stage, string> = {
   saved: "Saved",
@@ -78,3 +85,62 @@ export function readOutcome(result: unknown): ApplyOutcome | null {
     fit: r.fit,
   };
 }
+
+/** The part of the documents a "Rewrite" redoes for a flagged line. */
+export function sectionFor(flag: Flag): RegenerateSection | null {
+  if (flag.document === "cover_letter") return "cover_letter";
+  if (flag.location === "headline" || flag.location === "summary") return "summary";
+  if (/^(experience|projects)\./.test(flag.location)) return "experience";
+  if (flag.location === "skills" || flag.location.startsWith("skills.")) return "skills";
+  return null;
+}
+
+/** Only single bullets and paragraphs can be dropped in one click. */
+export function canDrop(flag: Flag): boolean {
+  return /^experience\.\d+\.bullets\.\d+$|^paragraphs\.\d+$/.test(flag.location);
+}
+
+/** The documents without the flagged bullet or paragraph (unchanged if it already moved). */
+export function dropLine(
+  cv: CvDocument,
+  letter: CoverLetter,
+  flag: Flag,
+): { cv: CvDocument; letter: CoverLetter } {
+  const bullet = /^experience\.(\d+)\.bullets\.(\d+)$/.exec(flag.location);
+  if (flag.document === "cv" && bullet) {
+    const [role, line] = [Number(bullet[1]), Number(bullet[2])];
+    const experience = cv.experience.map((r, i) =>
+      i === role && r.bullets[line] === flag.text
+        ? { ...r, bullets: r.bullets.filter((_, j) => j !== line) }
+        : r,
+    );
+    return { cv: { ...cv, experience }, letter };
+  }
+  const paragraph = /^paragraphs\.(\d+)$/.exec(flag.location);
+  if (flag.document === "cover_letter" && paragraph) {
+    const at = Number(paragraph[1]);
+    if (letter.paragraphs[at] !== flag.text) return { cv, letter };
+    return { cv, letter: { ...letter, paragraphs: letter.paragraphs.filter((_, i) => i !== at) } };
+  }
+  return { cv, letter };
+}
+
+/** The instruction "Soften" pre-fills for a stretch. */
+export function softenInstruction(flag: Flag): string {
+  const line = flag.text.length > 300 ? `${flag.text.slice(0, 297)}…` : flag.text;
+  return `Soften this line so I can defend it in an interview: "${line}" (${flag.issue})`.slice(
+    0,
+    1000,
+  );
+}
+
+/** Keyword coverage from the ATS check, in plain words. */
+export const KEYWORD_STATUS: Record<
+  NonNullable<RequirementView["keyword"]>,
+  { label: string; tone: string }
+> = {
+  covered: { label: "Matched", tone: "text-score-high" },
+  synonym: { label: "Only under another name", tone: "text-caution" },
+  missing_have: { label: "In your profile, not in this CV", tone: "text-destructive" },
+  gap: { label: "Not in your profile", tone: "text-muted-foreground" },
+};

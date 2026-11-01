@@ -29,6 +29,7 @@ import { safeUrl, whereText } from "@/features/discover/discoverText";
 import { timeAgo } from "@/lib/format";
 
 import { STAGE_LABELS } from "./applicationText";
+import { ChecksTab } from "./ChecksTab";
 import { DocumentsTab, type Doc } from "./DocumentsTab";
 
 function AutofillResult({ report }: { report: AutofillReport }) {
@@ -204,6 +205,7 @@ export default function ApplicationPage() {
       <Tabs defaultValue={detail.documents ? "documents" : "job"} className="gap-4 p-6">
         <TabsList>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          {detail.documents && <TabsTrigger value="checks">Checks</TabsTrigger>}
           <TabsTrigger value="job">Job</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
@@ -222,6 +224,11 @@ export default function ApplicationPage() {
             </p>
           )}
         </TabsContent>
+        {detail.documents && (
+          <TabsContent value="checks">
+            <ChecksTab bundle={detail.documents} />
+          </TabsContent>
+        )}
         <TabsContent value="job">
           <JobTab detail={detail} />
         </TabsContent>

@@ -16,6 +16,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from offerbound.apply.ats import (
+    AtsReport,
+    PostingRequirement,
+    RequirementView,
+    check_flags,
+    coverage,
+    cv_text,
+    missing_flags,
+    parse_checks,
+)
 from offerbound.apply.autofill import Autofiller, AutofillReport, applicant_from
 from offerbound.apply.drafts import (
     WRITER_RULES,
@@ -55,6 +65,7 @@ from offerbound.profile.model import Profile
 from offerbound.rendering.model import CoverLetter, CvDocument, DocumentKind
 from offerbound.rendering.pdf import PdfUnavailableError
 from offerbound.rendering.service import FORMATS, DocumentService, Format
+from offerbound.rendering.text import docx_text, pdf_text
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +124,27 @@ class DocumentFiles(BaseModel):
     cover_letter: dict[Format, str] = Field(default_factory=dict)
 
 
+class FlagRef(BaseModel):
+    """Which flag: the same document, line, and quoted text."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    document: Literal["cv", "cover_letter"]
+    location: str = Field(max_length=200)
+    text: str = Field(max_length=5_000)
+
+    @classmethod
+    def of(cls, flag: Flag) -> FlagRef:
+        return cls(document=flag.document, location=flag.location, text=flag.text)
+
+
+class KeepFlagError(ValueError):
+    user_message = "Facts your profile doesn't support can't be kept; fix the line or the profile."
+
+
+KEEPABLE = {"stretch", "style", "unaddressed"}
+
+
 class Bundle(BaseModel):
     """application.json: the documents as data, their review flags, and their files."""
 
@@ -129,6 +161,12 @@ class Bundle(BaseModel):
     model: str | None
     files: DocumentFiles
     pdf_unavailable: bool = False
+    # The posting's requirements with keyword coverage and the review's verdicts, and the
+    # ATS check of the rendered CV (apply/ats.py).
+    requirements: list[RequirementView] = Field(default_factory=list)
+    ats: AtsReport | None = None
+    # Flags the user chose to keep as written; they stay hidden when the checks run again.
+    kept: list[FlagRef] = Field(default_factory=list)
     updated_at: datetime
 
 
@@ -174,6 +212,7 @@ def _review_flags(result: ReviewResult) -> list[Flag]:
                 text=item.text,
                 issue=item.issue,
                 source="review",
+                kind="style" if item.kind == "generic" else item.kind,
             )
         )
     return flags
@@ -295,9 +334,9 @@ class ApplyService:
             raise ProfileIncompleteError("no experience in profile")
 
         await progress(0.2, "Writing your tailored CV and cover letter")
-        cv, letter, model = await self._draft(job, profile, task_id, progress)
-        await progress(0.7, "Fact-checking against your profile")
-        flags = await self._review(job, profile, cv, letter, task_id)
+        cv, letter, model, requirements = await self._draft(job, profile, task_id, progress)
+        await progress(0.7, "Reviewing against your profile and the posting")
+        flags, views = await self._review(job, profile, cv, letter, requirements, task_id)
 
         await progress(0.85, "Creating Word and PDF files")
         application_id = await asyncio.to_thread(self.ensure_application, job.id)
@@ -311,6 +350,7 @@ class ApplyService:
             model,
             params.cv_template,
             params.cover_template,
+            views,
         )
         await asyncio.to_thread(self._record_files, application_id, bundle)
         return ApplyOutcome(
@@ -323,7 +363,7 @@ class ApplyService:
 
     async def _draft(
         self, job: Job, profile: Profile, task_id: str | None, progress: Progress
-    ) -> tuple[CvDocument, CoverLetter, str]:
+    ) -> tuple[CvDocument, CoverLetter, str, list[PostingRequirement]]:
         system = self._system(WRITER_RULES)
         messages = [Message(role="user", text=draft_prompt(job, profile))]
         result = await self._llm.structured_result(
@@ -340,8 +380,9 @@ class ApplyService:
             check_cv(cv, profile)
             + check_letter(letter, profile, job.description)
             + check_style(cv, letter)
+            + missing_flags(coverage(draft.requirements, cv_text(cv), profile), False)
         )
-        if problems:  # one revision round with the fact and style checks' findings
+        if problems:  # one revision round with the fact, style, and keyword checks' findings
             await progress(0.5, "Fixing details your profile doesn't support")
             messages += [
                 Message(role="assistant", text=draft.model_dump_json()),
@@ -358,11 +399,13 @@ class ApplyService:
                 schema=ApplicationDraft,
                 task_id=task_id,
             )
+            requirements = draft.requirements
             draft = revised.value
+            draft.requirements = draft.requirements or requirements
             cv = build_cv(profile, draft.cv)
             letter = build_letter(profile, job, draft.cover_letter)
         cv, letter = polish(cv, letter)
-        return cv, letter, result.model
+        return cv, letter, result.model, draft.requirements
 
     async def _review(
         self,
@@ -370,8 +413,9 @@ class ApplyService:
         profile: Profile,
         cv: CvDocument,
         letter: CoverLetter,
+        requirements: list[PostingRequirement],
         task_id: str | None,
-    ) -> list[Flag]:
+    ) -> tuple[list[Flag], list[RequirementView]]:
         flags = (
             check_cv(cv, profile)
             + check_letter(letter, profile, job.description)
@@ -381,13 +425,37 @@ class ApplyService:
             command="apply",
             task=Task.REVIEW,
             system=self._system(REVIEW_RULES),
-            messages=[Message(role="user", text=review_prompt(job_brief(job), cv, letter))],
+            messages=[
+                Message(role="user", text=review_prompt(job_brief(job), cv, letter, requirements))
+            ],
             schema=ReviewResult,
             task_id=task_id,
         )
         checked = {(f.document, f.location) for f in flags}
         flags += [f for f in _review_flags(review) if (f.document, f.location) not in checked]
-        return flags
+        verdicts = {r.index: r for r in review.requirements}
+        views: list[RequirementView] = []
+        for i, req in enumerate(requirements):
+            verdict = verdicts.get(i)
+            view = RequirementView(
+                **req.model_dump(),
+                addressed=verdict.addressed if verdict else None,
+                note=verdict.note.strip() if verdict and verdict.note.strip() else None,
+            )
+            views.append(view)
+            if view.addressed is False and view.priority == "required":
+                flags.append(
+                    Flag(
+                        document="cover_letter",
+                        location=f"requirements.{i}",
+                        text=view.requirement,
+                        issue=view.note
+                        or "Neither document addresses this. Show it, or name the gap honestly.",
+                        source="review",
+                        kind="unaddressed",
+                    )
+                )
+        return flags, views
 
     async def _render(
         self,
@@ -400,6 +468,7 @@ class ApplyService:
         model: str | None,
         cv_template: str | None,
         cover_template: str | None,
+        requirements: list[RequirementView],
     ) -> Bundle:
         docs = self._documents
         folder = self.folder(application_id)
@@ -416,6 +485,15 @@ class ApplyService:
         cover_files = await docs.write(
             letter, folder, f"{name} cover letter", cover_manifest.id, formats
         )
+        cv_paths = {f.format: f.path for f in cv_files.files}
+        ats, views = await asyncio.to_thread(self._ats_check, cv, cv_paths, requirements)
+        previous = await asyncio.to_thread(self.load_bundle, application_id)
+        kept = previous.kept if previous else []
+        flags = [
+            f
+            for f in [*flags, *check_flags(ats.checks), *missing_flags(views, required_only=True)]
+            if FlagRef.of(f) not in kept
+        ]
         bundle = Bundle(
             job_id=job_id,
             cv=cv,
@@ -426,14 +504,36 @@ class ApplyService:
             fit=fit,
             model=model,
             files=DocumentFiles(
-                cv={f.format: f.path for f in cv_files.files},
+                cv=cv_paths,
                 cover_letter={f.format: f.path for f in cover_files.files},
             ),
             pdf_unavailable=pdf_unavailable,
+            requirements=views,
+            ats=ats,
+            kept=kept,
             updated_at=utcnow(),
         )
         await asyncio.to_thread(self._save_bundle, application_id, bundle)
         return bundle
+
+    def _ats_check(
+        self,
+        cv: CvDocument,
+        paths: dict[Format, str],
+        requirements: list[RequirementView],
+    ) -> tuple[AtsReport, list[RequirementView]]:
+        """Read the rendered CV back the way an ATS would, and score keyword coverage."""
+        if "pdf" in paths:
+            source: Literal["pdf", "docx"] = "pdf"
+            text = pdf_text(Path(paths["pdf"]).read_bytes())
+        else:
+            source, text = "docx", docx_text(Path(paths["docx"]).read_bytes())
+        found = coverage(list(requirements), text, self._load_profile())
+        views = [
+            v.model_copy(update={"addressed": old.addressed, "note": old.note})
+            for v, old in zip(found, requirements, strict=True)
+        ]
+        return AtsReport(source=source, checks=parse_checks(cv, text)), views
 
     async def render_documents(
         self,
@@ -444,10 +544,12 @@ class ApplyService:
         flags: list[Flag],
         fit: FitView | None,
         model: str | None,
+        requirements: list[PostingRequirement] | None = None,
     ) -> Bundle:
         """Render with the chosen templates, save the bundle, and link the files."""
+        views = [RequirementView(**r.model_dump()) for r in requirements or []]
         bundle = await self._render(
-            application_id, job_id, cv, letter, flags, fit, model, None, None
+            application_id, job_id, cv, letter, flags, fit, model, None, None, views
         )
         await asyncio.to_thread(self._record_files, application_id, bundle)
         return bundle
@@ -560,6 +662,21 @@ class ApplyService:
             raise KeyError(application_id)
         return bundle
 
+    def keep_flag(self, application_id: int, ref: FlagRef) -> ApplicationDetail:
+        """The user keeps a flagged line as written (a stretch they can defend, a phrase they
+        like, a requirement they'll cover in the interview). Unsupported facts can't be kept."""
+        bundle = self._require_bundle(application_id)
+        match = [f for f in bundle.flags if FlagRef.of(f) == ref]
+        if not match:
+            raise KeyError("flag")
+        if any(f.kind not in KEEPABLE for f in match):
+            raise KeepFlagError(ref.location)
+        bundle.flags = [f for f in bundle.flags if FlagRef.of(f) != ref]
+        if ref not in bundle.kept:
+            bundle.kept.append(ref)
+        self._save_bundle(application_id, bundle)
+        return self.detail(application_id)
+
     async def save_documents(self, application_id: int, edits: DocumentsIn) -> ApplicationDetail:
         """Hand edits: re-run the fact check, keep AI review flags whose text is still there,
         and re-render."""
@@ -578,7 +695,9 @@ class ApplyService:
         flags += [
             f
             for f in bundle.flags
-            if f.source == "review" and f.text in text and (f.document, f.location) not in checked
+            if f.source == "review"
+            and (f.text in text or f.kind == "unaddressed")  # until the next AI review
+            and (f.document, f.location) not in checked
         ]
         new = await self._render(
             application_id,
@@ -590,6 +709,7 @@ class ApplyService:
             bundle.model,
             bundle.cv_template,
             bundle.cover_template,
+            bundle.requirements,
         )
         await asyncio.to_thread(self._record_files, application_id, new)
         return await asyncio.to_thread(self.detail, application_id)
@@ -636,8 +756,12 @@ class ApplyService:
             else bundle.cover_letter
         )
         cv, letter = polish(cv, letter, section)
-        await progress(0.6, "Fact-checking against your profile")
-        flags = await self._review(job, profile, cv, letter, task_id)
+        requirements: list[PostingRequirement] = [
+            PostingRequirement(**r.model_dump(include=set(PostingRequirement.model_fields)))
+            for r in bundle.requirements
+        ] or new.requirements
+        await progress(0.6, "Reviewing against your profile and the posting")
+        flags, views = await self._review(job, profile, cv, letter, requirements, task_id)
         await progress(0.85, "Creating Word and PDF files")
         rendered = await self._render(
             application_id,
@@ -649,6 +773,7 @@ class ApplyService:
             result.model,
             bundle.cv_template,
             bundle.cover_template,
+            views,
         )
         await asyncio.to_thread(self._record_files, application_id, rendered)
         return ApplyOutcome(

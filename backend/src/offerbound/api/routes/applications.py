@@ -16,6 +16,8 @@ from offerbound.apply.service import (
     ApplyParams,
     ApplyPlan,
     DocumentsIn,
+    FlagRef,
+    KeepFlagError,
     StagePatch,
     UnknownJobError,
 )
@@ -86,6 +88,17 @@ async def save_documents(
     """Hand edits to the CV or cover letter: fact-checked and re-rendered."""
     try:
         return await runtime.applications.save_documents(application_id, body)
+    except KeyError:
+        raise _not_found() from None
+
+
+@router.post("/api/applications/{application_id}/flags/keep")
+async def keep_flag(application_id: int, body: FlagRef, runtime: RuntimeDep) -> ApplicationDetail:
+    """Keep a flagged line as written; it stays hidden when the checks run again."""
+    try:
+        return await asyncio.to_thread(runtime.applications.keep_flag, application_id, body)
+    except KeepFlagError:
+        raise HTTPException(status_code=409, detail=KeepFlagError.user_message) from None
     except KeyError:
         raise _not_found() from None
 

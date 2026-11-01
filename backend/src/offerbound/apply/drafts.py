@@ -10,6 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from offerbound.apply.ats import PostingRequirement
 from offerbound.db.models import Job
 from offerbound.llm.prompting import TRUTHFULNESS_RULES, UNTRUSTED_RULES, untrusted
 from offerbound.profile.model import Profile
@@ -57,6 +58,10 @@ class LetterDraft(BaseModel):
 
 
 class ApplicationDraft(BaseModel):
+    requirements: list[PostingRequirement] = Field(
+        default_factory=list,
+        description="Every requirement the posting states, required first",
+    )
     cv: CvDraft
     cover_letter: LetterDraft
 
@@ -75,6 +80,18 @@ you never add facts:
   would have to say "well, what I actually meant was...", it goes too far. Don't describe
   adjacent work in the posting's exact terms, and don't merge study and industry work into
   one claim.
+
+Cover every requirement:
+- First list each requirement the posting states in `requirements` (required ones first),
+  with the posting's own keywords for it, exactly as written, and any other common names.
+- Address each one, matched or honestly gapped, never silently skipped: show the evidence
+  from the profile, or, when the profile lacks it, acknowledge it briefly in the cover
+  letter with a bridge from related experience ("not in my daily toolkit yet; it builds on
+  my work with X"). Omissions read as hiding once an interviewer asks.
+- Use the posting's own term instead of a synonym wherever the profile supports it in those
+  words, including the CV headline and skills: ATS keyword matching is often literal.
+- Mention logistics the posting raises (start date, location, clearance willingness, a
+  reference number) in the cover letter when the profile or preferences answer them.
 
 How to write (recruiters skim, and they read clichés as AI-written):
 - Show, don't claim: back each strength with a specific example, tool, or result from the
