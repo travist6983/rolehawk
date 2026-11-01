@@ -131,6 +131,12 @@ class MemoryProposalStatus(StrEnum):
     CONFLICT = "conflict"  # the file changed and the edit no longer applies
 
 
+class FollowUpChannel(StrEnum):
+    EMAIL = "email"
+    LINKEDIN = "linkedin"
+    PORTAL = "portal"
+
+
 class TaskStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
@@ -299,6 +305,22 @@ class Interview(TimestampMixin, Base):
     prep_pack_path: Mapped[str | None] = mapped_column(Text)
     mock_transcript_path: Mapped[str | None] = mapped_column(Text)
     self_rating: Mapped[int | None] = mapped_column(Integer)
+
+
+class FollowUp(Base):
+    """A follow-up note the user sent on a quiet application (logged when they confirm;
+    the app never sends anything)."""
+
+    __tablename__ = "follow_ups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), index=True
+    )
+    channel: Mapped[FollowUpChannel] = mapped_column(str_enum(FollowUpChannel))
+    subject: Mapped[str | None] = mapped_column(String(300))
+    body: Mapped[str] = mapped_column(Text)
+    sent_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class Outcome(Base):

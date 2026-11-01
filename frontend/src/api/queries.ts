@@ -737,6 +737,77 @@ export function usePipeline() {
   });
 }
 
+export type QuietApplication = Schemas["QuietApplication"];
+export type FollowUpDraft = Schemas["FollowUpDraft"];
+export type FollowUpChannel = Schemas["FollowUpIn"]["channel"];
+
+export const followUpKeys = {
+  stale: ["followups", "stale"] as const,
+  history: (id: number) => ["followups", "history", id] as const,
+};
+
+export function useStaleApplications() {
+  return useQuery({
+    queryKey: followUpKeys.stale,
+    queryFn: () => unwrap(api.GET("/api/followups/stale")),
+  });
+}
+
+export function useFollowUpHistory(id: number) {
+  return useQuery({
+    queryKey: followUpKeys.history(id),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/applications/{application_id}/followups", {
+          params: { path: { application_id: id } },
+        }),
+      ),
+  });
+}
+
+/** A draft from the documents already sent. Nothing is sent. */
+export function useDraftFollowUp(id: number) {
+  return useMutation({
+    mutationFn: (channel: NonNullable<FollowUpChannel>) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/followups/draft", {
+          params: { path: { application_id: id } },
+          body: { channel },
+        }),
+      ),
+  });
+}
+
+/** Record a follow-up the user sent; the pipeline's next action updates. */
+export function useLogFollowUp(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Schemas["FollowUpIn"]) =>
+      unwrap(
+        api.POST("/api/applications/{application_id}/followups", {
+          params: { path: { application_id: id } },
+          body,
+        }),
+      ),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: pipelineKeys.board });
+      void client.invalidateQueries({ queryKey: ["followups"] });
+    },
+  });
+}
+
+export function useCloseStale() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationIds: number[]) =>
+      unwrap(api.POST("/api/followups/close-stale", { body: { application_ids: applicationIds } })),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: pipelineKeys.board });
+      void client.invalidateQueries({ queryKey: ["followups"] });
+    },
+  });
+}
+
 /** Optimistic: the card moves at once; the server records the stage event. */
 export function useMoveApplication() {
   const client = useQueryClient();

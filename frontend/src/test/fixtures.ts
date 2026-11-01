@@ -613,6 +613,8 @@ export const boardCard = (overrides: Partial<BoardCard> = {}): BoardCard => ({
   has_documents: true,
   flags: 0,
   closes_at: null,
+  follow_ups: 0,
+  follow_up_due: false,
   next_action: "Submit, then mark as applied",
   ...overrides,
 });

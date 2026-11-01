@@ -24,6 +24,7 @@ from offerbound.api.routes import (
     commands,
     documents,
     events,
+    followups,
     insights,
     jobs,
     llm,
@@ -92,6 +93,7 @@ def create_app(
         jobs.router,
         documents.router,
         applications.router,
+        followups.router,
         insights.router,
     ):
         app.include_router(router)

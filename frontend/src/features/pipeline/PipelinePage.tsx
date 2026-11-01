@@ -1,19 +1,40 @@
-import { SquareKanbanIcon } from "lucide-react";
+import { ArchiveIcon, SquareKanbanIcon } from "lucide-react";
+import { useState } from "react";
 
 import { errorText } from "@/api/errors";
-import { useLLMStatus, usePipeline } from "@/api/queries";
+import { useLLMStatus, usePipeline, useStaleApplications } from "@/api/queries";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { BoardSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
 
 import { Kanban } from "./Kanban";
+import { StaleDialog } from "./StaleDialog";
 
 export default function PipelinePage() {
   const status = useLLMStatus();
   const board = usePipeline();
+  const stale = useStaleApplications();
+  const [sweeping, setSweeping] = useState(false);
   const connected = status.data?.configured === true;
+  const quiet = stale.data ?? [];
   const header = (
-    <PageHeader title="Pipeline" description="Every application, from saved to offer." />
+    <PageHeader
+      title="Pipeline"
+      description="Every application, from saved to offer."
+      actions={
+        quiet.length > 0 ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSweeping(true);
+            }}
+          >
+            <ArchiveIcon /> No reply in 60+ days ({quiet.length})
+          </Button>
+        ) : undefined
+      }
+    />
   );
   if (board.isPending) return <BoardSkeleton />;
   if (board.isError) {
@@ -35,6 +56,14 @@ export default function PipelinePage() {
         <div className="p-6">
           <Kanban board={board.data} />
         </div>
+        {sweeping && (
+          <StaleDialog
+            applications={quiet}
+            onClose={() => {
+              setSweeping(false);
+            }}
+          />
+        )}
       </>
     );
   }

@@ -1105,6 +1105,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/followups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quiet
+         * @description Waiting applications quiet long enough for a follow-up (at most two each).
+         */
+        get: operations["quiet_api_followups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/followups/stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stale */
+        get: operations["stale_api_followups_stale_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/followups/close-stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close Stale
+         * @description Move the chosen long-quiet applications to Ghosted.
+         */
+        post: operations["close_stale_api_followups_close_stale_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{application_id}/followups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["history_api_applications__application_id__followups_get"];
+        put?: never;
+        /**
+         * Log
+         * @description Record a follow-up the user sent.
+         */
+        post: operations["log_api_applications__application_id__followups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{application_id}/followups/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft
+         * @description A draft from the documents already sent. Nothing is sent.
+         */
+        post: operations["draft_api_applications__application_id__followups_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pipeline": {
         parameters: {
             query?: never;
@@ -1466,6 +1564,10 @@ export interface components {
             flags: number;
             /** Closes At */
             closes_at: string | null;
+            /** Follow Ups */
+            follow_ups: number;
+            /** Follow Up Due */
+            follow_up_due: boolean;
             /** Next Action */
             next_action: string | null;
         };
@@ -1554,6 +1656,16 @@ export interface components {
             value: string;
             /** Label */
             label: string;
+        };
+        /** CloseStaleIn */
+        CloseStaleIn: {
+            /** Application Ids */
+            application_ids: number[];
+        };
+        /** ClosedStale */
+        ClosedStale: {
+            /** Closed */
+            closed: number;
         };
         /** Column */
         Column: {
@@ -2052,6 +2164,11 @@ export interface components {
              */
             created_at: string;
         };
+        /** DraftIn */
+        DraftIn: {
+            /** @default email */
+            channel: components["schemas"]["FollowUpChannel"];
+        };
         /** Education */
         "Education-Input": {
             /** Institution */
@@ -2292,6 +2409,50 @@ export interface components {
             location: string;
             /** Text */
             text: string;
+        };
+        /**
+         * FollowUpChannel
+         * @enum {string}
+         */
+        FollowUpChannel: "email" | "linkedin" | "portal";
+        /** FollowUpDraft */
+        FollowUpDraft: {
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Issues
+             * @description Claims or phrases worth a second look before sending
+             */
+            issues: string[];
+        };
+        /** FollowUpIn */
+        FollowUpIn: {
+            /** @default email */
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject?: string | null;
+            /** Body */
+            body: string;
+        };
+        /** FollowUpView */
+        FollowUpView: {
+            /** Id */
+            id: number;
+            /** Application Id */
+            application_id: number;
+            channel: components["schemas"]["FollowUpChannel"];
+            /** Subject */
+            subject: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
         };
         /** FormField */
         FormField: {
@@ -3205,6 +3366,26 @@ export interface components {
             value: string | string[] | {
                 [key: string]: string;
             } | null;
+        };
+        /** QuietApplication */
+        QuietApplication: {
+            /** Application Id */
+            application_id: number;
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            stage: components["schemas"]["Stage"];
+            /** Applied At */
+            applied_at: string | null;
+            /** Quiet Days */
+            quiet_days: number;
+            /** Follow Ups */
+            follow_ups: number;
+            /** Last Follow Up At */
+            last_follow_up_at: string | null;
         };
         /** RankParams */
         RankParams: {
@@ -5776,6 +5957,202 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AutofillReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quiet_api_followups_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuietApplication"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stale_api_followups_stale_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuietApplication"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_stale_api_followups_close_stale_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseStaleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClosedStale"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_applications__application_id__followups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_api_applications__application_id__followups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_api_applications__application_id__followups_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpDraft"];
                 };
             };
             /** @description Validation Error */

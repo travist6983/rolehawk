@@ -14,6 +14,7 @@ import { errorText } from "@/api/errors";
 import {
   useApplication,
   useAutofill,
+  useFollowUpHistory,
   useUpdateApplication,
   type ApplicationDetail,
   type AutofillReport,
@@ -28,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { safeUrl, whereText } from "@/features/discover/discoverText";
 import { timeAgo } from "@/lib/format";
 
-import { STAGE_LABELS } from "./applicationText";
+import { CHANNEL_LABELS, STAGE_LABELS } from "./applicationText";
 import { ChecksTab } from "./ChecksTab";
 import { DocumentsTab, type Doc } from "./DocumentsTab";
 
@@ -167,15 +168,35 @@ function JobTab({ detail }: { detail: ApplicationDetail }) {
 }
 
 function TimelineTab({ detail }: { detail: ApplicationDetail }) {
+  const followUps = useFollowUpHistory(detail.id);
+  const entries = [
+    ...detail.history.map((event) => ({
+      at: event.created_at,
+      key: `stage-${event.created_at}-${event.to_stage}`,
+      title: STAGE_LABELS[event.to_stage],
+      detail: event.from_stage ? `from ${STAGE_LABELS[event.from_stage]}` : null,
+      body: null,
+    })),
+    ...(followUps.data ?? []).map((note) => ({
+      at: note.sent_at,
+      key: `followup-${String(note.id)}`,
+      title: `Follow-up sent (${CHANNEL_LABELS[note.channel]})`,
+      detail: note.subject,
+      body: note.body,
+    })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
   return (
     <ol className="space-y-3 border-l pl-4" aria-label="Stage history">
-      {[...detail.history].reverse().map((event) => (
-        <li key={`${event.created_at}-${event.to_stage}`} className="text-sm">
-          <span className="font-medium">{STAGE_LABELS[event.to_stage]}</span>
-          {event.from_stage && (
-            <span className="text-muted-foreground"> from {STAGE_LABELS[event.from_stage]}</span>
+      {entries.map((entry) => (
+        <li key={entry.key} className="text-sm">
+          <span className="font-medium">{entry.title}</span>
+          {entry.detail && <span className="text-muted-foreground"> {entry.detail}</span>}
+          <span className="block text-xs text-muted-foreground">{timeAgo(entry.at)}</span>
+          {entry.body && (
+            <p className="mt-1 max-w-prose text-xs whitespace-pre-line text-muted-foreground">
+              {entry.body}
+            </p>
           )}
-          <span className="block text-xs text-muted-foreground">{timeAgo(event.created_at)}</span>
         </li>
       ))}
     </ol>

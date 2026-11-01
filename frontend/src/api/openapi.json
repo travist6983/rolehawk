@@ -2923,6 +2923,297 @@
         }
       }
     },
+    "/api/followups": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Quiet",
+        "description": "Waiting applications quiet long enough for a follow-up (at most two each).",
+        "operationId": "quiet_api_followups_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 10,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuietApplication"
+                  },
+                  "title": "Response Quiet Api Followups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/followups/stale": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Stale",
+        "operationId": "stale_api_followups_stale_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 730,
+              "minimum": 7,
+              "default": 60,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuietApplication"
+                  },
+                  "title": "Response Stale Api Followups Stale Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/followups/close-stale": {
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Close Stale",
+        "description": "Move the chosen long-quiet applications to Ghosted.",
+        "operationId": "close_stale_api_followups_close_stale_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseStaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosedStale"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/followups": {
+      "get": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "History",
+        "operationId": "history_api_applications__application_id__followups_get",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FollowUpView"
+                  },
+                  "title": "Response History Api Applications  Application Id  Followups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Log",
+        "description": "Record a follow-up the user sent.",
+        "operationId": "log_api_applications__application_id__followups_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/followups/draft": {
+      "post": {
+        "tags": [
+          "followups"
+        ],
+        "summary": "Draft",
+        "description": "A draft from the documents already sent. Nothing is sent.",
+        "operationId": "draft_api_applications__application_id__followups_draft_post",
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pipeline": {
       "get": {
         "tags": [
@@ -3840,6 +4131,14 @@
             ],
             "title": "Closes At"
           },
+          "follow_ups": {
+            "type": "integer",
+            "title": "Follow Ups"
+          },
+          "follow_up_due": {
+            "type": "boolean",
+            "title": "Follow Up Due"
+          },
           "next_action": {
             "anyOf": [
               {
@@ -3867,6 +4166,8 @@
           "has_documents",
           "flags",
           "closes_at",
+          "follow_ups",
+          "follow_up_due",
           "next_action"
         ],
         "title": "Card"
@@ -4120,6 +4421,38 @@
           "label"
         ],
         "title": "Choice"
+      },
+      "CloseStaleIn": {
+        "properties": {
+          "application_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Application Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "application_ids"
+        ],
+        "title": "CloseStaleIn"
+      },
+      "ClosedStale": {
+        "properties": {
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "closed"
+        ],
+        "title": "ClosedStale"
       },
       "Column": {
         "properties": {
@@ -5753,6 +6086,17 @@
         ],
         "title": "Draft"
       },
+      "DraftIn": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel",
+            "default": "email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DraftIn"
+      },
       "Education-Input": {
         "properties": {
           "institution": {
@@ -6423,6 +6767,130 @@
         ],
         "title": "FlagRef",
         "description": "Which flag: the same document, line, and quoted text."
+      },
+      "FollowUpChannel": {
+        "type": "string",
+        "enum": [
+          "email",
+          "linkedin",
+          "portal"
+        ],
+        "title": "FollowUpChannel"
+      },
+      "FollowUpDraft": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues",
+            "description": "Claims or phrases worth a second look before sending"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "subject",
+          "body",
+          "issues"
+        ],
+        "title": "FollowUpDraft"
+      },
+      "FollowUpIn": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel",
+            "default": "email"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "FollowUpIn"
+      },
+      "FollowUpView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "application_id": {
+            "type": "integer",
+            "title": "Application Id"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/FollowUpChannel"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "application_id",
+          "channel",
+          "subject",
+          "body",
+          "sent_at"
+        ],
+        "title": "FollowUpView"
       },
       "FormField": {
         "properties": {
@@ -9047,6 +9515,74 @@
           "value"
         ],
         "title": "Question"
+      },
+      "QuietApplication": {
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "title": "Application Id"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/Stage"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At"
+          },
+          "quiet_days": {
+            "type": "integer",
+            "title": "Quiet Days"
+          },
+          "follow_ups": {
+            "type": "integer",
+            "title": "Follow Ups"
+          },
+          "last_follow_up_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Follow Up At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "job_id",
+          "title",
+          "company",
+          "stage",
+          "applied_at",
+          "quiet_days",
+          "follow_ups",
+          "last_follow_up_at"
+        ],
+        "title": "QuietApplication"
       },
       "RankParams": {
         "properties": {

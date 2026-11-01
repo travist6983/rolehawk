@@ -21,6 +21,12 @@ export const STAGE_LABELS: Record<Stage, string> = {
   ghosted: "Ghosted",
 };
 
+export const CHANNEL_LABELS: Record<"email" | "linkedin" | "portal", string> = {
+  email: "email",
+  linkedin: "LinkedIn",
+  portal: "application portal",
+};
+
 /** How each kind of review flag is labeled; serious ones are shown in the destructive color. */
 export const FLAG_KINDS: Record<Flag["kind"], { label: string; serious: boolean }> = {
   unsupported: { label: "Not in your profile", serious: true },

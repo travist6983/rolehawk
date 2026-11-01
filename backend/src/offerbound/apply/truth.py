@@ -52,6 +52,13 @@ def numbers_in(text: str) -> set[str]:
     return {n for n in (_norm_number(m) for m in _NUMBER.findall(text)) if n}
 
 
+def numbers_missing_from(text: str, source: str) -> list[str]:
+    """Numbers in `text` (as written) that `source` doesn't contain; small counts are fine."""
+    known = numbers_in(source) | _SMALL_OK
+    found = [m.strip() for m in _NUMBER.findall(text)]
+    return list(dict.fromkeys(r for r in found if _norm_number(r) and _norm_number(r) not in known))
+
+
 def _profile_text(profile: Profile) -> str:
     return profile.model_dump_json()
 
