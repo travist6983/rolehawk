@@ -200,6 +200,9 @@ export default function OnboardingPage() {
             onContinue={() => {
               go("resume");
             }}
+            onStay={() => {
+              go("connect");
+            }}
             onUseClaudeCode={() => {
               go("interview");
             }}

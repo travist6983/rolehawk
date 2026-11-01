@@ -113,6 +113,7 @@ Backend (from `backend/`):
 | Run a command (what skills call) | `uv run rolehawk run context --json` |
 | Build the release ZIP (after `npm run build`) | `uv run --no-project --python 3.12 python ../scripts/build_release.py` |
 | Store an Anthropic API key in the keychain | `uv run rolehawk llm set-key` |
+| Send one tiny real message with the stored key | `uv run rolehawk llm test-key` |
 | Regenerate fixture resumes | `uv run python tests/fixtures/make_fixtures.py` |
 | New migration after editing models | `uv run rolehawk db revision -m "add x"` |
 | Test | `uv run pytest` or `uv run poe test` |

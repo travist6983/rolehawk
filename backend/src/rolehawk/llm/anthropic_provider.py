@@ -23,12 +23,17 @@ from rolehawk import keychain
 from rolehawk.keychain import SecretName
 from rolehawk.llm import models
 from rolehawk.llm.errors import (
+    LLMAccountLimitError,
     LLMAuthError,
+    LLMBillingError,
+    LLMConnectionError,
     LLMError,
     LLMOutputError,
+    LLMOverloadedError,
+    LLMPermissionError,
+    LLMRateLimitError,
     LLMRefusalError,
     LLMTruncatedError,
-    LLMUnavailableError,
 )
 from rolehawk.llm.types import (
     Completion,
@@ -67,15 +72,30 @@ def resolve_api_key() -> tuple[str | None, KeySource]:
 
 
 def map_error(exc: anthropic.APIError) -> LLMError:
-    if isinstance(exc, anthropic.AuthenticationError | anthropic.PermissionDeniedError):
-        return LLMAuthError(str(exc))
-    if isinstance(
-        exc, anthropic.RateLimitError | anthropic.APIConnectionError | anthropic.InternalServerError
-    ):
-        return LLMUnavailableError(str(exc))
-    if isinstance(exc, anthropic.APIStatusError) and exc.status_code >= 500:
-        return LLMUnavailableError(str(exc))
-    return LLMError(str(exc))
+    """Sort an SDK error into the kinds the app can explain (docs: /docs/en/api/errors).
+
+    No credit shows up as 402 billing_error, or as a 400 whose message mentions the credit
+    balance. A spend limit the user set returns a 400 ("...specified API usage limits"); the
+    tier's cap returns a 429 with error_code enforced_spend_limit_reached.
+    """
+    text = str(exc)
+    lowered = text.lower()
+    if isinstance(exc, anthropic.AuthenticationError):
+        return LLMAuthError(text)
+    if isinstance(exc, anthropic.PermissionDeniedError):
+        return LLMPermissionError(text)
+    if isinstance(exc, anthropic.APIConnectionError):  # includes timeouts
+        return LLMConnectionError(text)
+    if isinstance(exc, anthropic.APIStatusError):
+        if exc.status_code == 402 or "credit balance" in lowered:
+            return LLMBillingError(text)
+        if "usage limits" in lowered or "enforced_spend_limit" in lowered:
+            return LLMAccountLimitError(text)
+        if exc.status_code == 429:
+            return LLMRateLimitError(text)
+        if exc.status_code >= 500:
+            return LLMOverloadedError(text)
+    return LLMError(text)
 
 
 def _usage(usage: Any) -> Usage:
@@ -251,8 +271,19 @@ class AnthropicProvider:
         except anthropic.APIError as exc:
             raise map_error(exc) from exc
 
-    async def check(self) -> None:
+    async def check(self) -> Usage:
+        """One real message on the cheapest model, capped at one output token.
+
+        Listing models only proves the key exists; a message also proves the account can pay,
+        which is where most first connections fail. Costs a fraction of a cent.
+        """
         try:
-            await self._client.models.list(limit=1)
+            message = await self._client.messages.create(
+                model=models.PROBE_MODEL,
+                max_tokens=1,
+                thinking={"type": "disabled"},
+                messages=[{"role": "user", "content": "Hi"}],
+            )
         except anthropic.APIError as exc:
             raise map_error(exc) from exc
+        return _usage(message.usage)

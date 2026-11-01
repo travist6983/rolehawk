@@ -1,9 +1,21 @@
-import { CheckCircle2Icon, ExternalLinkIcon, KeyRoundIcon, TerminalIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  ExternalLinkIcon,
+  FlaskConicalIcon,
+  KeyRoundIcon,
+  TerminalIcon,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import { errorText } from "@/api/errors";
-import { useClearApiKey, useSetApiKey, type LLMStatus } from "@/api/queries";
+import {
+  useClearApiKey,
+  useSetApiKey,
+  useTestApiKey,
+  type KeyTest,
+  type LLMStatus,
+} from "@/api/queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +23,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { CLAUDE_KEYS_URL } from "./claudeLinks";
+import { KeyTestResult } from "./KeyTestResult";
+import { TypicalCostNote } from "./TypicalCostNote";
 import { PRODUCT_NAME } from "@/lib/brand";
 
 export function ConnectionCard({ status }: { status: LLMStatus }) {
   const [key, setKey] = useState("");
   const setApiKey = useSetApiKey();
   const clearApiKey = useClearApiKey();
+  const testKey = useTestApiKey();
+  const [result, setResult] = useState<KeyTest | null>(null);
   const inputId = useId();
   const fromKeychain = status.key_source === "keychain";
 
@@ -43,12 +59,17 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
           className="flex flex-col gap-2 sm:flex-row sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
+            setResult(null);
             setApiKey.mutate(key, {
-              onSuccess: () => {
-                setKey("");
-                toast.success("API key saved and verified");
+              onSuccess: ({ saved, test }) => {
+                if (saved) setKey("");
+                if (saved && test.ok) {
+                  toast.success("API key saved and working");
+                } else {
+                  setResult(test);
+                }
               },
-              onError: (error) => toast.error(errorText(error, "Couldn't save the key")),
+              onError: (error) => toast.error(errorText(error, "Couldn't check the key")),
             });
           }}
         >
@@ -72,7 +93,23 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
             <KeyRoundIcon /> {setApiKey.isPending ? "Checking…" : "Save and test"}
           </Button>
         </form>
+        {result && <KeyTestResult result={result} />}
         <div className="flex flex-wrap items-center gap-3 text-sm">
+          {status.configured && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={testKey.isPending}
+              onClick={() => {
+                testKey.mutate(undefined, {
+                  onSuccess: setResult,
+                  onError: (error) => toast.error(errorText(error, "Couldn't run the test")),
+                });
+              }}
+            >
+              <FlaskConicalIcon /> {testKey.isPending ? "Testing…" : "Test key"}
+            </Button>
+          )}
           <a
             href={CLAUDE_KEYS_URL}
             target="_blank"
@@ -88,7 +125,10 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
               disabled={clearApiKey.isPending}
               onClick={() => {
                 clearApiKey.mutate(undefined, {
-                  onSuccess: () => toast("API key removed"),
+                  onSuccess: () => {
+                    setResult(null);
+                    toast("API key removed");
+                  },
                   onError: (error) => toast.error(errorText(error, "Couldn't remove the key")),
                 });
               }}
@@ -102,6 +142,7 @@ export function ConnectionCard({ status }: { status: LLMStatus }) {
             </span>
           )}
         </div>
+        <TypicalCostNote cost={status.typical_cost} />
         <div className="flex gap-3 rounded-lg bg-muted/50 p-3 text-sm">
           <TerminalIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
           <p>

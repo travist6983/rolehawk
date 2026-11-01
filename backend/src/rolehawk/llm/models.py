@@ -1,6 +1,6 @@
 """Model catalog: pricing for cost tracking and per-model API capabilities.
 
-Prices are USD per million tokens from Anthropic's published pricing (checked 2026-10-31).
+Prices are USD per million tokens from Anthropic's published pricing (checked 2026-11-01).
 Verify at https://platform.claude.com/docs/en/about-claude/pricing when adding models. The
 Settings screen lists live models from the Models API; this table only needs to cover
 pricing and request-shape differences.
@@ -14,6 +14,7 @@ from rolehawk.llm.types import Usage
 
 DEFAULT_MODEL = "claude-opus-5-5"  # best model: writing, review, chat
 SMALL_MODEL = "claude-haiku-5-5"  # smart routing: ranking and extraction
+PROBE_MODEL = SMALL_MODEL  # cheapest model, for the one-token "Test key" call
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,7 @@ CATALOG: dict[str, ModelInfo] = {
         ModelInfo(
             "claude-sonnet-5-5",
             "Claude Sonnet 5.5",
-            Pricing(2.0, 10.0, 0.20, 2.5),
+            Pricing(2.0, 10.0, 0.10, 2.5),
             server_fallback=True,
         ),
         ModelInfo(

@@ -5,7 +5,14 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
-from rolehawk.llm.types import Completion, LLMRequest, ModelChoice, StreamEvent, Structured
+from rolehawk.llm.types import (
+    Completion,
+    LLMRequest,
+    ModelChoice,
+    StreamEvent,
+    Structured,
+    Usage,
+)
 
 
 class LLMProvider(Protocol):
@@ -24,6 +31,7 @@ class LLMProvider(Protocol):
 
     async def list_models(self) -> list[ModelChoice]: ...
 
-    async def check(self) -> None:
-        """Cheap authenticated call; raises LLMAuthError / LLMUnavailableError."""
+    async def check(self) -> Usage:
+        """One tiny real call that proves the key works and the account can pay. Returns its
+        usage so the caller can meter it; raises rolehawk.llm.errors types."""
         ...

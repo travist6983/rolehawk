@@ -54,6 +54,9 @@ class FakeProvider:
         self.structured_handler = structured_handler
         self.latency_s = latency_s
         self.auth_ok = auth_ok
+        # Raised by check() when set, to script a key test failing a particular way.
+        self.check_error: Exception | None = None
+        self.checks = 0
         self.requests: list[LLMRequest] = []
         self.structured_requests: list[tuple[LLMRequest, type[BaseModel]]] = []
 
@@ -124,6 +127,10 @@ class FakeProvider:
     async def list_models(self) -> list[ModelChoice]:
         return [ModelChoice(id=m.id, display_name=m.label) for m in CATALOG.values()]
 
-    async def check(self) -> None:
+    async def check(self) -> Usage:
+        self.checks += 1
         if not self.auth_ok:
             raise LLMAuthError("fake auth failure")
+        if self.check_error is not None:
+            raise self.check_error
+        return Usage(input_tokens=8, output_tokens=1)
