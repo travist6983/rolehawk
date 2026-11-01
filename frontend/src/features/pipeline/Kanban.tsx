@@ -7,7 +7,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { AlertTriangleIcon, ClockIcon, MailIcon, MoreHorizontalIcon } from "lucide-react";
+import { MailIcon, MoreHorizontalIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ import {
   type BoardColumn,
   type Stage,
 } from "@/api/queries";
-import { ScoreBadge } from "@/components/ScoreBadge";
+import { FitRuler } from "@/components/ScoreBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,8 +44,10 @@ import {
   CLOSED_STAGES,
   columnIndexOf,
   daysText,
+  PHASES,
   STAGE_NAMES,
   stageForColumn,
+  waitsOnYou,
 } from "./pipelineText";
 
 interface Picked {
@@ -61,7 +63,7 @@ function CardMenu({ card, onMove }: { card: BoardCard; onMove: (stage: Stage) =>
         <Button
           size="icon"
           variant="ghost"
-          className="size-7"
+          className="-my-1 size-6 text-muted-foreground"
           aria-label={`Move ${card.title} at ${card.company}`}
           onPointerDown={(event) => {
             event.stopPropagation(); // the menu, not a drag
@@ -115,6 +117,24 @@ function KanbanCard({
     ? { transform: `translate3d(${String(transform.x)}px, ${String(transform.y)}px, 0)` }
     : undefined;
   const closed = CLOSED_STAGES.includes(card.stage);
+  const urgent = waitsOnYou(card);
+  const title = (
+    <Link
+      to={`/applications/${String(card.application_id)}`}
+      className={cn(
+        "hover:underline",
+        closed
+          ? "text-sm font-medium text-foreground-2"
+          : "font-serif text-[16.5px] leading-tight font-medium text-pretty",
+      )}
+      tabIndex={-1}
+      onClick={(event) => {
+        if (dragging.current) event.preventDefault();
+      }}
+    >
+      {closed ? card.company : card.title}
+    </Link>
+  );
   return (
     <article
       ref={setNodeRef}
@@ -128,63 +148,68 @@ function KanbanCard({
         onKeyDown(event, card);
       }}
       className={cn(
-        "cursor-grab touch-none space-y-1.5 rounded-lg border bg-card p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing",
+        "cursor-grab touch-none outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary active:cursor-grabbing",
+        closed
+          ? "flex items-start justify-between gap-2 border-b border-dashed px-1 py-2"
+          : "flex flex-col gap-[7px] rounded-lg bg-card px-3 pt-3 pb-[11px] shadow-card transition-shadow hover:shadow-card-hover",
         isDragging && "relative z-20 shadow-lg",
-        picked && "ring-[3px] ring-primary",
+        picked && "outline-2 outline-primary",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{card.company}</p>
-          <Link
-            to={`/applications/${String(card.application_id)}`}
-            className="line-clamp-2 font-medium hover:underline"
-            tabIndex={-1}
-            onClick={(event) => {
-              if (dragging.current) event.preventDefault();
-            }}
-          >
-            {card.title}
-          </Link>
-        </div>
-        {card.score !== null && <ScoreBadge score={card.score} />}
-      </div>
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <ClockIcon className="size-3.5" aria-hidden />
-          {closed ? STAGE_NAMES[card.stage] : `${daysText(card.days_in_stage)} in stage`}
-        </span>
-        <CardMenu card={card} onMove={onMove} />
-      </div>
-      {card.next_action && (
-        <p
-          className={cn(
-            "flex items-start gap-1 text-xs",
-            card.flags > 0 ? "text-destructive" : "text-foreground",
+      {closed ? (
+        <>
+          <div className="flex min-w-0 flex-col gap-px">
+            {title}
+            <span className="text-[13px] text-muted-foreground">
+              {STAGE_NAMES[card.stage]} · {card.title}
+            </span>
+          </div>
+          <CardMenu card={card} onMove={onMove} />
+        </>
+      ) : (
+        <>
+          <div className="flex items-start justify-between gap-1">
+            <span className="min-w-0 text-[12.5px] leading-tight font-semibold tracking-[0.04em] break-words text-foreground-2 uppercase">
+              {card.company}
+            </span>
+            <span className="flex flex-none items-center gap-1 text-[13px] text-muted-foreground">
+              <span aria-hidden>{card.days_in_stage}d</span>
+              <span className="sr-only">{daysText(card.days_in_stage)} in stage</span>
+              <CardMenu card={card} onMove={onMove} />
+            </span>
+          </div>
+          {title}
+          {card.score !== null && <FitRuler score={card.score} />}
+          {card.next_action && (
+            <p
+              className={cn(
+                "text-[13.5px] leading-snug",
+                urgent ? "font-semibold text-primary-text" : "text-muted-foreground",
+              )}
+            >
+              {card.next_action}
+            </p>
           )}
-        >
-          {card.flags > 0 && <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
-          {card.next_action}
-        </p>
-      )}
-      {card.follow_up_due && onFollowUp && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 w-full text-xs"
-          // A button inside a draggable card: don't start a drag or a keyboard move.
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-          }}
-          onClick={() => {
-            onFollowUp(card);
-          }}
-        >
-          <MailIcon /> Draft a follow-up
-        </Button>
+          {card.follow_up_due && onFollowUp && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 w-full text-xs"
+              // A button inside a draggable card: don't start a drag or a keyboard move.
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={() => {
+                onFollowUp(card);
+              }}
+            >
+              <MailIcon /> Draft a follow-up
+            </Button>
+          )}
+        </>
       )}
     </article>
   );
@@ -206,20 +231,18 @@ function KanbanColumn({
       ref={setNodeRef}
       aria-labelledby={headingId}
       className={cn(
-        "flex w-64 shrink-0 flex-col gap-2 rounded-xl bg-muted/50 p-2 transition-colors motion-reduce:transition-none",
-        (isOver || highlighted) && "bg-primary/10 ring-2 ring-primary/40",
+        "flex min-w-0 flex-1 flex-col gap-2.5 rounded-lg pb-6 transition-colors motion-reduce:transition-none",
+        column.id === "closed" && "gap-1.5",
+        (isOver || highlighted) && "bg-accent outline-2 outline-primary/40",
       )}
     >
-      <h2
-        id={headingId}
-        className="flex items-center justify-between px-1 pt-1 text-sm font-medium"
-      >
+      <h3 id={headingId} className="flex items-baseline gap-1.5 p-0.5 text-sm font-semibold">
         {column.label}
-        <span className="rounded-full bg-background px-2 text-xs text-muted-foreground tabular-nums">
+        <span className="font-medium text-muted-foreground tabular-nums">
           {column.cards.length}
         </span>
-      </h2>
-      <div className="flex min-h-24 flex-col gap-2">{children}</div>
+      </h3>
+      <div className="flex min-h-24 flex-col gap-2.5">{children}</div>
     </section>
   );
 }
@@ -264,6 +287,14 @@ export function Kanban({ board }: { board: Board }) {
     if (event.target !== event.currentTarget) return; // keys inside the menu button
     const label = (i: number) => board.columns[i]?.label ?? "";
     if (!picked || picked.id !== card.application_id) {
+      if (event.altKey && (event.key === "ArrowRight" || event.key === "ArrowLeft")) {
+        // The design's shortcut: move one column without picking the card up.
+        event.preventDefault();
+        const from = columnIndexOf(board, card);
+        const target = board.columns[from + (event.key === "ArrowRight" ? 1 : -1)];
+        if (target) dropOn(card, target.id);
+        return;
+      }
       if (event.key === " ") {
         event.preventDefault();
         const from = columnIndexOf(board, card);
@@ -302,7 +333,8 @@ export function Kanban({ board }: { board: Board }) {
     <>
       <p id={instructionsId} className="sr-only">
         Press Space to pick up a card, the left and right arrow keys to choose a column, and Space
-        again to drop it. Press Enter to open the application.
+        again to drop it. Alt with an arrow key moves it one column. Press Enter to open the
+        application.
       </p>
       <p aria-live="assertive" className="sr-only">
         {announcement}
@@ -320,27 +352,57 @@ export function Kanban({ board }: { board: Board }) {
           screenReaderInstructions: { draggable: "Press Space to pick up this card." },
         }}
       >
-        <div className="flex gap-3 overflow-x-auto pb-4" role="list" aria-label="Pipeline">
-          {board.columns.map((column, index) => (
-            <div key={column.id} role="listitem">
-              <KanbanColumn column={column} highlighted={picked?.target === index}>
-                {column.cards.map((card) => (
-                  <KanbanCard
-                    key={card.application_id}
-                    card={card}
-                    picked={picked?.id === card.application_id}
-                    instructionsId={instructionsId}
-                    dragging={dragging}
-                    onKeyDown={onKeyDown}
-                    onMove={(stage) => {
-                      doMove(card, stage);
-                    }}
-                    onFollowUp={setFollowingUp}
-                  />
-                ))}
-              </KanbanColumn>
-            </div>
-          ))}
+        <div className="overflow-x-auto pb-4">
+          <div
+            className="grid min-w-max grid-cols-[minmax(348px,2fr)_minmax(528px,3fr)_minmax(348px,2fr)] gap-7"
+            role="list"
+            aria-label="Pipeline"
+          >
+            {PHASES.map((phase, p) => {
+              const ids: readonly string[] = phase.columns;
+              const columns = board.columns.filter(
+                (c) =>
+                  ids.includes(c.id) ||
+                  (p === PHASES.length - 1 &&
+                    !PHASES.some((x) => (x.columns as readonly string[]).includes(c.id))),
+              );
+              return (
+                <div key={phase.name} className="flex min-w-0 flex-col gap-3">
+                  <h2 className="flex items-baseline gap-2.5 border-b border-foreground pb-2">
+                    <span className="font-serif text-xl font-medium italic">{phase.name}</span>
+                    {phase.note && (
+                      <span className="text-[13.5px] text-muted-foreground">{phase.note}</span>
+                    )}
+                  </h2>
+                  <div className="flex flex-1 gap-3">
+                    {columns.map((column) => {
+                      const index = board.columns.indexOf(column);
+                      return (
+                        <div key={column.id} role="listitem" className="flex min-w-0 flex-1">
+                          <KanbanColumn column={column} highlighted={picked?.target === index}>
+                            {column.cards.map((card) => (
+                              <KanbanCard
+                                key={card.application_id}
+                                card={card}
+                                picked={picked?.id === card.application_id}
+                                instructionsId={instructionsId}
+                                dragging={dragging}
+                                onKeyDown={onKeyDown}
+                                onMove={(stage) => {
+                                  doMove(card, stage);
+                                }}
+                                onFollowUp={setFollowingUp}
+                              />
+                            ))}
+                          </KanbanColumn>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </DndContext>
       {followingUp && (

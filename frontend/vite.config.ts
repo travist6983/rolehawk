@@ -3,10 +3,20 @@ import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+import { PRODUCT_NAME } from "./src/lib/brand";
+
+/** Fills %PRODUCT_NAME% in index.html from src/lib/brand.ts, so a rename is one line. */
+function productName(): Plugin {
+  return {
+    name: "product-name",
+    transformIndexHtml: (html) => html.replaceAll("%PRODUCT_NAME%", PRODUCT_NAME),
+  };
+}
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), productName()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

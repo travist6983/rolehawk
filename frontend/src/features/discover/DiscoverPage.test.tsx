@@ -74,7 +74,7 @@ describe("DiscoverPage", () => {
     await waitFor(() => {
       expect(requests.at(-1)?.get("show")).toBe("saved");
     });
-    await user.click(screen.getByRole("switch", { name: "Remote only" }));
+    await user.click(screen.getByRole("button", { name: "Remote only" }));
     await waitFor(() => {
       expect(requests.at(-1)?.get("remote")).toBe("true");
     });

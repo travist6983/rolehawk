@@ -183,7 +183,7 @@ export default function OnboardingPage() {
         title="Set up your profile"
         description="About 10 minutes. You can stop and come back any time."
       />
-      <div className="mx-auto max-w-3xl space-y-8 p-6">
+      <div className="max-w-3xl space-y-8 px-5 pb-8 md:px-8">
         <Stepper
           current={step}
           done={

@@ -11,6 +11,7 @@ import { AddPortalDialog } from "./AddPortalDialog";
 import { PortalCard } from "./PortalCard";
 import { SearchPanel } from "./SearchPanel";
 import { Watchlist } from "./Watchlist";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export default function SourcesPage() {
   const portals = usePortals();
@@ -24,7 +25,7 @@ export default function SourcesPage() {
       <EmptyState
         icon={RadioTowerIcon}
         title="Couldn't load your sources"
-        description="The Offerbound backend didn't answer. Check that it's still running."
+        description={`The ${PRODUCT_NAME} backend didn't answer. Check that it's still running.`}
       >
         <Button
           className="mt-6"
@@ -56,9 +57,9 @@ export default function SourcesPage() {
     <>
       <PageHeader
         title="Sources"
-        description="Where Offerbound looks for jobs. Searches run on your computer and go straight to each job site."
+        description={`Where ${PRODUCT_NAME} looks for jobs. Searches run on your computer and go straight to each job site.`}
       />
-      <div className="space-y-8 p-6">
+      <div className="space-y-8 px-5 pb-8 md:px-8">
         <SearchPanel portals={portals.data} />
 
         <section aria-labelledby="boards-heading" className="space-y-3">

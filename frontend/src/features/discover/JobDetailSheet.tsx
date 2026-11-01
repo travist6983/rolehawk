@@ -1,9 +1,6 @@
 import {
-  BookmarkIcon,
   BookmarkXIcon,
   FileTextIcon,
-  SendIcon,
-  EyeOffIcon,
   ExternalLinkIcon,
   SparklesIcon,
   Undo2Icon,
@@ -13,7 +10,7 @@ import { toast } from "sonner";
 
 import { errorText } from "@/api/errors";
 import { useDismissJobs, useJob, useSaveJobs, type JobDetail } from "@/api/queries";
-import { ScoreBadge } from "@/components/ScoreBadge";
+import { FitScale } from "@/components/ScoreBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,39 +43,55 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
     );
   }
   return (
-    <section aria-label="Fit" className="space-y-3 rounded-lg border p-4 text-sm">
-      <div className="flex items-center gap-2">
-        <ScoreBadge score={job.score} className="text-sm" />
-        <span className="font-medium">Fit score</span>
-        {job.scored_at && (
-          <span className="text-xs text-muted-foreground">ranked {timeAgo(job.scored_at)}</span>
-        )}
+    <section aria-label="Fit" className="space-y-4 text-sm">
+      <div className="space-y-1">
+        <p className="flex items-baseline justify-between text-xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">
+          <span>Fit score</span>
+          {job.scored_at && (
+            <span className="font-normal tracking-normal normal-case">
+              ranked {timeAgo(job.scored_at)}
+            </span>
+          )}
+        </p>
+        <FitScale score={job.score} />
       </div>
       {job.gates && <FitGates gates={job.gates} />}
       {job.reasons.length > 0 && (
-        <div>
-          <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Why</h3>
-          <ul className="mt-1 list-disc space-y-1 pl-5">
+        <div className="space-y-2">
+          <h3 className="font-serif text-lg font-medium italic">Why this fits you</h3>
+          <ul className="space-y-1.5">
             {job.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
+              <li
+                key={reason}
+                className="grid grid-cols-[14px_1fr] gap-1.5 text-[14.5px] leading-normal"
+              >
+                <span aria-hidden className="text-score-high">
+                  +
+                </span>
+                <span>{reason}</span>
+              </li>
             ))}
           </ul>
         </div>
       )}
-      <div>
-        <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Gaps in must-haves
-        </h3>
+      <div className="space-y-2">
+        <h3 className="font-serif text-lg font-medium italic">Worth addressing</h3>
         {job.must_have_gaps.length > 0 ? (
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="space-y-1.5">
             {job.must_have_gaps.map((gap) => (
-              <li key={gap}>
-                <Badge variant="outline">{gap}</Badge>
+              <li
+                key={gap}
+                className="grid grid-cols-[14px_1fr] gap-1.5 text-[14.5px] leading-normal"
+              >
+                <span aria-hidden className="text-primary-text">
+                  –
+                </span>
+                <span>{gap}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-1 text-muted-foreground">None found.</p>
+          <p className="text-muted-foreground">No gaps in the must-haves.</p>
         )}
       </div>
       {job.breakdown && <FitBreakdown breakdown={job.breakdown} />}
@@ -97,25 +110,24 @@ function Actions({ job, onApply }: { job: JobDetail; onApply: (id: number) => vo
   return (
     <div className="flex flex-wrap gap-2">
       {job.application_id !== null && job.stage !== null && job.stage !== "saved" ? (
-        <Button size="sm" asChild>
+        <Button asChild>
           <Link to={`/applications/${String(job.application_id)}`}>
             <FileTextIcon /> Open application
           </Link>
         </Button>
       ) : (
         <Button
-          size="sm"
           disabled={busy}
           onClick={() => {
             onApply(job.id);
           }}
         >
-          <SendIcon /> Apply
+          Write application
         </Button>
       )}
       {job.stage === null ? (
         <Button
-          size="sm"
+          variant="outline"
           disabled={busy}
           onClick={() => {
             save.mutate(
@@ -124,11 +136,10 @@ function Actions({ job, onApply }: { job: JobDetail; onApply: (id: number) => vo
             );
           }}
         >
-          <BookmarkIcon /> Save
+          Save
         </Button>
       ) : job.stage === "saved" ? (
         <Button
-          size="sm"
           variant="outline"
           disabled={busy}
           onClick={() => {
@@ -154,8 +165,8 @@ function Actions({ job, onApply }: { job: JobDetail; onApply: (id: number) => vo
       ) : (
         !inPipeline && (
           <Button
-            size="sm"
             variant="ghost"
+            className="text-foreground-2"
             disabled={busy}
             onClick={() => {
               dismiss.mutate(
@@ -164,12 +175,12 @@ function Actions({ job, onApply }: { job: JobDetail; onApply: (id: number) => vo
               );
             }}
           >
-            <EyeOffIcon /> Dismiss
+            Dismiss
           </Button>
         )
       )}
       {link && (
-        <Button size="sm" variant="ghost" asChild>
+        <Button variant="ghost" className="text-foreground-2" asChild>
           <a href={link} target="_blank" rel="noreferrer noopener">
             <ExternalLinkIcon /> Open posting
           </a>
@@ -200,18 +211,27 @@ export function JobDetailSheet({
         if (!open) onClose();
       }}
     >
-      <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-xl">
+      <SheetContent className="w-full gap-0 overflow-y-auto bg-card sm:max-w-[460px]">
         {data ? (
           <>
-            <SheetHeader className="pr-10">
-              <SheetTitle className="text-lg leading-snug">{data.title}</SheetTitle>
-              <SheetDescription>
-                {data.company} · {whereText(data)}
+            <SheetHeader className="gap-1 px-6 pt-6 pr-12">
+              <p className="text-[12.5px] font-semibold tracking-[0.04em] text-foreground-2 uppercase">
+                {data.company}
+              </p>
+              <SheetTitle className="font-serif text-[28px] leading-[1.15] font-medium tracking-[-0.01em]">
+                {data.title}
+              </SheetTitle>
+              <SheetDescription className="text-sm text-foreground-2">
+                {[
+                  whereText(data),
+                  data.salary_text,
+                  `posted ${timeAgo(data.posted_at ?? data.scraped_at)}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </SheetDescription>
               <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                {data.salary_text && <span>{data.salary_text}</span>}
                 <span>via {data.source}</span>
-                <span>posted {timeAgo(data.posted_at ?? data.scraped_at)}</span>
                 {deadlineText(data) && (
                   <span className={cn(data.deadline && "font-medium text-caution")}>
                     {deadlineText(data)}
@@ -225,16 +245,16 @@ export function JobDetailSheet({
                 </p>
               )}
             </SheetHeader>
-            <div className="space-y-5 px-4 pb-6">
-              <Actions job={data} onApply={onApply} />
+            <div className="space-y-6 px-6 pb-8">
               <FitSection
                 job={data}
                 onRank={() => {
                   onRank(data.id);
                 }}
               />
+              <Actions job={data} onApply={onApply} />
               <section aria-labelledby="posting-heading" className="space-y-2">
-                <h3 id="posting-heading" className="text-sm font-medium">
+                <h3 id="posting-heading" className="font-serif text-lg font-medium italic">
                   From the posting
                 </h3>
                 <p className="text-xs text-muted-foreground">

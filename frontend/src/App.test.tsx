@@ -37,8 +37,12 @@ describe("App shell", () => {
   it("switches theme and remembers it", async () => {
     const { user } = await renderApp();
     const nav = screen.getByRole("navigation", { name: "Main" });
-    await user.click(within(nav).getByRole("button", { name: /^Theme:/ }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "Dark" }));
+    const theme = within(nav).getByRole("group", { name: "Theme" });
+    await user.click(within(theme).getByRole("button", { name: "Dark" }));
+    expect(within(theme).getByRole("button", { name: "Dark" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(document.documentElement).toHaveClass("dark");
     expect(localStorage.getItem("offerbound.theme")).toBe("dark");
   });

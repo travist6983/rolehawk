@@ -208,7 +208,7 @@ export default function SettingsPage() {
   if (status.isPending) return <FormSkeleton />;
   if (status.isError) {
     return (
-      <div className="p-6" role="alert">
+      <div className="px-5 py-7 md:px-8" role="alert">
         Couldn't load settings: {errorText(status.error, "unknown error")}
       </div>
     );
@@ -219,7 +219,7 @@ export default function SettingsPage() {
         title="Settings"
         description="Claude connection, models, spend, documents, and your data."
       />
-      <div className="mx-auto grid max-w-3xl gap-6 p-6">
+      <div className="grid max-w-3xl gap-6 px-5 pb-8 md:px-8">
         <ConnectionCard status={status.data} />
         <ModelCard status={status.data} />
         <SpendCard key={status.data.monthly_cap_usd ?? "none"} status={status.data} />

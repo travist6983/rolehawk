@@ -23,6 +23,7 @@ import {
   capLabel,
 } from "@/features/settings/claudeLinks";
 import { cn } from "@/lib/utils";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 function Step({
   n,
@@ -123,7 +124,7 @@ export function ConnectClaudeStep({
         <CardHeader>
           <CardTitle>Connect Claude</CardTitle>
           <CardDescription>
-            Offerbound uses Claude to rank jobs and write your applications. It connects with an{" "}
+            {PRODUCT_NAME} uses Claude to rank jobs and write your applications. It connects with an{" "}
             <span className="font-medium text-foreground">API key</span>: a long password that lets
             this app use Claude on your account. You pay Anthropic only for what you use, and the
             key is stored in your computer's keychain, never in a file.
@@ -175,7 +176,7 @@ export function ConnectClaudeStep({
               link={{ href: CLAUDE_KEYS_URL, label: "Open API keys" }}
             >
               <p className="text-muted-foreground">
-                Choose Create key, name it &ldquo;Offerbound&rdquo;, and copy it. It starts with{" "}
+                Choose Create key, name it &ldquo;{PRODUCT_NAME}&rdquo;, and copy it. It starts with{" "}
                 <code className="rounded bg-muted px-1">sk-ant-</code> and is shown only once.
               </p>
             </Step>
@@ -246,7 +247,7 @@ export function ConnectClaudeStep({
           <p>
             <span className="font-medium">Use Claude Code?</span>{" "}
             <span className="text-muted-foreground">
-              If you already work in Claude Code, it can run Offerbound's commands with your
+              If you already work in Claude Code, it can run {PRODUCT_NAME}'s commands with your
               subscription instead, and you can skip this.
             </span>
           </p>

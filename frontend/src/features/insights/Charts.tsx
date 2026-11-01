@@ -12,7 +12,7 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const BAR_SIZE = 18; // <= 24px marks
+const BAR_SIZE = 12; // <= 24px marks; the design draws slim bars
 const AXIS = { fontSize: 12, fill: "var(--muted-foreground)" };
 
 export interface Datum {
@@ -131,7 +131,7 @@ export function HorizontalBars({
             dataKey="value"
             fill="var(--chart-1)"
             barSize={BAR_SIZE}
-            radius={[0, 4, 4, 0]}
+            radius={[0, 2, 2, 0]}
             isAnimationActive={false}
           >
             <LabelList dataKey="text" content={TipLabel} />
@@ -162,7 +162,7 @@ export function Columns({ data, label }: { data: Datum[]; label: string }) {
             dataKey="value"
             fill="var(--chart-1)"
             barSize={BAR_SIZE}
-            radius={[4, 4, 0, 0]}
+            radius={[2, 2, 0, 0]}
             isAnimationActive={false}
           />
         </BarChart>

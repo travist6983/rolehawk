@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { CHANNELS, followUpText } from "./pipelineText";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 type Channel = NonNullable<FollowUpChannel>;
 
@@ -48,8 +49,8 @@ export function FollowUpDialog({ card, onClose }: { card: BoardCard; onClose: ()
         <DialogHeader>
           <DialogTitle>Follow up with {card.company}</DialogTitle>
           <DialogDescription>
-            {followUpText(card)} The draft uses only what you already sent them. Offerbound never
-            sends anything: copy it, send it yourself, then log it here.
+            {followUpText(card)} The draft uses only what you already sent them. {PRODUCT_NAME}{" "}
+            never sends anything: copy it, send it yourself, then log it here.
           </DialogDescription>
         </DialogHeader>
         <fieldset className="space-y-2">

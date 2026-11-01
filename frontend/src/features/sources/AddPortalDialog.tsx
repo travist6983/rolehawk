@@ -47,6 +47,7 @@ import {
   isCompanyInTitle,
   plural,
 } from "./sourceText";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 function Candidates({
   candidates,
@@ -221,9 +222,9 @@ export function AddPortalDialog({
         <DialogHeader>
           <DialogTitle>Add a job site</DialogTitle>
           <DialogDescription>
-            Paste a company's careers page or a job board. Offerbound looks for a feed or structured
-            job data first and only falls back to reading the page layout. You see sample jobs and
-            the plugin file before anything is added.
+            Paste a company's careers page or a job board. {PRODUCT_NAME} looks for a feed or
+            structured job data first and only falls back to reading the page layout. You see sample
+            jobs and the plugin file before anything is added.
           </DialogDescription>
         </DialogHeader>
 

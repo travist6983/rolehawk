@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div role="status" aria-label={label} aria-busy="true" className="space-y-6 p-6">
+    <div role="status" aria-label={label} aria-busy="true" className="space-y-6 px-5 py-7 md:px-8">
       {children}
       <span className="sr-only">{label}</span>
     </div>

@@ -1,4 +1,4 @@
-import { EyeIcon, MessageSquarePlusIcon, SparklesIcon, XIcon } from "lucide-react";
+import { EyeIcon, MessageSquarePlusIcon, SparklesIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export function ChatDrawer() {
           if (event.key === "Escape") chat.closeDrawer();
         }}
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-xl md:w-[420px]",
+          "fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-background shadow-[-1px_0_0_var(--border),-12px_0_32px_oklch(0_0_0/0.12)] md:w-[420px]",
           "duration-150 ease-out",
           // Visibility flips instantly on open (so the input can take focus right away) and
           // only after the slide-out on close.
@@ -53,10 +53,9 @@ export function ChatDrawer() {
             : "invisible translate-x-full transition-[transform,visibility]",
         )}
       >
-        <header className="flex items-center gap-2 border-b px-4 py-3">
-          <SparklesIcon className="size-4 text-primary" aria-hidden />
-          <h2 className="font-semibold">Chat</h2>
-          <div className="ml-auto flex gap-1">
+        <header className="flex items-center gap-2 border-b px-5 py-[18px]">
+          <h2 className="font-serif text-[22px] leading-none font-medium">Ask Claude</h2>
+          <div className="ml-auto flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -70,13 +69,18 @@ export function ChatDrawer() {
               </TooltipTrigger>
               <TooltipContent>New conversation</TooltipContent>
             </Tooltip>
-            <Button size="icon" variant="ghost" aria-label="Close chat" onClick={chat.closeDrawer}>
-              <XIcon />
-            </Button>
+            <button
+              type="button"
+              aria-label="Close chat"
+              onClick={chat.closeDrawer}
+              className="cursor-pointer rounded px-2 py-1 font-mono text-[13px] font-medium text-muted-foreground shadow-[0_0_0_1px_var(--border)] hover:text-foreground"
+            >
+              esc
+            </button>
           </div>
         </header>
 
-        <div className="flex px-4 pt-3">
+        <div className="flex px-5 pt-3">
           <span
             className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
             data-testid="context-chip"
@@ -105,7 +109,8 @@ export function ChatDrawer() {
       {/* Stays mounted while the drawer is open (just hidden) so focus can return to it. */}
       <Button
         className={cn(
-          "fixed right-4 bottom-4 z-40 size-12 rounded-full shadow-lg sm:h-11 sm:w-auto sm:px-4",
+          // The sidebar's Ask Claude opens chat on wider screens; this one is for phones.
+          "fixed right-4 bottom-4 z-40 size-12 rounded-full shadow-lg sm:h-11 sm:w-auto sm:px-4 md:hidden",
           chat.open && "hidden",
         )}
         onClick={() => {

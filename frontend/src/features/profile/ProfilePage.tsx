@@ -201,7 +201,7 @@ export default function ProfilePage() {
   if (overview.isPending || memory.isPending) return <DocumentSkeleton />;
   if (overview.isError || memory.isError) {
     return (
-      <div className="p-6" role="alert">
+      <div className="px-5 py-7 md:px-8" role="alert">
         Couldn't load your profile.
       </div>
     );
@@ -224,7 +224,7 @@ export default function ProfilePage() {
           )
         }
       />
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="max-w-3xl space-y-6 px-5 pb-8 md:px-8">
         {pending.length > 0 && (
           <section aria-labelledby="pending-heading" className="space-y-2">
             <h2 id="pending-heading" className="text-sm font-semibold">

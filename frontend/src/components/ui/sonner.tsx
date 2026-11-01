@@ -24,10 +24,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          // The design's toast: an ink pill at the bottom center.
+          "--normal-bg": "var(--foreground)",
+          "--normal-text": "var(--background)",
+          "--normal-border": "var(--foreground)",
+          "--border-radius": "999px",
         } as React.CSSProperties
       }
       {...props}

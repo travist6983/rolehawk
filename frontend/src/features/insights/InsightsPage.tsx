@@ -12,13 +12,14 @@ import { usd } from "@/lib/format";
 
 import { CalibrationCard } from "./CalibrationCard";
 import { ChartCard, Columns, HorizontalBars } from "./Charts";
-import { compactNumber, pct, weekLabel } from "./insightsText";
+import { compactNumber, leadText, pct, weekLabel } from "./insightsText";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+    <div className="rounded-lg bg-card p-4 shadow-card">
+      <p className="text-sm font-medium text-foreground-2">{label}</p>
+      <p className="mt-1 font-serif text-3xl leading-none font-medium tabular-nums">{value}</p>
       {detail && <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>}
     </div>
   );
@@ -28,9 +29,11 @@ function SpendTile({ spend }: { spend: Insights["spend"] }) {
   const cap = spend.cap_usd;
   const share = cap ? Math.min(spend.month_to_date_usd / cap, 1) : null;
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <p className="text-sm text-muted-foreground">AI spend this month</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{usd(spend.month_to_date_usd)}</p>
+    <div className="rounded-lg bg-card p-4 shadow-card">
+      <p className="text-sm font-medium text-foreground-2">AI spend this month</p>
+      <p className="mt-1 font-serif text-3xl leading-none font-medium tabular-nums">
+        {usd(spend.month_to_date_usd)}
+      </p>
       {share !== null && cap !== null ? (
         <div className="mt-2 space-y-1">
           <Progress value={Math.round(share * 100)} aria-label="Share of monthly cap used" />
@@ -86,7 +89,7 @@ export default function InsightsPage() {
         <EmptyState
           icon={ChartColumnIcon}
           title="Couldn't load insights"
-          description={errorText(insights.error, "The Offerbound backend didn't answer.")}
+          description={errorText(insights.error, `The ${PRODUCT_NAME} backend didn't answer.`)}
         />
       </>
     );
@@ -119,7 +122,7 @@ export default function InsightsPage() {
             },
           ]}
         />
-        <div className="mx-auto max-w-sm px-6 pb-6">
+        <div className="mx-auto max-w-sm px-5 pb-6">
           <SpendTile spend={data.spend} />
         </div>
       </>
@@ -150,10 +153,18 @@ export default function InsightsPage() {
     text: `${usd(line.cost_usd)} (${String(line.calls)} calls)`,
   }));
 
+  const lead = leadText(data.by_source, t);
   return (
     <>
-      {header}
-      <div className="space-y-6 p-6">
+      <PageHeader title="Insights" actions={<ReportButton />} />
+      {lead && (
+        <p className="max-w-[760px] px-5 pb-6 font-serif text-[19px] leading-[1.45] text-pretty text-foreground-2 md:px-8">
+          {lead.before}
+          <b className="font-medium text-foreground">{lead.strong}</b>
+          {lead.after}
+        </p>
+      )}
+      <div className="space-y-6 px-5 pb-8 md:px-8">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <StatTile
             label="Applications"
@@ -174,7 +185,7 @@ export default function InsightsPage() {
           <SpendTile spend={data.spend} />
         </div>
         <CalibrationCard />
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">
           <ChartCard
             title="Pipeline funnel"
             description="Applications that reached each stage, and the share that moved on from the stage before."
