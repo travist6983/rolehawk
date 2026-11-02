@@ -1,6 +1,6 @@
 name: Site
 
-# Builds the marketing site (site/ plus docs/media) and deploys it to GitHub Pages at
+# Builds the marketing site (site/) and deploys it to GitHub Pages at
 # https://travist6983.github.io/rolehawk/. Pull requests only build and check it.
 # Deploys run only while the repository is public and Pages is set to "GitHub Actions"
 # (Settings > Pages > Build and deployment > Source).
@@ -10,12 +10,10 @@ on:
     branches: [main]
     paths:
       - "site/**"
-      - "docs/media/**"
       - ".github/workflows/pages.yml"
   pull_request:
     paths:
       - "site/**"
-      - "docs/media/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 

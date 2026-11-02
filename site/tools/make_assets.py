@@ -1,12 +1,10 @@
 """Regenerate the site's image assets from docs/media and the bundled fonts.
 
 Writes, under site/:
-  stills/<name>.png   a still frame of each GIF (shown when animations are paused or
-                      the visitor prefers reduced motion)
-  social.png          the 1200x630 Open Graph / Twitter card image
+  social.png          the 1200x630 Open Graph / Twitter card image (from docs/media/pipeline.png)
   icon-180.png        the Apple touch icon
 
-Run it again whenever a GIF in docs/media changes:
+Run it again whenever docs/media/pipeline.png changes:
 
     uv run --no-project --with pillow --with fonttools --with brotli \
         python site/tools/make_assets.py
@@ -19,11 +17,10 @@ import math
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageSequence
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 SITE = Path(__file__).resolve().parents[1]
 MEDIA = SITE.parent / "docs" / "media"
-GIFS = ["hero", "discover", "apply", "chat"]
 
 
 def oklch(lightness: float, chroma: float, hue: float) -> tuple[int, int, int]:
@@ -71,18 +68,6 @@ def font(name: str, size: int, weight: int, opsz: int | None = None) -> ImageFon
     names = [ax.axisTag for ax in tt["fvar"].axes]
     f.set_variation_by_axes([axes.get(n, 400) for n in names])
     return f
-
-
-def stills() -> None:
-    out = SITE / "stills"
-    out.mkdir(exist_ok=True)
-    for name in GIFS:
-        gif = Image.open(MEDIA / f"{name}.gif")
-        frames = [fr.convert("RGB") for fr in ImageSequence.Iterator(gif)]
-        # The last frame is the finished state each animation builds up to.
-        frames[-1].quantize(colors=128, method=Image.Quantize.MEDIANCUT).save(
-            out / f"{name}.png", optimize=True
-        )
 
 
 def social() -> None:
@@ -145,8 +130,7 @@ def touch_icon() -> None:
 
 
 if __name__ == "__main__":
-    stills()
     social()
     touch_icon()
-    print("Wrote stills/, social.png, icon-180.png")
+    print("Wrote social.png, icon-180.png")
     print("Colors:", {"paper": PAPER, "ink": INK, "espresso": ESPRESSO, "accent": ACCENT})
