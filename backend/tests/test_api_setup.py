@@ -34,7 +34,7 @@ def test_upload_extract_review_apply(client: TestClient, fake: FakeProvider) -> 
     assert client.get("/api/setup/documents").json()[0]["id"] == doc["id"]
 
     assert client.get("/api/setup/draft").status_code == 404
-    fake.queue_structured(extracted_reply())
+    fake.queue_structured(*extracted_reply())
     started = client.post("/api/setup/extract", json={"document_ids": [doc["id"]]})
     assert started.status_code == 202
     task = wait_for_task(client, started.json()["task_id"])

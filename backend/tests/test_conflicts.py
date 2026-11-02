@@ -132,7 +132,7 @@ async def test_a_cv_and_a_linkedin_export_that_disagree(runtime: Runtime) -> Non
     )
     cv = runtime.setup.add_document("cv.txt", (FIXTURES / "ada_example.txt").read_bytes())
     fake_of(runtime).queue_structured(
-        ExtractionOut.from_setup(
+        *ExtractionOut.from_setup(
             ExtractedSetup.model_validate(
                 {
                     "profile": {
@@ -148,7 +148,7 @@ async def test_a_cv_and_a_linkedin_export_that_disagree(runtime: Runtime) -> Non
                     "preferences": {},
                 }
             )
-        )
+        ).parts()
     )
     draft = await runtime.setup.extract([export.id, cv.id])
     [conflict] = [c for c in draft.conflicts if c.kind == "title"]

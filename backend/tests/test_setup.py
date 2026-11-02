@@ -8,7 +8,12 @@ from rolehawk.llm.fake import FakeProvider
 from rolehawk.memory.files import MemoryTarget
 from rolehawk.paths import DataPaths
 from rolehawk.profile.documents import DocumentError
-from rolehawk.profile.extraction import ExtractedSetup, ExtractionOut
+from rolehawk.profile.extraction import (
+    ExtractedSetup,
+    ExtractionOut,
+    WirePreferences,
+    WireProfile,
+)
 from rolehawk.profile.interview import AnswerError, AnswerValue
 from rolehawk.profile.model import Experience, Profile
 from rolehawk.services.runtime import Runtime, open_runtime
@@ -208,16 +213,16 @@ def extracted() -> ExtractedSetup:
     )
 
 
-def extracted_reply() -> ExtractionOut:
-    """What Claude sends back: the wire form of `extracted()`."""
-    return ExtractionOut.from_setup(extracted())
+def extracted_reply() -> tuple[WireProfile, WirePreferences]:
+    """What Claude sends back to the two extraction requests: the wire form of `extracted()`."""
+    return ExtractionOut.from_setup(extracted()).parts()
 
 
 async def test_extract_then_apply_and_rerun_without_duplicates(runtime: Runtime) -> None:
     fake = fake_of(runtime)
     doc = runtime.setup.add_document("cv.txt", (FIXTURES / "ada_example.txt").read_bytes())
 
-    fake.queue_structured(extracted_reply())
+    fake.queue_structured(*extracted_reply())
     draft = await runtime.setup.extract([doc.id], task_id=None)
     request, _schema = fake.structured_requests[-1]
     assert (
@@ -234,7 +239,7 @@ async def test_extract_then_apply_and_rerun_without_duplicates(runtime: Runtime)
     assert "### Senior Frontend Engineer | Northwind Payments" in profile_md
 
     # Re-running setup with the same CV edits instead of duplicating.
-    fake.queue_structured(extracted_reply())
+    fake.queue_structured(*extracted_reply())
     await runtime.setup.extract([doc.id], task_id=None)
     again = runtime.setup.apply_draft()
     assert again.added == {}
