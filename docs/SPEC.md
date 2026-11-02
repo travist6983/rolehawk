@@ -307,7 +307,7 @@ The app opens on a kanban board of applications; chat is a right-side drawer ava
 | --- | --- | --- |
 | Onboarding | First run | 4 steps: connect Claude, upload resume, gap interview, pick sources. Progress bar, skip allowed except step 1 |
 | Pipeline (home) | Track applications | Kanban columns per stage, drag to move, card shows company, title, score badge, days in stage, next action |
-| Discover | Review scraped jobs | Ranked table with score, filters, bulk actions (Save, Dismiss, Apply), job detail side panel with fit reasons and gaps |
+| Discover | Review scraped jobs | Ranked table with score, filters, bulk actions (Save, Dismiss, Apply), job detail side panel with why it fits, why it might not, and gaps |
 | Application detail | One job end to end | Tabs: Job, Documents (side-by-side DOCX/PDF preview, regenerate, edit), Interview prep, Timeline, Emails |
 | Profile | Source of truth | Editable profile.md rendered as sections, memory facts with accept/reject, search targets editor |
 | Sources | Manage portals | Card per portal: status, last run, jobs found, risk badge, enable toggle, "Add portal" button |

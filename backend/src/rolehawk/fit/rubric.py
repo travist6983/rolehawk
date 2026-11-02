@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from rolehawk.llm.prompting import TRUTHFULNESS_RULES, UNTRUSTED_RULES
 from rolehawk.portals.text import parse_date
 
-RUBRIC_VERSION = "2026-10-31.2"
+RUBRIC_VERSION = "2026-11-01.1"
 
 # How much each part counts toward the overall score.
 WEIGHTS: dict[str, float] = {"experience": 0.35, "skills": 0.30, "career": 0.20, "logistics": 0.15}
@@ -60,10 +60,15 @@ empty. Report it; don't lower the parts for it.
 `deadline`: the application deadline the posting states, as YYYY-MM-DD, or empty. Only a
 stated date ("apply by 15 November 2026"); never guess one from "ASAP" or the posting date.
 
-`reasons`: up to 3 short reasons, most important first, written to the job seeker ("Your 6
-years of React match their senior frontend role"). Mix strengths and concerns.
-`must_have_gaps`: required items the profile doesn't show, a few words each ("Kubernetes in
-production", "active Secret clearance"). Empty when there are none.
+Write to the job seeker, most important first:
+- `reasons`: up to 3 short reasons it fits them, strengths only ("Your 6 years of React
+  match their senior frontend role").
+- `concerns`: up to 3 short reasons it might not fit them: a seniority or domain mismatch,
+  a salary below their floor or not stated, location or schedule, work that drains them, or
+  a direction away from their goals ("They want 8+ years leading teams; you show 3"). Don't
+  repeat must_have_gaps. Empty when nothing stands out.
+- `must_have_gaps`: required items the profile doesn't show, a few words each ("Kubernetes
+  in production", "active Secret clearance"). Empty when there are none.
 
 {TRUTHFULNESS_RULES}
 
@@ -110,7 +115,10 @@ class JobFit(BaseModel):
     logistics: int = Field(description="0 to 100: location or remote, salary, schedule")
     deal_breaker: str = Field(description="The deal breaker it hits, in their words; or empty")
     deadline: str = Field(default="", description="Stated deadline as YYYY-MM-DD, or empty")
-    reasons: list[str] = Field(description="Up to 3 short reasons, most important first")
+    reasons: list[str] = Field(description="Up to 3 reasons it fits, strengths only")
+    concerns: list[str] = Field(
+        default_factory=list, description="Up to 3 reasons it might not fit; empty if none"
+    )
     must_have_gaps: list[str] = Field(
         description="Required items the profile doesn't show; empty if none"
     )
@@ -152,6 +160,7 @@ class JobFit(BaseModel):
             deal_breaker=" ".join(self.deal_breaker.split())[:200],
             deadline=closes.isoformat() if (closes := parse_date(self.deadline)) else "",
             reasons=[r.strip() for r in self.reasons if r.strip()][:3],
+            concerns=[c.strip() for c in self.concerns if c.strip()][:3],
             must_have_gaps=[g.strip() for g in self.must_have_gaps if g.strip()][:8],
         )
 

@@ -24,6 +24,7 @@ import { ScoreBadge } from "@/components/ScoreBadge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { safeUrl, whereText } from "@/features/discover/discoverText";
+import { FitConcerns } from "@/features/discover/FitDetails";
 import { plural, timeAgo } from "@/lib/format";
 import { fitWord } from "@/lib/score";
 import { cn } from "@/lib/utils";
@@ -290,6 +291,7 @@ function JobTab({ detail }: { detail: ApplicationDetail }) {
               <li key={r}>{r}</li>
             ))}
           </ul>
+          <FitConcerns concerns={fit.concerns} />
           {fit.must_have_gaps.length > 0 && (
             <p className="text-muted-foreground">Missing: {fit.must_have_gaps.join(", ")}</p>
           )}

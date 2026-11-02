@@ -83,7 +83,7 @@ describe("DiscoverPage", () => {
     expect(last?.has("portal_id")).toBe(false); // empty filters aren't sent
   });
 
-  it("opens a job with reasons, gaps, and the posting", async () => {
+  it("opens a job with reasons, concerns, gaps, and the posting", async () => {
     withJobs();
     server.use(http.get("/api/jobs/1", () => HttpResponse.json(jobDetail())));
     const { user } = await renderApp("/discover");
@@ -92,12 +92,40 @@ describe("DiscoverPage", () => {
     const sheet = await screen.findByRole("dialog");
     expect(within(sheet).getByRole("heading", { name: "Senior Data Analyst" })).toBeVisible();
     expect(sheet).toHaveTextContent("Your SQL and Looker work matches their stack");
+    expect(within(sheet).getByRole("heading", { name: "Why it might not fit" })).toBeVisible();
+    expect(sheet).toHaveTextContent(
+      "They want finance reporting; your analytics work is in marketing",
+    );
     expect(within(sheet).getByText("dbt")).toBeVisible();
     expect(sheet).toHaveTextContent("You'll own reporting for our finance team.");
     expect(within(sheet).getByRole("link", { name: "Open posting" })).toHaveAttribute(
       "href",
       "https://boards.greenhouse.io/northwind/jobs/1",
     );
+  });
+
+  it("offers a re-rank when the score predates concerns", async () => {
+    withJobs();
+    let rescore: boolean | undefined;
+    server.use(
+      http.get("/api/jobs/1", () => HttpResponse.json(jobDetail({ concerns: null }))),
+      http.post("/api/rank/plan", async ({ request }) => {
+        rescore = ((await request.json()) as { rescore: boolean }).rescore;
+        return HttpResponse.json(rankPlan());
+      }),
+    );
+    const { user } = await renderApp("/discover");
+    await user.click(await screen.findByRole("button", { name: "Senior Data Analyst" }));
+    const sheet = await screen.findByRole("dialog");
+    expect(sheet).toHaveTextContent("This score is from before RoleHawk listed concerns.");
+
+    await user.click(within(sheet).getByRole("button", { name: "Rank it again" }));
+    expect(
+      await screen.findByRole("checkbox", { name: "Also re-rank jobs that already have a score" }),
+    ).toBeChecked();
+    await waitFor(() => {
+      expect(rescore).toBe(true);
+    });
   });
 
   it("shows the score's parts and the eligibility check with the posting's words", async () => {

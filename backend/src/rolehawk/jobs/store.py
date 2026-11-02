@@ -71,6 +71,9 @@ class JobRow(BaseModel):
     scraped_at: datetime
     score: int | None
     reasons: list[str]
+    concerns: list[str] | None = Field(
+        description="Why it might not fit; null when ranked before the rubric asked"
+    )
     must_have_gaps: list[str]
     scored_at: datetime | None
     score_model: str | None
@@ -151,6 +154,7 @@ class JobStore:
                 Job,
                 score.c.score,
                 score.c.reasons,
+                score.c.concerns,
                 score.c.must_have_gaps,
                 score.c.created_at,
                 score.c.model,
@@ -168,9 +172,20 @@ class JobStore:
 
     @staticmethod
     def _row(values: Any) -> dict[str, Any]:
-        job, score, reasons, gaps, scored_at, model, breakdown, gates, stage, app_id, source = (
-            values
-        )
+        (
+            job,
+            score,
+            reasons,
+            concerns,
+            gaps,
+            scored_at,
+            model,
+            breakdown,
+            gates,
+            stage,
+            app_id,
+            source,
+        ) = values
         report = IntegrityView.of(job.integrity)
         today = utcnow().date()
         posted = job.posted_at.date() if job.posted_at else None
@@ -189,6 +204,7 @@ class JobStore:
             "scraped_at": job.scraped_at,
             "score": score,
             "reasons": reasons or [],
+            "concerns": concerns,
             "must_have_gaps": gaps or [],
             "scored_at": scored_at,
             "score_model": model,

@@ -28,7 +28,47 @@ import { deadlineText, safeUrl, staleText, whereText } from "./discoverText";
 import { FitBreakdown, FitGates } from "./FitDetails";
 import { IntegrityNotice } from "./IntegrityNotice";
 
-function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
+function FitList({ items, marker, tone }: { items: string[]; marker: string; tone: string }) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item) => (
+        <li key={item} className="grid grid-cols-[14px_1fr] gap-1.5 text-[14.5px] leading-normal">
+          <span aria-hidden className={tone}>
+            {marker}
+          </span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Concerns({ concerns, onRescore }: { concerns: string[] | null; onRescore: () => void }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="font-serif text-lg font-medium italic">Why it might not fit</h3>
+      {concerns === null ? (
+        <p className="text-muted-foreground">
+          This score is from before RoleHawk listed concerns.{" "}
+          <button
+            type="button"
+            className="text-primary-text underline-offset-4 hover:underline"
+            onClick={onRescore}
+          >
+            Rank it again
+          </button>{" "}
+          to see them.
+        </p>
+      ) : concerns.length > 0 ? (
+        <FitList items={concerns} marker="−" tone="text-caution" />
+      ) : (
+        <p className="text-muted-foreground">Nothing stands out against it.</p>
+      )}
+    </div>
+  );
+}
+
+function FitSection({ job, onRank }: { job: JobDetail; onRank: (rescore: boolean) => void }) {
   if (job.score === null) {
     return (
       <section aria-label="Fit" className="rounded-lg border border-dashed p-4 text-sm">
@@ -36,7 +76,14 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
         <p className="mt-1 text-muted-foreground">
           Rank it to see how well it fits your profile, with reasons and gaps.
         </p>
-        <Button size="sm" variant="outline" className="mt-3" onClick={onRank}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() => {
+            onRank(false);
+          }}
+        >
           <SparklesIcon /> Rank this job
         </Button>
       </section>
@@ -59,37 +106,19 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
       {job.reasons.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-serif text-lg font-medium italic">Why this fits you</h3>
-          <ul className="space-y-1.5">
-            {job.reasons.map((reason) => (
-              <li
-                key={reason}
-                className="grid grid-cols-[14px_1fr] gap-1.5 text-[14.5px] leading-normal"
-              >
-                <span aria-hidden className="text-score-high">
-                  +
-                </span>
-                <span>{reason}</span>
-              </li>
-            ))}
-          </ul>
+          <FitList items={job.reasons} marker="+" tone="text-score-high" />
         </div>
       )}
+      <Concerns
+        concerns={job.concerns}
+        onRescore={() => {
+          onRank(true);
+        }}
+      />
       <div className="space-y-2">
         <h3 className="font-serif text-lg font-medium italic">Worth addressing</h3>
         {job.must_have_gaps.length > 0 ? (
-          <ul className="space-y-1.5">
-            {job.must_have_gaps.map((gap) => (
-              <li
-                key={gap}
-                className="grid grid-cols-[14px_1fr] gap-1.5 text-[14.5px] leading-normal"
-              >
-                <span aria-hidden className="text-primary-text">
-                  –
-                </span>
-                <span>{gap}</span>
-              </li>
-            ))}
-          </ul>
+          <FitList items={job.must_have_gaps} marker="–" tone="text-primary-text" />
         ) : (
           <p className="text-muted-foreground">No gaps in the must-haves.</p>
         )}
@@ -198,7 +227,7 @@ export function JobDetailSheet({
 }: {
   id: number | null;
   onClose: () => void;
-  onRank: (id: number) => void;
+  onRank: (id: number, rescore: boolean) => void;
   onApply: (id: number) => void;
 }) {
   const job = useJob(id);
@@ -211,7 +240,7 @@ export function JobDetailSheet({
         if (!open) onClose();
       }}
     >
-      <SheetContent className="w-full gap-0 overflow-y-auto bg-card sm:max-w-[460px]">
+      <SheetContent className="w-full gap-0 overflow-y-auto bg-card sm:w-1/3 sm:max-w-none sm:min-w-[460px]">
         {data ? (
           <>
             <SheetHeader className="gap-1 px-6 pt-6 pr-12">
@@ -248,8 +277,8 @@ export function JobDetailSheet({
             <div className="space-y-6 px-6 pb-8">
               <FitSection
                 job={data}
-                onRank={() => {
-                  onRank(data.id);
+                onRank={(rescore) => {
+                  onRank(data.id, rescore);
                 }}
               />
               <Actions job={data} onApply={onApply} />

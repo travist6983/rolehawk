@@ -13,6 +13,7 @@ def fit_of(
     eligibility: GateVerdict = "pass",
     language: GateVerdict = "pass",
     deal_breaker: str = "",
+    concerns: list[str] | None = None,
 ) -> JobFit:
     return JobFit(
         job_id=job_id,
@@ -24,6 +25,7 @@ def fit_of(
         logistics=score,
         deal_breaker=deal_breaker,
         reasons=reasons or [],
+        concerns=concerns or [],
         must_have_gaps=gaps or [],
     )
 

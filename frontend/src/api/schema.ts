@@ -2515,6 +2515,11 @@ export interface components {
             score: number;
             /** Reasons */
             reasons: string[];
+            /**
+             * Concerns
+             * @description Why it might not fit; empty if none or not asked
+             */
+            concerns: string[];
             /** Must Have Gaps */
             must_have_gaps: string[];
             /** Threshold */
@@ -2861,6 +2866,11 @@ export interface components {
             score: number | null;
             /** Reasons */
             reasons: string[];
+            /**
+             * Concerns
+             * @description Why it might not fit; null when ranked before the rubric asked
+             */
+            concerns: string[] | null;
             /** Must Have Gaps */
             must_have_gaps: string[];
             /** Scored At */
@@ -2944,6 +2954,11 @@ export interface components {
             score: number | null;
             /** Reasons */
             reasons: string[];
+            /**
+             * Concerns
+             * @description Why it might not fit; null when ranked before the rubric asked
+             */
+            concerns: string[] | null;
             /** Must Have Gaps */
             must_have_gaps: string[];
             /** Scored At */

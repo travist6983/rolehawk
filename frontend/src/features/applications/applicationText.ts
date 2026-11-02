@@ -76,7 +76,14 @@ export function commaTextToList(text: string): string[] {
 export interface ApplyOutcome {
   status: "ready" | "needs_review" | "below_threshold";
   application_id: number | null;
-  fit: { score: number; threshold: number; reasons: string[]; must_have_gaps: string[] };
+  fit: {
+    score: number;
+    threshold: number;
+    reasons: string[];
+    /** Missing from results of older versions. */
+    concerns?: string[];
+    must_have_gaps: string[];
+  };
 }
 
 export function readOutcome(result: unknown): ApplyOutcome | null {

@@ -18,7 +18,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { needsAttention } from "@/features/discover/discoverText";
-import { FitGates } from "@/features/discover/FitDetails";
+import { FitConcerns, FitGates } from "@/features/discover/FitDetails";
 import { useEventStream } from "@/features/events/EventStreamProvider";
 import { usd } from "@/lib/format";
 
@@ -42,6 +42,7 @@ function FitSummary({ fit }: { fit: ApplyOutcome["fit"] | NonNullable<ApplyPlan[
           ))}
         </ul>
       )}
+      <FitConcerns concerns={fit.concerns ?? []} />
       {fit.must_have_gaps.length > 0 && (
         <p className="text-muted-foreground">Missing: {fit.must_have_gaps.join(", ")}</p>
       )}

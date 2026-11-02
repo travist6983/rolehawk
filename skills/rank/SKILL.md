@@ -41,15 +41,15 @@ the Discover screen and the chat drawer exactly. Two ways to score:
      "language": {"verdict": "check", "quote": "Fluent German required"},
      "experience": 85, "skills": 70, "career": 80, "logistics": 90, "deal_breaker": "",
      "deadline": "2026-11-15",
-     "reasons": ["...", "..."], "must_have_gaps": ["..."]}]}' --json
+     "reasons": ["...", "..."], "concerns": ["..."], "must_have_gaps": ["..."]}]}' --json
    ```
 
    You score the four parts; the app computes the overall score from them (35/30/20/15) and
    caps it at 39 when a gate fails or a deal breaker is hit, exactly as when it scores.
    `deadline` is a date the posting states (YYYY-MM-DD), or empty; jobs past their deadline
    aren't offered for ranking. Quote
-   the posting's own words for each gate. Up to 3 reasons each, written to the user; gaps
-   are required items the profile doesn't show. Never claim the user has a skill that isn't
+   the posting's own words for each gate. Up to 3 reasons it fits and 3 concerns (why it might not)
+   each, written to the user; gaps are required items the profile doesn't show. Never claim the user has a skill that isn't
    in `memory_text`.
 
 4. Repeat steps 2-3 while `left_after_this_batch` is above 0. For more than ~100 jobs, ask

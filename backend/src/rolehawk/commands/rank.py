@@ -119,8 +119,8 @@ def register_rank(registry: CommandRegistry) -> None:
     registry.register(
         CommandSpec(
             "rank-save",
-            "Save fit scores computed outside the app (job_id, score 0-100, reasons, "
-            "must_have_gaps).",
+            "Save fit scores computed outside the app (job_id, gates, the four parts, "
+            "reasons, concerns, must_have_gaps).",
             _rank_save,
             SaveScoresParams,
             read_only=False,
