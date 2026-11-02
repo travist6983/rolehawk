@@ -199,6 +199,7 @@ describe("Onboarding", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("2 answered · about 6 to go")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument(); // required
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument(); // first one
 
     await user.click(screen.getByRole("button", { name: "Hybrid" }));
     expect(sent).toEqual({ question_id: "prefs.remote", value: "hybrid" });
@@ -307,6 +308,184 @@ describe("Onboarding", () => {
       question_id: "basics.contact",
       value: { name: "Ada Example", links: ["github.com/ada", "ada.example.com"] },
     });
+  });
+
+  it("adds typed job titles with Enter instead of moving on", async () => {
+    let sent: unknown = null;
+    server.use(
+      http.get("/api/setup/interview", () =>
+        HttpResponse.json(
+          interviewState({
+            question: question({
+              id: "prefs.titles",
+              prompt: "Which job titles should I search for?",
+              kind: "multi",
+              choices: [{ value: "Data Analyst", label: "Data Analyst" }],
+              allow_other: true,
+              placeholder: "Add other titles, comma separated",
+            }),
+          }),
+        ),
+      ),
+      http.post("/api/setup/interview/answer", async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({ detail: "stop here" }, { status: 422 });
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=interview");
+    const box = await screen.findByLabelText("Add your own");
+    await user.type(box, "Analytics Engineer{Enter}");
+    expect(sent).toBeNull(); // Enter added it; nothing was submitted
+    expect(box).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Analytics Engineer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.type(box, "BI Developer, data analyst{Enter}"); // matches the existing chip
+    expect(screen.getByRole("button", { name: "Data Analyst" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.type(box, "Data Scientist"); // typed but not added: still sent
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("stop here");
+    expect(sent).toEqual({
+      question_id: "prefs.titles",
+      value: ["Analytics Engineer", "BI Developer", "Data Analyst", "Data Scientist"],
+    });
+  });
+
+  it("moves to a new link box with Enter instead of submitting", async () => {
+    let posted = false;
+    server.use(
+      http.get("/api/setup/interview", () =>
+        HttpResponse.json(
+          interviewState({
+            question: question({
+              id: "basics.contact",
+              prompt: "First, the basics for your CV header.",
+              kind: "form",
+              choices: [],
+              fields: [
+                {
+                  name: "name",
+                  label: "Full name",
+                  kind: "text",
+                  required: true,
+                  placeholder: null,
+                },
+                {
+                  name: "links",
+                  label: "Links (LinkedIn, GitHub, site)",
+                  kind: "list",
+                  required: false,
+                  placeholder: null,
+                },
+              ],
+              value: { name: "Ada Example" },
+            }),
+          }),
+        ),
+      ),
+      http.post("/api/setup/interview/answer", () => {
+        posted = true;
+        return HttpResponse.json({ detail: "stop here" }, { status: 422 });
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=interview");
+    expect(await screen.findByLabelText(/Full name/)).toHaveValue("Ada Example"); // saved answer
+    await user.type(
+      screen.getByRole("textbox", { name: "Links (LinkedIn, GitHub, site)" }),
+      "github.com/ada{Enter}",
+    );
+    expect(posted).toBe(false);
+    expect(screen.getByLabelText("Link 2")).toHaveFocus();
+  });
+
+  it("goes back to the previous question with the saved answer filled in", async () => {
+    let backs = 0;
+    server.use(
+      http.get("/api/setup/interview", () =>
+        HttpResponse.json(
+          interviewState({
+            can_go_back: true,
+            question: question({
+              id: "prefs.seniority",
+              prompt: "What level are you aiming for?",
+              choices: [
+                { value: "Senior", label: "Senior" },
+                { value: "Director+", label: "Director+" },
+              ],
+              optional: true,
+            }),
+          }),
+        ),
+      ),
+      http.post("/api/setup/interview/back", () => {
+        backs += 1;
+        return HttpResponse.json(
+          interviewState({
+            can_go_back: true,
+            question: question({
+              id: "prefs.titles",
+              prompt: "Which job titles should I search for?",
+              kind: "multi",
+              choices: [
+                { value: "Data Analyst", label: "Data Analyst" },
+                { value: "Staff Engineer", label: "Staff Engineer" },
+              ],
+              allow_other: true,
+              optional: true,
+              skip_label: "Keep my answer",
+              value: ["Staff Engineer"],
+            }),
+          }),
+        );
+      }),
+    );
+    const { user } = await renderApp("/onboarding?step=interview");
+    await screen.findByRole("heading", { name: "What level are you aiming for?" });
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(
+      await screen.findByRole("heading", { name: "Which job titles should I search for?" }),
+    ).toBeInTheDocument();
+    expect(backs).toBe(1);
+    expect(screen.getByRole("button", { name: "Staff Engineer" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Data Analyst" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Keep my answer" })).toBeInTheDocument();
+  });
+
+  it("marks the saved choice when a single-choice question is asked again", async () => {
+    server.use(
+      http.get("/api/setup/interview", () =>
+        HttpResponse.json(
+          interviewState({
+            question: question({
+              id: "prefs.country",
+              prompt: "Which country are you job hunting in?",
+              choices: [
+                { value: "US", label: "United States" },
+                { value: "GB", label: "United Kingdom" },
+              ],
+              allow_other: true,
+              value: "FR",
+            }),
+          }),
+        ),
+      ),
+    );
+    await renderApp("/onboarding?step=interview");
+    expect(await screen.findByLabelText("Or type your own")).toHaveValue("FR"); // not a choice
+    expect(screen.getByRole("button", { name: "United States" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   it("celebrates when the interview is complete", async () => {

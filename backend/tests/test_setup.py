@@ -176,6 +176,131 @@ async def test_refinement_questions_for_dates_and_metrics(runtime: Runtime) -> N
     assert exp.highlights == ["Cut deploy time from 40 to 8 minutes for 30 teams"]
 
 
+def answer_through(runtime: Runtime, last: str) -> None:
+    """Answer INTERVIEW_ANSWERS in order up to and including `last` (skipping the rest)."""
+    state = runtime.setup.interview_state()
+    while state.question is not None:
+        qid = state.question.id
+        if qid in INTERVIEW_ANSWERS:
+            state = runtime.setup.answer(qid, INTERVIEW_ANSWERS[qid])
+        else:
+            state = runtime.setup.skip(qid)
+        if qid == last:
+            return
+    raise AssertionError(f"{last} was never asked")
+
+
+async def test_back_asks_the_previous_question_again_with_the_saved_answer(
+    runtime: Runtime,
+) -> None:
+    assert not runtime.setup.interview_state().can_go_back
+    with pytest.raises(AnswerError, match="no earlier question"):
+        runtime.setup.back()
+
+    answer_through(runtime, "prefs.titles")
+    mis_click = runtime.setup.answer("prefs.seniority", "Director+")
+    assert mis_click.question is not None
+    assert mis_click.question.id == "prefs.remote"
+    assert mis_click.can_go_back
+
+    state = runtime.setup.back()
+    assert state.question is not None
+    assert state.question.id == "prefs.seniority"
+    assert state.question.value == "Director+"
+    assert (state.question.optional, state.question.skip_label) == (True, "Keep my answer")
+    assert state.answered == mis_click.answered - 1
+
+    state = runtime.setup.answer("prefs.seniority", "Mid level")
+    assert runtime.profiles.load_preferences().seniority == "Mid level"
+    assert state.question is not None
+    assert state.question.id == "prefs.remote"  # carries on where it was
+    assert state.answered == mis_click.answered
+
+
+async def test_back_to_a_role_edits_it_instead_of_adding_another(runtime: Runtime) -> None:
+    answer_through(runtime, "role.add")
+    state = runtime.setup.back()
+    assert state.question is not None
+    assert state.question.id.startswith("role.edit.")
+    form = state.question.value
+    assert isinstance(form, dict)
+    assert (form["title"], form["company"], form["dates"]) == (
+        "Data Analyst",
+        "Initech",
+        "2022-01 to present",
+    )
+
+    runtime.setup.answer(state.question.id, {**form, "title": "Senior Data Analyst"})
+    [role] = runtime.profiles.load_profile().experience
+    assert (role.title, role.company, role.start, role.current) == (
+        "Senior Data Analyst",
+        "Initech",
+        "2022-01",
+        True,
+    )
+    assert role.highlights[0] == "Built the weekly revenue dashboard, used by 40 managers"
+    # Back again reaches the role under its new title.
+    again = runtime.setup.back()
+    assert again.question is not None
+    assert isinstance(again.question.value, dict)
+    assert again.question.value["title"] == "Senior Data Analyst"
+
+
+async def test_back_twice_then_keep_returns_to_where_you_were(runtime: Runtime) -> None:
+    answer_through(runtime, "profile.skills")
+    before = runtime.setup.interview_state()
+    assert before.question is not None
+    assert before.question.id == "profile.languages"
+
+    skills = runtime.setup.back()
+    assert skills.question is not None
+    assert skills.question.id == "profile.skills"
+    assert skills.question.value == ["SQL", "Python", "Tableau", "dbt"]
+    role_more = runtime.setup.back()
+    assert role_more.question is not None
+    assert role_more.question.id == "role.more"
+
+    kept = runtime.setup.skip("role.more")  # "Keep my answer"
+    assert kept.question is not None
+    assert kept.question.id == "profile.languages"
+    assert kept.answered == before.answered
+    assert runtime.profiles.load_profile().skills == ["SQL", "Python", "Tableau", "dbt"]
+    back_again = runtime.setup.back()  # the skills step is still in history
+    assert back_again.question is not None
+    assert back_again.question.id == "profile.skills"
+
+
+async def test_back_replaces_a_list_answer(runtime: Runtime) -> None:
+    answer_through(runtime, "profile.skills")
+    runtime.setup.back()
+    runtime.setup.answer("profile.skills", ["SQL", "Python"])  # removed two
+    assert runtime.profiles.load_profile().skills == ["SQL", "Python"]
+
+
+async def test_back_reopens_a_skipped_question(runtime: Runtime) -> None:
+    answer_through(runtime, "profile.skills")
+    skipped = runtime.setup.skip("profile.languages")
+    state = runtime.setup.back()
+    assert state.question is not None
+    assert state.question.id == "profile.languages"
+    assert state.question.skip_label == "Skip"  # still unanswered: a normal skip
+    state = runtime.setup.answer("profile.languages", "English (native)")
+    assert runtime.profiles.load_profile().languages == ["English (native)"]
+    assert state.answered == skipped.answered + 1
+
+
+async def test_back_after_done_adding_roles_adds_another(runtime: Runtime) -> None:
+    answer_through(runtime, "basics.contact")
+    runtime.setup.answer("role.add", INTERVIEW_ANSWERS["role.add"])
+    runtime.setup.answer("role.more", "yes")
+    state = runtime.setup.skip("role.add")  # "Done adding roles"
+    assert state.question is not None
+    assert state.question.id == "profile.skills"
+    state = runtime.setup.back()
+    assert state.question is not None
+    assert (state.question.id, state.question.prompt) == ("role.add", "Add another role.")
+
+
 # --- documents, drafts, and re-runs --------------------------------------------------------
 
 

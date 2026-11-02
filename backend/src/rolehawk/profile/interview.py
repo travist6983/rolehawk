@@ -2,7 +2,11 @@
 
 Questions are computed from what the profile and preferences are missing, so the interview
 is resumable (state is the files themselves plus a small list of skipped questions) and works
-with no resume and no API key. Answers are the user's own words and are written directly."""
+with no resume and no API key. Answers are the user's own words and are written directly.
+
+Back asks the previous question again, filled in with what is saved. Answering replaces that
+answer; "Keep my answer" leaves it. Lists (skills, titles, deal-breakers) and a form's list
+field are replaced by the answer, so it carries the items to keep."""
 
 from __future__ import annotations
 
@@ -23,6 +27,8 @@ from rolehawk.profile.model import (
 )
 from rolehawk.profile.parsing import (
     dedupe,
+    format_date_range,
+    format_salary,
     parse_date_range,
     parse_salary,
     split_lines,
@@ -69,11 +75,24 @@ class Question(_Out):
     value: AnswerValue | None = None  # prefill
 
 
+class Step(BaseModel):
+    """A question the user moved past. `again` is the id that asks it again with the saved
+    answer filled in: an added role comes back as `role.edit.<key>`, an achievement under
+    its new text."""
+
+    question: str
+    again: str
+    skipped: bool = False
+
+
 class InterviewProgress(BaseModel):
     skipped: list[str] = Field(default_factory=list)
     answered: list[str] = Field(default_factory=list)
     adding_role: bool = False
     roles_done: bool = False
+    history: list[Step] = Field(default_factory=list)  # oldest first; Back pops the last
+    revisit: Step | None = None  # the step Back went to: asked first until answered or kept
+    ahead: list[Step] = Field(default_factory=list)  # steps Back went past, back in history after
 
 
 class InterviewState(_Out):
@@ -81,6 +100,7 @@ class InterviewState(_Out):
     answered: int
     remaining: int
     complete: bool
+    can_go_back: bool
 
 
 class AnswerError(ValueError):
@@ -129,253 +149,342 @@ ROLE_FIELDS = [
 ]
 
 
+KEEP_ANSWER = "Keep my answer"
+
+
+def _role_edit_id(exp: Experience) -> str:
+    return f"role.edit.{_short_hash(exp.title, exp.company)}"
+
+
+def _education_edit_id(edu: Education) -> str:
+    return f"education.edit.{_short_hash(edu.institution, edu.degree)}"
+
+
+def _joined(items: list[str]) -> str | None:
+    return "; ".join(items) or None
+
+
+def _form_value(fields: dict[str, str | list[str] | None]) -> dict[str, str | list[str]] | None:
+    value = {name: v for name, v in fields.items() if v}
+    return value or None
+
+
+def _role_value(exp: Experience) -> dict[str, str | list[str]] | None:
+    return _form_value(
+        {
+            "title": exp.title,
+            "company": exp.company,
+            "dates": format_date_range(exp.start, exp.end, exp.current),
+            "location": exp.location,
+            "highlights": "\n".join(exp.highlights),
+        }
+    )
+
+
+def _education_question(qid: str, edu: Education | None) -> Question:
+    return Question(
+        id=qid,
+        prompt="What's your highest education?",
+        kind="form",
+        skip_label="Skip (not relevant)",
+        fields=[
+            FormField(name="institution", label="School or university", required=True),
+            FormField(name="degree", label="Degree", placeholder="BSc"),
+            FormField(name="field", label="Field of study", placeholder="Computer Science"),
+            FormField(name="dates", label="Dates", placeholder="2015 - 2019"),
+        ],
+        value=None
+        if edu is None
+        else _form_value(
+            {
+                "institution": edu.institution,
+                "degree": edu.degree,
+                "field": edu.field,
+                "dates": format_date_range(edu.start, edu.end, False),
+            }
+        ),
+    )
+
+
+def _question(qid: str, profile: Profile, prefs: Preferences) -> Question | None:
+    """Build one question, filled in with what is saved now (so Back can ask it again).
+    None when it no longer applies (the role or achievement it was about is gone)."""
+    if qid == "basics.contact":
+        c = profile.contact
+        return Question(
+            id=qid,
+            prompt="First, the basics for your CV header.",
+            kind="form",
+            optional=False,
+            fields=[
+                FormField(name="name", label="Full name", required=True),
+                FormField(name="email", label="Email"),
+                FormField(name="location", label="City and country", placeholder="Austin, TX"),
+                FormField(
+                    name="links",
+                    label="Links (LinkedIn, GitHub, site)",
+                    kind="list",
+                    placeholder="https://www.linkedin.com/in/you",
+                ),
+            ],
+            value=_form_value(
+                {"name": c.name, "email": c.email, "location": c.location, "links": c.links}
+            ),
+        )
+    if qid == "role.add":
+        return Question(
+            id=qid,
+            prompt="Tell me about your most recent role."
+            if not profile.experience
+            else "Add another role.",
+            help="Only what's true: RoleHawk never invents details for your CV.",
+            kind="form",
+            fields=ROLE_FIELDS,
+            skip_label="I don't have work experience yet"
+            if not profile.experience
+            else "Done adding roles",
+        )
+    if qid.startswith("role.edit."):
+        role = next((e for e in profile.experience if _role_edit_id(e) == qid), None)
+        if role is None:
+            return None
+        return Question(
+            id=qid,
+            prompt="Edit this role.",
+            help="Only what's true: RoleHawk never invents details for your CV.",
+            kind="form",
+            fields=ROLE_FIELDS,
+            value=_role_value(role),
+        )
+    if qid == "role.more":
+        if not profile.experience:
+            return None
+        return Question(
+            id=qid,
+            prompt="Is there another role you'd like on your profile?",
+            kind="single",
+            choices=[
+                Choice(value="yes", label="Yes, add a role"),
+                Choice(value="no", label="No, that's all"),
+            ],
+            optional=False,
+        )
+    if qid == "profile.skills":
+        return Question(
+            id=qid,
+            prompt="What are your strongest skills?",
+            help="Tools, languages, and methods you'd be happy to be interviewed on.",
+            kind="list",
+            placeholder="TypeScript, React, PostgreSQL",
+            value=list(profile.skills) or None,
+        )
+    if qid == "profile.languages":
+        return Question(
+            id=qid,
+            prompt="Which languages do you work in, and how well?",
+            help="With your level, so jobs that need another language can be flagged.",
+            kind="text",
+            placeholder="English (native); Spanish (B2)",
+            value=_joined(profile.languages),
+        )
+    if qid == "profile.education":
+        return _education_question(qid, None)
+    if qid.startswith("education.edit."):
+        edu = next((e for e in profile.education if _education_edit_id(e) == qid), None)
+        return None if edu is None else _education_question(qid, edu)
+    if qid == "prefs.titles":
+        recent_titles = [e.title for e in profile.experience[:3]]
+        return Question(
+            id=qid,
+            prompt="Which job titles should I search for?",
+            kind="multi",
+            choices=[Choice(value=t, label=t) for t in dedupe(recent_titles + prefs.target_titles)],
+            allow_other=True,
+            optional=False,
+            placeholder="Add other titles, comma separated",
+            value=list(prefs.target_titles) or None,
+        )
+    if qid == "prefs.seniority":
+        return Question(
+            id=qid,
+            prompt="What level are you aiming for?",
+            kind="single",
+            choices=[Choice(value=s, label=s) for s in SENIORITY],
+            value=prefs.seniority,
+        )
+    if qid == "prefs.remote":
+        return Question(
+            id=qid,
+            prompt="How do you want to work?",
+            kind="single",
+            choices=[
+                Choice(value=RemotePreference.REMOTE.value, label="Remote only"),
+                Choice(value=RemotePreference.HYBRID.value, label="Hybrid"),
+                Choice(value=RemotePreference.ONSITE.value, label="On-site"),
+                Choice(value=RemotePreference.ANY.value, label="Open to any"),
+            ],
+            optional=False,
+            value=prefs.remote.value if prefs.remote else None,
+        )
+    if qid == "prefs.country":
+        return Question(
+            id=qid,
+            prompt="Which country are you job hunting in?",
+            help="Picks the right job sources, currency, and salary format.",
+            kind="single",
+            choices=[Choice(value=c, label=n) for c, n in countries.known_countries()],
+            allow_other=True,
+            placeholder="Other country code, e.g. FR",
+            optional=False,
+            value=prefs.country,
+        )
+    if qid == "prefs.locations":
+        return Question(
+            id=qid,
+            prompt="Which cities or regions work for you?",
+            help="Separate places with semicolons; commas stay part of a place name.",
+            kind="text",
+            placeholder="Denver, CO; Boulder, CO",
+            value=_joined(prefs.locations) or profile.contact.location,
+        )
+    if qid == "prefs.salary":
+        currency = countries.defaults_for(prefs.country).currency
+        return Question(
+            id=qid,
+            prompt="What's the lowest salary you'd accept?",
+            help=f"Used to filter out jobs below it. Amounts default to {currency} per year.",
+            kind="text",
+            placeholder=f"e.g. 120k {currency}",
+            value=format_salary(prefs.salary_floor) if prefs.salary_floor else None,
+        )
+    if qid == "prefs.work_auth":
+        return Question(
+            id=qid,
+            prompt="What's your work authorization in that country?",
+            kind="single",
+            choices=[Choice(value=w, label=w) for w in WORK_AUTH],
+            allow_other=True,
+            value=prefs.work_authorization,
+        )
+    if qid == "prefs.deal_breakers":
+        return Question(
+            id=qid,
+            prompt="Any deal-breakers?",
+            kind="multi",
+            choices=[Choice(value=d, label=d) for d in dedupe(DEAL_BREAKERS + prefs.deal_breakers)],
+            allow_other=True,
+            skip_label="None",
+            value=list(prefs.deal_breakers) or None,
+        )
+    if qid == "prefs.energizing":
+        return Question(
+            id=qid,
+            prompt="What kind of work gives you energy?",
+            help="Used to score how well a job fits what you want to do, not just can do.",
+            kind="text",
+            placeholder="Building tools from scratch; mentoring; talking to customers",
+            value=_joined(prefs.energizing),
+        )
+    if qid == "prefs.draining":
+        return Question(
+            id=qid,
+            prompt="And what kind of work drains you?",
+            kind="text",
+            placeholder="Maintaining legacy systems; heavy travel",
+            value=_joined(prefs.draining),
+        )
+    if qid.startswith("role.dates."):
+        exp = next((e for e in profile.experience if _role_dates_id(e) == qid), None)
+        if exp is None:
+            return None
+        return Question(
+            id=qid,
+            prompt=f"When did you work as {exp.title}"
+            + (f" at {exp.company}?" if exp.company else "?"),
+            kind="text",
+            placeholder="Mar 2021 - present",
+            value=format_date_range(exp.start, exp.end, exp.current),
+        )
+    if qid.startswith("metric."):
+        highlight = next(
+            (h for e in profile.experience for h in e.highlights if _metric_id(h) == qid), None
+        )
+        if highlight is None:
+            return None
+        return Question(
+            id=qid,
+            prompt="Can you add a number to this achievement?",
+            help="Recruiters skim for results. Only add a number you can stand behind.",
+            kind="text",
+            value=highlight,
+            skip_label="Keep as is",
+        )
+    return None
+
+
 def open_questions(
     profile: Profile, prefs: Preferences, progress: InterviewProgress
 ) -> list[Question]:
-    """Every question still worth asking, in order. The interview asks the first one."""
+    """Every question still worth asking, in order. The interview asks the first one; after
+    Back, the question being revisited comes first, filled in with the current answer."""
     skipped = set(progress.skipped)
-    out: list[Question] = []
-
-    def ask(question: Question) -> None:
-        if question.id not in skipped:
-            out.append(question)
-
+    ids: list[str] = []
     if not profile.contact.name:
-        ask(
-            Question(
-                id="basics.contact",
-                prompt="First, the basics for your CV header.",
-                kind="form",
-                optional=False,
-                fields=[
-                    FormField(name="name", label="Full name", required=True),
-                    FormField(name="email", label="Email"),
-                    FormField(name="location", label="City and country", placeholder="Austin, TX"),
-                    FormField(
-                        name="links",
-                        label="Links (LinkedIn, GitHub, site)",
-                        kind="list",
-                        placeholder="https://www.linkedin.com/in/you",
-                    ),
-                ],
-            )
-        )
-
+        ids.append("basics.contact")
     if (not profile.experience and "role.add" not in skipped) or progress.adding_role:
-        ask(
-            Question(
-                id="role.add",
-                prompt="Tell me about your most recent role."
-                if not profile.experience
-                else "Add another role.",
-                help="Only what's true: RoleHawk never invents details for your CV.",
-                kind="form",
-                fields=ROLE_FIELDS,
-                skip_label="I don't have work experience yet"
-                if not profile.experience
-                else "Done adding roles",
-            )
-        )
+        ids.append("role.add")
     elif profile.experience and not progress.roles_done:
-        ask(
-            Question(
-                id="role.more",
-                prompt="Is there another role you'd like on your profile?",
-                kind="single",
-                choices=[
-                    Choice(value="yes", label="Yes, add a role"),
-                    Choice(value="no", label="No, that's all"),
-                ],
-                optional=False,
-            )
-        )
-
+        ids.append("role.more")
     if len(profile.skills) < 3:
-        ask(
-            Question(
-                id="profile.skills",
-                prompt="What are your strongest skills?",
-                help="Tools, languages, and methods you'd be happy to be interviewed on.",
-                kind="list",
-                placeholder="TypeScript, React, PostgreSQL",
-                value=profile.skills or None,
-            )
-        )
-
+        ids.append("profile.skills")
     if not profile.languages:
-        ask(
-            Question(
-                id="profile.languages",
-                prompt="Which languages do you work in, and how well?",
-                help="With your level, so jobs that need another language can be flagged.",
-                kind="text",
-                placeholder="English (native); Spanish (B2)",
-            )
-        )
-
+        ids.append("profile.languages")
     if not profile.education:
-        ask(
-            Question(
-                id="profile.education",
-                prompt="What's your highest education?",
-                kind="form",
-                skip_label="Skip (not relevant)",
-                fields=[
-                    FormField(name="institution", label="School or university", required=True),
-                    FormField(name="degree", label="Degree", placeholder="BSc"),
-                    FormField(name="field", label="Field of study", placeholder="Computer Science"),
-                    FormField(name="dates", label="Dates", placeholder="2015 - 2019"),
-                ],
-            )
-        )
-
-    recent_titles = dedupe([e.title for e in profile.experience[:3]])
+        ids.append("profile.education")
     if not prefs.target_titles:
-        ask(
-            Question(
-                id="prefs.titles",
-                prompt="Which job titles should I search for?",
-                kind="multi",
-                choices=[Choice(value=t, label=t) for t in recent_titles],
-                allow_other=True,
-                optional=False,
-                placeholder="Add other titles, comma separated",
-            )
-        )
+        ids.append("prefs.titles")
     if not prefs.seniority:
-        ask(
-            Question(
-                id="prefs.seniority",
-                prompt="What level are you aiming for?",
-                kind="single",
-                choices=[Choice(value=s, label=s) for s in SENIORITY],
-            )
-        )
+        ids.append("prefs.seniority")
     if not prefs.remote:
-        ask(
-            Question(
-                id="prefs.remote",
-                prompt="How do you want to work?",
-                kind="single",
-                choices=[
-                    Choice(value=RemotePreference.REMOTE.value, label="Remote only"),
-                    Choice(value=RemotePreference.HYBRID.value, label="Hybrid"),
-                    Choice(value=RemotePreference.ONSITE.value, label="On-site"),
-                    Choice(value=RemotePreference.ANY.value, label="Open to any"),
-                ],
-                optional=False,
-            )
-        )
+        ids.append("prefs.remote")
     if not prefs.country:
-        ask(
-            Question(
-                id="prefs.country",
-                prompt="Which country are you job hunting in?",
-                help="Picks the right job sources, currency, and salary format.",
-                kind="single",
-                choices=[Choice(value=c, label=n) for c, n in countries.known_countries()],
-                allow_other=True,
-                placeholder="Other country code, e.g. FR",
-                optional=False,
-            )
-        )
+        ids.append("prefs.country")
     if not prefs.locations and prefs.remote is not RemotePreference.REMOTE:
-        ask(
-            Question(
-                id="prefs.locations",
-                prompt="Which cities or regions work for you?",
-                help="Separate places with semicolons; commas stay part of a place name.",
-                kind="text",
-                placeholder="Denver, CO; Boulder, CO",
-                value=profile.contact.location,
-            )
-        )
+        ids.append("prefs.locations")
     if not prefs.salary_floor:
-        currency = countries.defaults_for(prefs.country).currency
-        ask(
-            Question(
-                id="prefs.salary",
-                prompt="What's the lowest salary you'd accept?",
-                help=f"Used to filter out jobs below it. Amounts default to {currency} per year.",
-                kind="text",
-                placeholder=f"e.g. 120k {currency}",
-            )
-        )
+        ids.append("prefs.salary")
     if not prefs.work_authorization:
-        ask(
-            Question(
-                id="prefs.work_auth",
-                prompt="What's your work authorization in that country?",
-                kind="single",
-                choices=[Choice(value=w, label=w) for w in WORK_AUTH],
-                allow_other=True,
-            )
-        )
+        ids.append("prefs.work_auth")
     if not prefs.deal_breakers:
-        ask(
-            Question(
-                id="prefs.deal_breakers",
-                prompt="Any deal-breakers?",
-                kind="multi",
-                choices=[Choice(value=d, label=d) for d in DEAL_BREAKERS],
-                allow_other=True,
-                skip_label="None",
-            )
-        )
-
+        ids.append("prefs.deal_breakers")
     if not prefs.energizing:
-        ask(
-            Question(
-                id="prefs.energizing",
-                prompt="What kind of work gives you energy?",
-                help="Used to score how well a job fits what you want to do, not just can do.",
-                kind="text",
-                placeholder="Building tools from scratch; mentoring; talking to customers",
-            )
-        )
+        ids.append("prefs.energizing")
     if not prefs.draining:
-        ask(
-            Question(
-                id="prefs.draining",
-                prompt="And what kind of work drains you?",
-                kind="text",
-                placeholder="Maintaining legacy systems; heavy travel",
-            )
-        )
+        ids.append("prefs.draining")
 
     # Refinements: missing dates, then achievements that could use a number.
-    for exp in profile.experience:
-        if not exp.start:
-            ask(
-                Question(
-                    id=_role_dates_id(exp),
-                    prompt=f"When did you work as {exp.title}"
-                    + (f" at {exp.company}?" if exp.company else "?"),
-                    kind="text",
-                    placeholder="Mar 2021 - present",
-                )
-            )
-    metric_questions = 0
+    ids += [_role_dates_id(exp) for exp in profile.experience if not exp.start]
+    metric_ids: list[str] = []
     for exp in profile.experience[:2]:
         for highlight in exp.highlights:
-            if metric_questions >= MAX_METRIC_QUESTIONS:
-                break
-            if re.search(r"\d", highlight) or len(highlight) < 25:
-                continue
             question_id = _metric_id(highlight)
-            if question_id in skipped:
+            if re.search(r"\d", highlight) or len(highlight) < 25 or question_id in skipped:
                 continue
-            metric_questions += 1
-            out.append(
-                Question(
-                    id=question_id,
-                    prompt="Can you add a number to this achievement?",
-                    help="Recruiters skim for results. Only add a number you can stand behind.",
-                    kind="text",
-                    value=highlight,
-                    skip_label="Keep as is",
-                )
-            )
+            if len(metric_ids) < MAX_METRIC_QUESTIONS:
+                metric_ids.append(question_id)
+    ids += metric_ids
+
+    out = [
+        q for qid in ids if qid not in skipped and (q := _question(qid, profile, prefs)) is not None
+    ]
+    step = progress.revisit
+    if step is not None:
+        natural = next((q for q in out if q.id == step.again), None)
+        if natural is not None:
+            out.remove(natural)
+            out.insert(0, natural)
+        elif (again := _question(step.again, profile, prefs)) is not None:
+            out.insert(0, again.model_copy(update={"optional": True, "skip_label": KEEP_ANSWER}))
     return out
 
 
@@ -386,6 +495,7 @@ def state(profile: Profile, prefs: Preferences, progress: InterviewProgress) -> 
         answered=len(progress.answered),
         remaining=len(remaining),
         complete=not remaining,
+        can_go_back=bool(progress.history),
     )
 
 
@@ -439,6 +549,44 @@ def _dates(text: str | None) -> tuple[str | None, str | None, bool]:
     return parsed.start, parsed.end, parsed.current
 
 
+def _form_text(value: AnswerValue, name: str, current: str | None) -> str | None:
+    """A form's optional text field: a field left out keeps what's saved (older clients)."""
+    if isinstance(value, dict) and name in value:
+        raw = value[name]
+        return raw.strip() or None if isinstance(raw, str) else current
+    return current
+
+
+def _role_from_form(form: dict[str, str], role: Experience | None = None) -> Experience:
+    start, end, current = _dates(form.get("dates"))
+    fields = {
+        "title": form["title"],
+        "company": form.get("company") or None,
+        "location": form.get("location") or None,
+        "start": start,
+        "end": end,
+        "current": current,
+        "highlights": split_lines(form.get("highlights", "")),
+    }
+    return role.model_copy(update=fields) if role else Experience.model_validate(fields)
+
+
+def _education_from_form(form: dict[str, str], edu: Education | None = None) -> Education:
+    start, end, _ = _dates(form.get("dates"))
+    fields = {
+        "institution": form["institution"],
+        "degree": form.get("degree") or None,
+        "field": form.get("field") or None,
+        "start": start,
+        "end": end,
+    }
+    return edu.model_copy(update=fields) if edu else Education.model_validate(fields)
+
+
+def _replace[T](items: list[T], old: T, new: T) -> list[T]:
+    return [new if item is old else item for item in items]
+
+
 def apply_answer(
     question_id: str,
     value: AnswerValue,
@@ -450,31 +598,31 @@ def apply_answer(
     profile = profile.model_copy(deep=True)
     prefs = prefs.model_copy(deep=True)
     progress = progress.model_copy(deep=True)
+    again = question_id  # the id that asks this question again (see Step)
 
     if question_id == "basics.contact":
         form = _form(value, ["name"])
+        c = profile.contact
+        has_links = isinstance(value, dict) and "links" in value
         profile.contact = Contact(
             name=form["name"],
-            email=form.get("email") or profile.contact.email,
-            phone=profile.contact.phone,
-            location=form.get("location") or profile.contact.location,
-            links=dedupe([*profile.contact.links, *_form_list(value, "links")]),
+            email=_form_text(value, "email", c.email),
+            phone=c.phone,
+            location=_form_text(value, "location", c.location),
+            links=_form_list(value, "links") if has_links else c.links,
         )
     elif question_id == "role.add":
-        form = _form(value, ["title"])
-        start, end, current = _dates(form.get("dates"))
-        profile.experience.append(
-            Experience(
-                title=form["title"],
-                company=form.get("company") or None,
-                location=form.get("location") or None,
-                start=start,
-                end=end,
-                current=current,
-                highlights=split_lines(form.get("highlights", "")),
-            )
-        )
+        role = _role_from_form(_form(value, ["title"]))
+        profile.experience.append(role)
         progress.adding_role = False
+        again = _role_edit_id(role)
+    elif question_id.startswith("role.edit."):
+        old = next((e for e in profile.experience if _role_edit_id(e) == question_id), None)
+        if old is None:
+            raise AnswerError("That role isn't in your profile anymore.")
+        role = _role_from_form(_form(value, ["title"]), old)
+        profile.experience = _replace(profile.experience, old, role)
+        again = _role_edit_id(role)
     elif question_id == "role.more":
         answer = _text(value)
         progress.adding_role = answer == "yes"
@@ -483,19 +631,18 @@ def apply_answer(
         skills = _items(value)
         if not skills:
             raise AnswerError("Add at least one skill, or skip.")
-        profile.skills = dedupe([*profile.skills, *skills])
+        profile.skills = skills
     elif question_id == "profile.education":
-        form = _form(value, ["institution"])
-        start, end, _ = _dates(form.get("dates"))
-        profile.education.append(
-            Education(
-                institution=form["institution"],
-                degree=form.get("degree") or None,
-                field=form.get("field") or None,
-                start=start,
-                end=end,
-            )
-        )
+        edu = _education_from_form(_form(value, ["institution"]))
+        profile.education.append(edu)
+        again = _education_edit_id(edu)
+    elif question_id.startswith("education.edit."):
+        old_edu = next((e for e in profile.education if _education_edit_id(e) == question_id), None)
+        if old_edu is None:
+            raise AnswerError("That school isn't in your profile anymore.")
+        edu = _education_from_form(_form(value, ["institution"]), old_edu)
+        profile.education = _replace(profile.education, old_edu, edu)
+        again = _education_edit_id(edu)
     elif question_id == "prefs.titles":
         titles = _items(value)
         if not titles:
@@ -531,35 +678,99 @@ def apply_answer(
     elif question_id == "prefs.draining":
         prefs.draining = _items(value)
     elif question_id == "profile.languages":
-        profile.languages = dedupe([*profile.languages, *_items(value)])
+        profile.languages = _items(value)
     elif question_id.startswith("role.dates."):
-        role = next((e for e in profile.experience if _role_dates_id(e) == question_id), None)
-        if role is None:
+        dated = next((e for e in profile.experience if _role_dates_id(e) == question_id), None)
+        if dated is None:
             raise AnswerError("That role isn't in your profile anymore.")
-        role.start, role.end, role.current = _dates(_text(value))
+        dated.start, dated.end, dated.current = _dates(_text(value))
     elif question_id.startswith("metric."):
         new_text = _text(value)
         for exp in profile.experience:
             exp.highlights = [
                 new_text if _metric_id(h) == question_id else h for h in exp.highlights
             ]
+        again = _metric_id(new_text)
         if not re.search(r"\d", new_text):  # answered without a number: don't ask again
-            progress.skipped.append(question_id)
+            progress.skipped.append(again)
     else:
         raise AnswerError("Unknown question.")
 
-    if question_id not in progress.answered:
-        progress.answered.append(question_id)
+    revisit = _revisiting(progress, question_id)
+    asked = revisit.question if revisit else question_id
+    if asked not in progress.answered:
+        progress.answered.append(asked)
+    _moved_past(progress, Step(question=asked, again=again), resolves=revisit is not None)
     return profile, prefs, progress
 
 
-def skip(question_id: str, progress: InterviewProgress, required: bool) -> InterviewProgress:
-    if required:
-        raise AnswerError("This one is needed to find jobs for you.")
+def skip(question: Question, progress: InterviewProgress) -> InterviewProgress:
+    """Skip an open question, or keep the saved answer to one that Back went to."""
     progress = progress.model_copy(deep=True)
-    if question_id == "role.add" and progress.adding_role:
+    revisit = _revisiting(progress, question.id)
+    if revisit is not None and not revisit.skipped:
+        if revisit.question not in progress.answered:
+            progress.answered.append(revisit.question)
+        _moved_past(progress, revisit, resolves=True)
+        return progress
+    if not question.optional:
+        raise AnswerError("This one is needed to find jobs for you.")
+    if question.id == "role.add" and progress.adding_role:
         progress.adding_role = False
         progress.roles_done = True
-    elif question_id not in progress.skipped:
-        progress.skipped.append(question_id)
+    elif question.id not in progress.skipped:
+        progress.skipped.append(question.id)
+    step = Step(question=question.id, again=question.id, skipped=True)
+    _moved_past(progress, step, resolves=revisit is not None)
     return progress
+
+
+def back(progress: InterviewProgress) -> InterviewProgress:
+    """Go to the previous question: it is asked again, filled in with the saved answer."""
+    progress = progress.model_copy(deep=True)
+    if not progress.history:
+        raise AnswerError("There's no earlier question to go back to.")
+    if progress.revisit is not None:  # going back further: leave this one as it was
+        _redo(progress.revisit, progress)
+        progress.ahead.insert(0, progress.revisit)
+    step = progress.history.pop()
+    _undo(step, progress)
+    progress.revisit = step
+    return progress
+
+
+def _revisiting(progress: InterviewProgress, question_id: str) -> Step | None:
+    step = progress.revisit
+    return step if step is not None and step.again == question_id else None
+
+
+def _moved_past(progress: InterviewProgress, step: Step, *, resolves: bool) -> None:
+    progress.history.append(step)
+    if resolves:  # done with the revisit: the steps after it come back into history
+        progress.history.extend(progress.ahead)
+        progress.ahead.clear()
+        progress.revisit = None
+
+
+def _undo(step: Step, progress: InterviewProgress) -> None:
+    """Make a step's question open again (for Back)."""
+    if step.skipped:
+        if step.question in progress.skipped:
+            progress.skipped.remove(step.question)
+        elif step.question == "role.add":  # "Done adding roles" ended the role loop
+            progress.adding_role, progress.roles_done = True, False
+        return
+    others = [s.question for s in (*progress.history, *progress.ahead)]
+    if step.question in progress.answered and step.question not in others:
+        progress.answered.remove(step.question)
+
+
+def _redo(step: Step, progress: InterviewProgress) -> None:
+    """Put a step Back went past the way it was before Back opened it."""
+    if not step.skipped:
+        if step.question not in progress.answered:
+            progress.answered.append(step.question)
+    elif step.question == "role.add" and progress.adding_role:
+        progress.adding_role, progress.roles_done = False, True
+    elif step.question not in progress.skipped:
+        progress.skipped.append(step.question)
