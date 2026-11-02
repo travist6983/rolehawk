@@ -170,7 +170,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     portals.sync_builtin()
     portals.seed_watchlist()
     memory = MemoryService(files, sessions, on_change=profiles.on_memory_changed)
-    jobs = JobStore(sessions)
+    jobs = JobStore(sessions, profiles.load_preferences)
     ranker = Ranker(sessions, llm, memory, profiles.load_preferences)
     board = BoardService(
         sessions, lambda app_id: paths.generated_documents / str(app_id) / "application.json"

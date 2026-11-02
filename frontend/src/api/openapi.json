@@ -2136,6 +2136,18 @@
             "description": "Only jobs marked remote"
           },
           {
+            "name": "fits_preferences",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only jobs your country, locations, salary floor, and excluded words allow",
+              "default": false,
+              "title": "Fits Preferences"
+            },
+            "description": "Only jobs your country, locations, salary floor, and excluded words allow"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -8088,6 +8100,24 @@
             "title": "Integrity",
             "description": "clean, cleaned (hidden text removed), or warning"
           },
+          "outside_preferences": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "excluded",
+                  "country",
+                  "location",
+                  "salary"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outside Preferences",
+            "description": "Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it"
+          },
           "description": {
             "type": "string",
             "title": "Description",
@@ -8143,6 +8173,7 @@
           "deadline",
           "stale_days",
           "integrity",
+          "outside_preferences",
           "description",
           "application_id",
           "integrity_report"
@@ -8399,6 +8430,24 @@
             ],
             "title": "Integrity",
             "description": "clean, cleaned (hidden text removed), or warning"
+          },
+          "outside_preferences": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "excluded",
+                  "country",
+                  "location",
+                  "salary"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outside Preferences",
+            "description": "Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it"
           }
         },
         "type": "object",
@@ -8427,7 +8476,8 @@
           "closes_at",
           "deadline",
           "stale_days",
-          "integrity"
+          "integrity",
+          "outside_preferences"
         ],
         "title": "JobRow"
       },
@@ -10484,6 +10534,12 @@
             "type": "boolean",
             "title": "Rescore",
             "description": "Score jobs again even if already ranked",
+            "default": false
+          },
+          "ignore_preferences": {
+            "type": "boolean",
+            "title": "Ignore Preferences",
+            "description": "Rank the chosen job_ids even if your country, locations, salary floor, or excluded words would skip them",
             "default": false
           }
         },

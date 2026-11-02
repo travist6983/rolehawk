@@ -2944,6 +2944,11 @@ export interface components {
              */
             integrity: "clean" | "cleaned" | "warning";
             /**
+             * Outside Preferences
+             * @description Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it
+             */
+            outside_preferences: ("excluded" | "country" | "location" | "salary") | null;
+            /**
              * Description
              * @description Third-party text from the posting
              */
@@ -3031,6 +3036,11 @@ export interface components {
              * @enum {string}
              */
             integrity: "clean" | "cleaned" | "warning";
+            /**
+             * Outside Preferences
+             * @description Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it
+             */
+            outside_preferences: ("excluded" | "country" | "location" | "salary") | null;
         };
         /**
          * JobStats
@@ -3738,6 +3748,12 @@ export interface components {
              * @default false
              */
             rescore: boolean;
+            /**
+             * Ignore Preferences
+             * @description Rank the chosen job_ids even if your country, locations, salary floor, or excluded words would skip them
+             * @default false
+             */
+            ignore_preferences: boolean;
         };
         /**
          * RankPlan
@@ -5803,6 +5819,8 @@ export interface operations {
                 portal_id?: string | null;
                 /** @description Only jobs marked remote */
                 remote?: boolean;
+                /** @description Only jobs your country, locations, salary floor, and excluded words allow */
+                fits_preferences?: boolean;
                 sort?: "score" | "newest";
                 limit?: number;
                 offset?: number;

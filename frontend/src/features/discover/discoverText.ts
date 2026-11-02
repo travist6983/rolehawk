@@ -44,6 +44,7 @@ export function isFiltered(filters: JobFilters): boolean {
     filters.min_score != null ||
     filters.portal_id ||
     filters.remote ||
+    filters.fits_preferences ||
     (filters.status && filters.status !== "all") ||
     (filters.show && filters.show !== "active"),
   );
@@ -68,6 +69,29 @@ export function skippedSummary(counts: FilterCounts): string | null {
   if (parts.length === 0) return null;
   const total = SKIP_REASONS.reduce((sum, [key]) => sum + counts[key], 0);
   return `Skipped ${total.toLocaleString("en")}: ${parts.join(", ")}.`;
+}
+
+export type OutsideReason = NonNullable<JobRow["outside_preferences"]>;
+
+/** Why ranking skips a job, short enough for a table row. */
+export const OUTSIDE_TEXT: Record<OutsideReason, string> = {
+  country: "Other country",
+  location: "Outside your locations",
+  salary: "Below your salary floor",
+  excluded: "Has an excluded word",
+};
+
+/** The longer version for the job sheet. */
+export const OUTSIDE_DETAIL: Record<OutsideReason, string> = {
+  country: "It's in a country outside your search.",
+  location: "It isn't remote and isn't in one of your locations.",
+  salary: "Its salary tops out below your floor.",
+  excluded: "Its title or company has one of your excluded words or deal breakers.",
+};
+
+/** Number of jobs a rank plan skipped because of the user's preferences. */
+export function preferenceSkips(counts: FilterCounts): number {
+  return counts.country + counts.location + counts.salary + counts.excluded;
 }
 
 export function whereText(job: Pick<JobRow, "location" | "remote">): string {

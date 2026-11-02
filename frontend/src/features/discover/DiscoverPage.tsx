@@ -234,6 +234,14 @@ function Filters({
         >
           Remote only
         </FilterPill>
+        <FilterPill
+          pressed={filters.fits_preferences ?? false}
+          onToggle={(fits_preferences) => {
+            onChange({ ...filters, fits_preferences });
+          }}
+        >
+          Matches my preferences
+        </FilterPill>
       </div>
     </div>
   );
