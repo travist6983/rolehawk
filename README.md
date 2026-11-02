@@ -3,11 +3,14 @@
 [![CI](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml/badge.svg)](https://github.com/travist6983/rolehawk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Free, local-first, and private.** RoleHawk is an open source AI job search copilot that runs
-on your own computer. It builds your profile from your resume, finds jobs across job boards and
-company career pages, ranks them against what you want, writes a tailored CV and cover letter
-for each one without inventing anything, and tracks every application. Claude does the
-thinking; your data stays with you.
+**A free, open source AI job search copilot that runs on your own computer.** RoleHawk builds
+your profile from your resume, finds and ranks jobs from job boards and company career pages,
+tailors your resume and cover letter to each posting without inventing anything, fills in
+application forms (it never submits), and tracks every application on one board. Claude does
+the thinking; your data lives on your computer, not on our servers (there are none).
+
+**[Website](https://travist6983.github.io/rolehawk/)** · [Install](#install) ·
+[Try the demo](#try-the-demo) · [Use it from Claude Code](#use-it-from-claude-code)
 
 ![RoleHawk: a pipeline board of job applications, then a tailored application opening](docs/media/hero.gif)
 
