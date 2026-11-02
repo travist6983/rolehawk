@@ -157,7 +157,7 @@ export function SearchPanel({ portals }: { portals: PortalView[] }) {
                 <span className="font-medium">{plural(summary.new, "new job")}</span>,{" "}
                 {summary.duplicates.toLocaleString("en")} already seen
                 {summary.removed > 0 &&
-                  `, ${summary.removed.toLocaleString("en")} that no longer match your titles removed`}
+                  `, ${summary.removed.toLocaleString("en")} that no longer match your targets removed`}
               </span>
               {summary.new > 0 && (
                 <Badge variant="link" asChild>

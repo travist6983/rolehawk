@@ -1,12 +1,17 @@
-"""Keep only jobs whose title fits a search target, so whole-company and whole-market sources
-don't flood the database. /rank does the fine-grained scoring, but the match is still strict:
+"""Keep only jobs that fit a search target, so whole-company and whole-market sources don't
+flood the database. /rank does the fine-grained scoring, but the match is still strict:
 
 - The job title has every word of the target, after dropping level words and folding
   spellings together ("Front-End Developer" = "Frontend Engineer").
 - The target's role word is the role the job names: the last word of a part of the title
   ("Java Developer - Security" is a developer; "Developer Advocate" is an advocate).
 - A target that names a role but no field keeps the word as written: "Senior Developer"
-  matches developers, not every Controls, Data, and Security Engineer.
+  matches developers, not every Controls, Data, and Security Engineer. It also skips other
+  trades that share the word ("Technical Curriculum Developer").
+- The target's words can't come from a part of the title that names a different job:
+  "Full-Stack BI Architect / Data Engineer" isn't a full-stack engineer.
+- The job's location doesn't name only other countries than the target's ("Bengaluru, India"
+  for a US search). Unknown and worldwide locations pass.
 
 Keywords on a target widen it: any job with all of a keyword's words matches."""
 
@@ -16,6 +21,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from rolehawk import geo
 from rolehawk.portals.base import SearchQuery
 from rolehawk.portals.text import norm
 
@@ -32,6 +38,13 @@ _TRAILING = {
     "time", "fulltime", "parttime", "permanent", "onsite", "new", "grad", "graduate",
     "us", "usa", "uk", "eu", "emea", "apac", "latam", "nyc", "sf",
 }  # fmt: skip
+# All-caps words that name a field rather than a region, so they're never skipped:
+# "Developer API" is about an API, not a developer.
+_FIELD_CODES = {
+    "api", "apis", "sdk", "sdks", "ui", "ux", "qa", "ai", "ml", "bi", "sre", "etl", "crm",
+    "erp", "sql", "cms", "ios", "aws", "gcp", "it", "hr", "seo", "gis", "llm", "nlp", "ar",
+    "vr", "xr", "dba", "rpa", "plc", "gpu", "rf",
+}  # fmt: skip
 _COMPOUNDS = [
     (r"\bfront end\b", "frontend"),
     (r"\bback end\b", "backend"),
@@ -43,7 +56,7 @@ _COMPOUNDS = [
 ]
 # Where a title splits into parts: "Engineer, Frontend (React) - Remote | Berlin @ Acme".
 # A hyphen splits only with spaces around it ("Full-Stack" stays one part); en/em dashes always.
-_PARTS = re.compile(r"\s-\s|\sat\s|[,()\[\]/|:;@\u2013\u2014]", re.IGNORECASE)
+_PARTS = re.compile(r"(\s-\s|\sat\s|[,()\[\]/|:;@\u2013\u2014])", re.IGNORECASE)
 
 
 def _written(text: str) -> list[str]:
@@ -62,9 +75,32 @@ def tokens(text: str) -> set[str]:
     return {w for w in _folded(text) if w not in _IGNORED}
 
 
+# Words that name a job. A part of a title headed by one names that job, so the target's other
+# words can't come from it unless it's the target's role.
+_ROLES = set(
+    _written(
+        "engineer developer architect analyst manager designer scientist advocate writer"
+        " copywriter consultant administrator admin specialist director recruiter technician"
+        " programmer tester representative executive coordinator officer strategist researcher"
+        " editor marketer accountant owner counsel attorney instructor trainer evangelist"
+        " producer operator agent assistant generalist auditor planner"
+    )
+)
+# Words in front of a bare role that make it another trade: a curriculum developer doesn't
+# write software, so "Senior Developer" skips them. Targets that name the word still match.
+_OTHER_TRADES = set(
+    _written(
+        "curriculum course courseware content instructional training learning elearning"
+        " business estate property community talent leadership organizational"
+    )
+)
+
+
 def _droppable(word: str) -> bool:
     folded = word.casefold()
-    return folded in _IGNORED or folded in _TRAILING or (len(word) > 1 and word.isupper())
+    if folded in _IGNORED or folded in _TRAILING:
+        return True
+    return len(word) > 1 and word.isupper() and folded not in _FIELD_CODES
 
 
 def _core(part: str) -> str:
@@ -76,48 +112,95 @@ def _core(part: str) -> str:
     return " ".join(words)
 
 
-def _head(part: str, folded: bool) -> str | None:
+def _kept(part: str, folded: bool) -> list[str]:
     core = _core(part)
-    kept = [w for w in (_folded(core) if folded else _written(core)) if w not in _IGNORED]
+    return [w for w in (_folded(core) if folded else _written(core)) if w not in _IGNORED]
+
+
+def _head(part: str, folded: bool) -> str | None:
+    kept = _kept(part, folded)
     return kept[-1] if kept else None
 
 
-def _heads(title: str) -> set[str]:
-    """The role each part of a title names (its last word), written and folded."""
-    found = set()
-    for part in _PARTS.split(title):
-        for folded in (False, True):
-            if head := _head(part, folded):
-                found.add(head)
-    return found
+@dataclass(frozen=True)
+class _Part:
+    words: frozenset[str]  # written and folded
+    heads: frozenset[str]  # the role it names (its last word), written and folded
+    trade: str | None  # the written word before that role ("curriculum" developer)
+
+
+def _parts(title: str) -> list[_Part]:
+    pieces = _PARTS.split(title)  # text, separator, text, separator, ..., text
+    parts: list[_Part] = []
+    after_role = False
+    for index in range(0, len(pieces), 2):
+        text = pieces[index]
+        if not tokens(text):
+            continue
+        written = _kept(text, folded=False)
+        heads = {h for folded in (False, True) if (h := _head(text, folded))}
+        separator = pieces[index - 1].strip() if index else ""
+        if separator == "," and after_role and len(written) == 1 and heads & _ROLES:
+            # "Copywriter, Developer": who the copywriter writes for, not a second job.
+            heads = set()
+        parts.append(
+            _Part(
+                words=frozenset(_folded(text)) | frozenset(_written(text)),
+                heads=frozenset(heads),
+                trade=written[-2] if len(written) > 1 else None,
+            )
+        )
+        after_role = bool(heads & _ROLES)
+    return parts
 
 
 @dataclass(frozen=True)
 class Wanted:
     words: frozenset[str]
     role: str
+    bare: bool = False  # a role with no field ("Senior Developer")
 
 
 def wanted(title: str) -> Wanted | None:
     """What a job title needs to match the target `title`, or None if it names nothing."""
     words = tokens(title)
     written = {w for w in _written(title) if w not in _IGNORED}
-    bare = len(words) == 1 and len(written) == 1  # a role with no field
+    bare = len(words) == 1 and len(written) == 1
     if bare:
         words = written
     first = next((p for p in _PARTS.split(title) if tokens(p)), "")
     role = _head(first, folded=not bare)
-    return Wanted(frozenset(words), role) if words and role else None
+    return Wanted(frozenset(words), role, bare) if words and role else None
+
+
+def _fits(need: Wanted, parts: list[_Part]) -> bool:
+    roles = [
+        p
+        for p in parts
+        if need.role in p.heads and not (need.bare and p.trade in _OTHER_TRADES - need.words)
+    ]
+    if not roles:
+        return False
+    pool: set[str] = set()
+    for part in parts:
+        if part in roles or not part.heads & _ROLES:
+            pool |= part.words
+    return need.words <= pool
 
 
 def title_matches(title: str, queries: Iterable[SearchQuery]) -> bool:
+    parts = _parts(title)
     folded = tokens(title)
-    words = folded | set(_written(title))
-    heads = _heads(title)
     for query in queries:
         need = wanted(query.title)
-        if need and need.words <= words and need.role in heads:
+        if need and _fits(need, parts):
             return True
         if any(tokens(k) and tokens(k) <= folded for k in query.keywords):
             return True
     return False
+
+
+def job_matches(title: str, location: str | None, queries: Iterable[SearchQuery]) -> bool:
+    """The title matches a target, and the location could be in that target's country."""
+    places = geo.detect(location)
+    return title_matches(title, [q for q in queries if places.allows(q.country)])

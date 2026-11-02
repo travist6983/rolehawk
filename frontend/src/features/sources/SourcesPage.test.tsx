@@ -196,7 +196,7 @@ describe("SourcesPage", () => {
       );
     });
     expect(await screen.findByText(/Last search/)).toHaveTextContent(
-      "14 new jobs, 28 already seen, 3,462 that no longer match your titles removed",
+      "14 new jobs, 28 already seen, 3,462 that no longer match your targets removed",
     );
     expect(screen.getByRole("link", { name: "Review in Discover" })).toHaveAttribute(
       "href",
