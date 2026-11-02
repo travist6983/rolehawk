@@ -3,8 +3,10 @@
 The first install test failed here: "Read with Claude" on a PDF or a .docx showed only "The AI
 request failed." The structured-output schema (Profile + Preferences) had 44 optional and 24
 nullable fields, over the API's limits of 24 and 16, so every call got a 400 "Schema is too
-complex for compilation". These tests send the request the way the app does and check the
-schema against those limits, using the fictional fixture resumes.
+complex for compilation". The all-required wire schema that fixed it was still too big as one
+grammar (400 "The compiled grammar is too large"), so profile and preferences are now two
+requests. These tests send the requests the way the app does and check each schema against the
+limits, using the fictional fixture resumes.
 """
 
 import json
@@ -20,10 +22,12 @@ from rolehawk.apply.drafts import ApplicationDraft
 from rolehawk.apply.followup import FollowUpDraftOut
 from rolehawk.apply.review import ReviewResult
 from rolehawk.fit.rubric import FitBatch
+from rolehawk.insights.calibration import CalibrationOut
 from rolehawk.llm.anthropic_provider import AnthropicProvider
 from rolehawk.llm.errors import LLMRequestError, LLMSchemaError
 from rolehawk.llm.schema import (
     MAX_OPTIONAL_FIELDS,
+    MAX_PROPERTIES,
     MAX_UNION_FIELDS,
     check_output_schema,
     schema_complexity,
@@ -31,7 +35,8 @@ from rolehawk.llm.schema import (
 from rolehawk.memory.extraction import ExtractedProposals
 from rolehawk.memory.sessions import SessionSummary
 from rolehawk.paths import DataPaths
-from rolehawk.profile.extraction import ExtractedSetup, ExtractionOut
+from rolehawk.portals.custom.generate import AiDraft
+from rolehawk.profile.extraction import ExtractedSetup, ExtractionOut, WirePreferences, WireProfile
 from rolehawk.profile.model import RemotePreference
 from rolehawk.services.runtime import Runtime, open_runtime
 
@@ -43,13 +48,16 @@ Handler = Callable[[httpx2.Request], httpx2.Response]
 
 # Every schema the app asks Claude to fill with structured outputs.
 STRUCTURED_SCHEMAS: list[type[BaseModel]] = [
-    ExtractionOut,
+    WireProfile,
+    WirePreferences,
     FitBatch,
     ApplicationDraft,
     ReviewResult,
     FollowUpDraftOut,
     ExtractedProposals,
     SessionSummary,
+    CalibrationOut,
+    AiDraft,
 ]
 
 
@@ -58,6 +66,7 @@ def test_every_structured_schema_is_within_the_api_limits(schema: type[BaseModel
     found = check_output_schema(schema)
     assert found.optional <= MAX_OPTIONAL_FIELDS
     assert found.unions <= MAX_UNION_FIELDS
+    assert found.properties <= MAX_PROPERTIES
 
 
 def test_the_profile_model_itself_is_too_complex_to_send() -> None:
@@ -65,6 +74,15 @@ def test_the_profile_model_itself_is_too_complex_to_send() -> None:
     assert not found.ok  # why extraction uses the ExtractionOut wire schema
     with pytest.raises(ValueError, match="too complex"):
         check_output_schema(ExtractedSetup)
+
+
+def test_profile_and_preferences_are_too_big_to_send_together() -> None:
+    # 49 properties as one schema: the API said "The compiled grammar is too large".
+    found = schema_complexity(ExtractionOut.model_json_schema())
+    assert found.optional == found.unions == 0
+    assert found.properties > MAX_PROPERTIES
+    with pytest.raises(ValueError, match="49 properties"):
+        check_output_schema(ExtractionOut)
 
 
 def _wire_reply() -> dict[str, Any]:
@@ -156,13 +174,20 @@ class FakeAnthropic:
         body: dict[str, Any] = json.loads(request.content)
         self.bodies.append(body)
         schema = body["output_config"]["format"]["schema"]
-        if not schema_complexity(schema).ok:
-            error = {
-                "type": "invalid_request_error",
-                "message": "Schema is too complex for compilation.",
-            }
+        found = schema_complexity(schema)
+        refusal = None
+        if found.optional > MAX_OPTIONAL_FIELDS or found.unions > MAX_UNION_FIELDS:
+            refusal = "Schema is too complex for compilation."
+        elif found.properties > MAX_PROPERTIES:
+            refusal = (
+                "The compiled grammar is too large, which would cause performance issues. "
+                "Simplify your tool schemas or reduce the number of strict tools."
+            )
+        if refusal is not None:
+            error = {"type": "invalid_request_error", "message": refusal}
             return httpx2.Response(400, json={"type": "error", "error": error})
-        return httpx2.Response(200, json=_message(json.dumps(_wire_reply())))
+        half = "profile" if "contact" in schema["properties"] else "preferences"
+        return httpx2.Response(200, json=_message(json.dumps(_wire_reply()[half])))
 
 
 @pytest.fixture
@@ -186,9 +211,12 @@ async def test_read_with_claude_works_for_pdf_and_docx(
     doc = real_sdk_runtime.setup.add_document(filename, (FIXTURES / filename).read_bytes())
     draft = await real_sdk_runtime.setup.extract([doc.id], task_id=None)
 
-    [body] = api.bodies
-    assert "Northwind Payments" in body["messages"][0]["content"]  # the document's text went
-    assert schema_complexity(body["output_config"]["format"]["schema"]).ok
+    profile_body, preferences_body = api.bodies
+    for body in api.bodies:
+        assert "Northwind Payments" in body["messages"][0]["content"]  # the document's text went
+        assert schema_complexity(body["output_config"]["format"]["schema"]).ok
+    assert "contact" in profile_body["output_config"]["format"]["schema"]["properties"]
+    assert "remote" in preferences_body["output_config"]["format"]["schema"]["properties"]
 
     profile = draft.profile
     assert profile.contact.name == "Ada Example"
@@ -210,7 +238,7 @@ async def test_a_rejected_request_says_what_claude_said(
     import rolehawk.llm.service as service
 
     monkeypatch.setattr(service, "check_output_schema", lambda _schema: None)
-    monkeypatch.setattr("rolehawk.profile.extraction.ExtractionOut", _TooBig)
+    monkeypatch.setattr("rolehawk.profile.extraction.WireProfile", ExtractedSetup)
     doc = real_sdk_runtime.setup.add_document(
         "cv.docx", (FIXTURES / "ada_example.docx").read_bytes()
     )
@@ -222,9 +250,21 @@ async def test_a_rejected_request_says_what_claude_said(
     assert "github.com/travist6983/rolehawk/issues" in message
 
 
-class _TooBig(ExtractedSetup):
-    def to_setup(self) -> ExtractedSetup:
-        return ExtractedSetup(profile=self.profile, preferences=self.preferences)
+async def test_a_grammar_too_large_refusal_is_reported_the_same_way(
+    real_sdk_runtime: Runtime, api: FakeAnthropic, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The 0.2.1 failure: all fields required, but too many of them for one grammar.
+    import rolehawk.llm.service as service
+
+    monkeypatch.setattr(service, "check_output_schema", lambda _schema: None)
+    monkeypatch.setattr("rolehawk.profile.extraction.WireProfile", ExtractionOut)
+    doc = real_sdk_runtime.setup.add_document(
+        "cv.docx", (FIXTURES / "ada_example.docx").read_bytes()
+    )
+    with pytest.raises(LLMRequestError) as caught:
+        await real_sdk_runtime.setup.extract([doc.id], task_id=None)
+    assert "The compiled grammar is too large" in caught.value.user_message
+    assert "RoleHawk bug" in caught.value.user_message
 
 
 async def test_an_over_limit_schema_is_caught_before_sending(

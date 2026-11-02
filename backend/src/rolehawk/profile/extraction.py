@@ -1,11 +1,15 @@
 """Resume / CV text -> structured profile with Claude (structured output). The result is a
 draft the user reviews before anything is saved.
 
-Claude fills a wire schema (`ExtractionOut`), not `Profile` itself. Structured outputs refuse
-schemas with more than 24 optional fields or 16 nullable/union fields in total ("Schema is too
-complex for compilation"), and `Profile` + `Preferences` have 44 and 24. So on the wire every
-field is required and nothing is nullable: unknown text is "" and an unknown amount is 0.
-`to_setup()` turns that back into the canonical models.
+Claude fills wire schemas, not `Profile` itself. Structured outputs refuse schemas with more
+than 24 optional fields or 16 nullable/union fields in total ("Schema is too complex for
+compilation"), and `Profile` + `Preferences` have 44 and 24. So on the wire every field is
+required and nothing is nullable: unknown text is "" and an unknown amount is 0.
+
+The API also refuses a schema whose compiled grammar is too big ("The compiled grammar is too
+large"), and profile + preferences together (49 properties) were over it. So they are two
+requests: `WireProfile`, then `WirePreferences`, each well under the budget in `llm/schema.py`.
+`ExtractionOut` holds both halves, and `to_setup()` turns them back into the canonical models.
 """
 
 from __future__ import annotations
@@ -49,6 +53,10 @@ Accuracy rules (these matter more than completeness):
   0 for salary_amount, [] for lists, and false for current.
 - {UNTRUSTED_RULES}
 """
+
+# One document read, two requests (see the module docstring); the system prompt is shared.
+PROFILE_ASK = "Extract the candidate's profile (everything except job-search preferences) from:"
+PREFERENCES_ASK = "Extract only the job-search preferences the documents state outright from:"
 
 
 class ExtractedSetup(BaseModel):
@@ -135,8 +143,14 @@ class WirePreferences(_Wire):
 
 
 class ExtractionOut(_Wire):
+    """Both halves of an extraction. Never sent as one schema (it is over the size budget)."""
+
     profile: WireProfile
     preferences: WirePreferences
+
+    def parts(self) -> tuple[WireProfile, WirePreferences]:
+        """The replies in the order `extract_setup` asks for them (for scripted tests)."""
+        return self.profile, self.preferences
 
     def to_setup(self) -> ExtractedSetup:
         return ExtractedSetup(
@@ -307,12 +321,21 @@ async def extract_setup(
     body = "\n\n".join(blocks)
     if len(body) > MAX_EXTRACT_CHARS:
         raise ValueError("Those documents are too long to read at once; upload just your CV.")
-    wire = await llm.structured(
+    system = [SystemBlock(EXTRACTION_PROMPT)]
+    profile = await llm.structured(
         command="setup",
         task=Task.EXTRACT,
-        system=[SystemBlock(EXTRACTION_PROMPT)],
-        messages=[Message(role="user", text=f"Extract the profile from:\n\n{body}")],
-        schema=ExtractionOut,
+        system=system,
+        messages=[Message(role="user", text=f"{PROFILE_ASK}\n\n{body}")],
+        schema=WireProfile,
         task_id=task_id,
     )
-    return wire.to_setup()
+    preferences = await llm.structured(
+        command="setup",
+        task=Task.EXTRACT,
+        system=system,
+        messages=[Message(role="user", text=f"{PREFERENCES_ASK}\n\n{body}")],
+        schema=WirePreferences,
+        task_id=task_id,
+    )
+    return ExtractionOut(profile=profile, preferences=preferences).to_setup()
