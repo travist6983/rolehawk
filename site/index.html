@@ -11,7 +11,7 @@
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <title>RoleHawk: a free AI job search copilot that runs on your computer</title>
+    <title>RoleHawk: your job search, from resume to offer</title>
     <meta
       name="description"
       content="RoleHawk is a free, open source AI job search copilot. It finds and ranks jobs, writes a tailored CV and cover letter for each one without inventing anything, and tracks every application. Your data stays on your computer."
@@ -47,7 +47,8 @@
 
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icon-180.png" />
-    <meta name="theme-color" content="#27201b" />
+    <meta name="theme-color" content="#f8f3e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1511" media="(prefers-color-scheme: dark)" />
 
     <link
       rel="preload"
@@ -68,553 +69,757 @@
     <script src="theme.js"></script>
     <script src="site.js" defer></script>
   </head>
-  <body>
+  <body id="top">
     <a class="skip" href="#main">Skip to content</a>
 
-    <!-- Phone: the app's espresso top bar with a menu. -->
-    <header class="mobile-bar">
-      <details class="menu">
-        <summary aria-label="Open menu">
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </summary>
-        <nav class="menu-panel" aria-label="Sections">
-          <ul class="nav-links">
-            <li><a href="#overview">Overview</a></li>
-            <li><a href="#features">What it does</a></li>
-            <li><a href="#privacy">Privacy</a></li>
-            <li><a href="#setup">Setup</a></li>
-            <li><a href="#install">Install</a></li>
-            <li><a href="#cost">Cost</a></li>
-            <li><a href="#faq">FAQ</a></li>
-          </ul>
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <a class="brand" href="#top">RoleHawk</a>
+        <nav class="topnav" aria-label="Sections">
+          <a href="#how">How it works</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#cost">Cost</a>
+          <a href="#faq">FAQ</a>
+          <!-- Comparison page: add <a href="compare.html">Compare</a> here once it exists. -->
         </nav>
-      </details>
-      <a class="brand" href="./">RoleHawk</a>
-      <a class="mobile-gh" href="https://github.com/travist6983/rolehawk">GitHub</a>
-    </header>
-
-    <!-- Desktop: the app's espresso sidebar. -->
-    <nav class="sidebar" aria-label="Sections">
-      <a class="brand" href="./">RoleHawk</a>
-      <ul class="nav-links" data-spy>
-        <li><a href="#overview">Overview</a></li>
-        <li><a href="#features">What it does</a></li>
-        <li><a href="#privacy">Privacy</a></li>
-        <li><a href="#setup">Setup</a></li>
-        <li><a href="#install">Install <span class="nav-badge">free</span></a></li>
-        <li><a href="#cost">Cost</a></li>
-        <li><a href="#faq">FAQ</a></li>
-        <!-- Comparison page: add <li><a href="compare.html">Compare</a></li> here once it exists. -->
-      </ul>
-      <div class="sidebar-foot">
-        <a class="cream-pill" href="#install">Install RoleHawk</a>
-        <div class="foot-row">
-          <a href="https://github.com/travist6983/rolehawk"><span class="dot" aria-hidden="true"></span>Open source</a>
-          <span class="theme-toggle" role="group" aria-label="Theme" hidden>
-            <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
-            <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
-          </span>
+        <div class="topbar-actions">
+          <a class="topbar-gh" href="https://github.com/travist6983/rolehawk">GitHub</a>
+          <a class="btn btn-primary btn-header" href="#install">Install free</a>
+          <details class="menu">
+            <summary aria-label="Menu">
+              <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </summary>
+            <nav class="menu-panel" aria-label="Menu">
+              <a href="#how">How it works</a>
+              <a href="#privacy">Privacy</a>
+              <a href="#install">Install</a>
+              <a href="#cost">Cost</a>
+              <a href="#faq">FAQ</a>
+              <a href="https://github.com/travist6983/rolehawk">GitHub</a>
+            </nav>
+          </details>
         </div>
       </div>
-    </nav>
+    </header>
 
-    <div class="content">
-      <main id="main" class="page">
-        <!-- Overview -->
-        <section id="overview" aria-labelledby="overview-title">
-          <header class="page-header">
-            <h1 id="overview-title">Your job search, on your computer.</h1>
-          </header>
-          <p class="lead">
-            RoleHawk is a free, open source AI job search copilot. It reads your resume, finds and
-            ranks jobs, writes a tailored CV and cover letter for each one, and tracks every
-            application. <b>Claude does the thinking. Your data stays in a folder you own.</b>
+    <main id="main">
+      <!-- Hero -->
+      <section class="wrap hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="kicker">Free and open source · Runs on your computer</span>
+          <h1 id="hero-title">From your resume to an offer, <em>one card at a time.</em></h1>
+          <p class="hero-lead">
+            RoleHawk reads your resume, finds jobs that genuinely fit you, writes a CV and cover
+            letter for each one, and keeps every application moving. Claude does the heavy lifting.
+            You make every call, and your data stays in a folder you own.
           </p>
           <div class="actions">
-            <a class="btn btn-primary" href="#install">Install it free</a>
-            <a class="btn btn-outline" href="https://github.com/travist6983/rolehawk">View on GitHub</a>
-            <span class="hint">macOS, Windows, and Linux · MIT license · No account</span>
+            <a class="btn btn-primary btn-lg" href="#install">Install it free</a>
+            <a class="btn btn-outline btn-lg" href="https://github.com/travist6983/rolehawk">View on GitHub</a>
+            <span class="hint">macOS, Windows and Linux · MIT license · No account</span>
           </div>
+        </div>
 
-          <figure class="shot card hero-shot">
-            <picture class="anim">
-              <source srcset="stills/hero.png" media="(prefers-reduced-motion: reduce)" />
-              <img
-                src="media/hero.gif"
-                data-anim="media/hero.gif"
-                data-still="stills/hero.png"
-                width="1440"
-                height="779"
-                fetchpriority="high"
-                alt="The RoleHawk pipeline board with applications from Saved to Offer. A card opens to its tailored application, with a CV preview and a fit score."
-              />
-            </picture>
-          </figure>
-          <p class="caption">
-            Every screen here shows made-up demo data: a fictional job seeker and fictional
-            companies.
-            <button class="link-btn" type="button" data-motion-toggle data-paused="false" hidden>
-              Pause animations
-            </button>
-          </p>
-
-          <div class="card-row overview-cards">
-            <article class="card tile">
-              <span class="label">Your CV</span>
-              <h3>Never invents a fact</h3>
-              <p>
-                Employers, titles, dates, degrees, and numbers come only from your profile. Three
-                checks flag anything that doesn't match.
-              </p>
-            </article>
-            <article class="card tile">
-              <span class="label">Applying</span>
-              <h3>Never submits for you</h3>
-              <p>
-                It drafts documents and can fill in an application form, then stops. You read it and
-                press submit yourself.
-              </p>
-            </article>
-            <article class="card tile">
-              <span class="label">Your data</span>
-              <h3>Never phones home</h3>
-              <p>
-                No RoleHawk account, server, analytics, or telemetry. It talks to Claude on your key
-                and the job sources you turn on.
-              </p>
-            </article>
-          </div>
-        </section>
-
-        <!-- Features -->
-        <section id="features" class="section" aria-labelledby="features-title">
-          <div class="phase">
-            <h2 id="features-title">What it does</h2>
-            <span>From a resume to an offer, in one place</span>
-          </div>
-
-          <article class="feature">
-            <div class="feature-text">
-              <span class="label">Pipeline</span>
-              <h3>Your whole search on one board</h3>
-              <p>
-                Every application moves from Saved to Offer, by drag or keyboard. Each card shows its
-                fit score and the one thing to do next: write the application, check a flagged line,
-                send a follow-up after ten quiet days, or prepare for an interview.
-              </p>
-            </div>
-            <figure class="shot card">
-              <img
-                src="media/pipeline.png"
-                data-light="media/pipeline.png"
-                data-dark="media/pipeline-dark.png"
-                width="1440"
-                height="900"
-                loading="lazy"
-                decoding="async"
-                alt="The Pipeline board: columns for Saved, Applying, Applied, Screen, Interview, Offer, and Closed, each card with a fit score and its next step."
-              />
-            </figure>
-          </article>
-
-          <article class="feature">
-            <div class="feature-text">
-              <span class="label">Discover</span>
-              <h3>Find and rank jobs that fit</h3>
-              <p>
-                RoleHawk searches Greenhouse, Lever, Ashby, and Workable boards for a watchlist of
-                companies you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS. Add any
-                careers page yourself. One fit rubric scores experience, skills, goals, and logistics,
-                explains every score, and shows the cost before it runs.
-              </p>
-            </div>
-            <figure class="shot card">
-              <picture class="anim">
-                <source srcset="stills/discover.png" media="(prefers-reduced-motion: reduce)" />
-                <img
-                  src="media/discover.gif"
-                  data-anim="media/discover.gif"
-                  data-still="stills/discover.png"
-                  width="1440"
-                  height="779"
-                  loading="lazy"
-                  decoding="async"
-                  alt="Discover: ranking new jobs, then opening one to see why it scored the way it did."
-                />
-              </picture>
-            </figure>
-          </article>
-
-          <article class="feature">
-            <div class="feature-text">
-              <span class="label">Applications</span>
-              <h3>A tailored CV and cover letter, fact checked</h3>
-              <p>
-                One click writes both, as Word and PDF, from templates that applicant tracking systems
-                can read. Drafts pick your roles by reference, a fact check flags unknown numbers and
-                skills, and an AI review marks stretches and generic lines for you to fix or keep. It
-                checks the posting's requirements against your CV too.
-              </p>
-            </div>
-            <figure class="shot card">
-              <picture class="anim">
-                <source srcset="stills/apply.png" media="(prefers-reduced-motion: reduce)" />
-                <img
-                  src="media/apply.gif"
-                  data-anim="media/apply.gif"
-                  data-still="stills/apply.png"
-                  width="1440"
-                  height="779"
-                  loading="lazy"
-                  decoding="async"
-                  alt="Writing an application: the CV and cover letter appear, then two flagged lines are reviewed."
-                />
-              </picture>
-            </figure>
-          </article>
-
-          <article class="feature">
-            <div class="feature-text">
-              <span class="label">Insights</span>
-              <h3>See what's working</h3>
-              <p>
-                Your funnel, response rate by source, weekly activity, and what you've spent on Claude
-                this month. Export a self-contained report to share with a mentor or career coach.
-              </p>
-            </div>
-            <figure class="shot card">
-              <img
-                src="media/insights.png"
-                width="1440"
-                height="900"
-                loading="lazy"
-                decoding="async"
-                alt="Insights: an application funnel, response rate by source, weekly activity, and AI spend for the month."
-              />
-            </figure>
-          </article>
-
-          <article class="feature">
-            <div class="feature-text">
-              <span class="label">Ask Claude</span>
-              <h3>Chat from any screen</h3>
-              <p>
-                Chat knows your profile, your pipeline, and the page you're on. It remembers what you
-                tell it, like preferences, deal breakers, and stories, in plain markdown files, and
-                never changes them without your OK.
-              </p>
-            </div>
-            <figure class="shot card">
-              <picture class="anim">
-                <source srcset="stills/chat.png" media="(prefers-reduced-motion: reduce)" />
-                <img
-                  src="media/chat.gif"
-                  data-anim="media/chat.gif"
-                  data-still="stills/chat.png"
-                  width="1440"
-                  height="779"
-                  loading="lazy"
-                  decoding="async"
-                  alt="The chat drawer answering “What should I focus on today?” with three next steps from the pipeline."
-                />
-              </picture>
-            </figure>
-          </article>
-
-          <div class="extras">
-            <article class="card tile">
-              <span class="label">Profile</span>
-              <h3>Built from your resume</h3>
-              <p>
-                PDF, Word, text, or a LinkedIn data export, then a short interview fills the gaps. You
-                review everything before it's saved.
-              </p>
-            </article>
-            <article class="card tile">
-              <span class="label">Follow-ups</span>
-              <h3>Drafted from what you sent</h3>
-              <p>For you to send yourself, after ten quiet days. RoleHawk never sends anything.</p>
-            </article>
-            <article class="card tile">
-              <span class="label">Learning</span>
-              <h3>Gets better with results</h3>
-              <p>
-                As replies and rejections come in, it suggests changes to your preferences for you to
-                accept or reject.
-              </p>
-            </article>
-            <article class="card tile">
-              <span class="label">Safety</span>
-              <h3>Backups before every change</h3>
-              <p>Updates and resets copy your data first. The old version stays until the new one works.</p>
-            </article>
-          </div>
-        </section>
-
-        <!-- Privacy -->
-        <section id="privacy" class="section" aria-labelledby="privacy-title">
-          <div class="phase">
-            <h2 id="privacy-title">Local first, on purpose</h2>
-            <span>Your resume, pipeline, and key stay with you</span>
-          </div>
-          <p class="lead privacy-lead">
-            A job search is personal. RoleHawk runs on your own computer and keeps everything in
-            <b>a folder you can open, read, back up, or delete.</b>
-          </p>
-          <ul class="card rows">
-            <li>
-              <span class="label">Where it runs</span>
-              <p>On 127.0.0.1 only. A random token in the launch link keeps other web pages out of it.</p>
-            </li>
-            <li>
-              <span class="label">Who it talks to</span>
-              <p>
-                Anthropic with your key, the job sources you turn on, employer pages you open with
-                autofill, and GitHub when you update. Settings lists every one. No analytics, no
-                telemetry.
-              </p>
-            </li>
-            <li>
-              <span class="label">Your API key</span>
-              <p>Stored in your operating system's keychain, never in a file.</p>
-            </li>
-            <li>
-              <span class="label">Your files</span>
-              <p>
-                Your profile and memory are plain markdown, plus one SQLite database. Copy the folder to
-                move it.
-              </p>
-            </li>
-            <li>
-              <span class="label">Job postings</span>
-              <p>
-                Treated as untrusted text. Hidden text is stripped, and lines aimed at AI tools are
-                shown to you, never obeyed.
-              </p>
-            </li>
-            <li>
-              <span class="label">The code</span>
-              <p>
-                Open source under the MIT license.
-                <a href="https://github.com/travist6983/rolehawk">Read every line on GitHub.</a>
-              </p>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Setup -->
-        <section id="setup" class="section" aria-labelledby="setup-title">
-          <div class="phase">
-            <h2 id="setup-title">Setup</h2>
-            <span>Running in about ten minutes</span>
-          </div>
-          <ol class="card-row">
-            <li class="card tile">
-              <span class="label">Step 1</span>
-              <h3>Install with one line</h3>
-              <p>
-                About three minutes, no admin rights, and no Python or Node to set up yourself. It
-                opens in your browser when it's done.
-              </p>
-              <a class="next" href="#install">Copy the install line</a>
-            </li>
-            <li class="card tile">
-              <span class="label">Step 2</span>
-              <h3>Connect Claude</h3>
-              <p>
-                Make an API key on the Claude Platform, add $10 to $20 of credit, paste it in, and set
-                a monthly limit. The app walks you through it. Use Claude Code? Skip the key and use
-                the skills.
-              </p>
-            </li>
-            <li class="card tile">
-              <span class="label">Step 3</span>
-              <h3>Add your resume and search</h3>
-              <p>
-                Import a resume or LinkedIn export, review your profile, pick your target roles, and
-                let it find and rank jobs. Then write your first application.
-              </p>
-            </li>
-          </ol>
-        </section>
-
-        <!-- Install -->
-        <section id="install" class="section" aria-labelledby="install-title">
-          <div class="phase">
-            <h2 id="install-title">Install</h2>
-            <span>One line in a terminal</span>
-          </div>
-          <div class="install-grid">
-            <div class="card cmd">
-              <div class="cmd-head">
-                <span class="label">macOS or Linux · Terminal</span>
-                <button class="btn btn-outline btn-sm copy" type="button" data-copy="cmd-unix" hidden>Copy</button>
+        <figure class="board-demo">
+          <div class="board-frame">
+            <div class="board-scroll" tabindex="0" role="region" aria-label="Demo pipeline board">
+              <div class="board-app" data-board>
+                <div class="board-side" aria-hidden="true">
+                  <span class="board-brand">RoleHawk</span>
+                  <span class="board-nav is-active"><span>Pipeline</span><span class="board-nav-count">7</span></span>
+                  <span class="board-nav"><span>Discover</span><span class="board-new">4 new</span></span>
+                  <span class="board-nav">Profile</span>
+                  <span class="board-nav">Insights</span>
+                  <span class="board-ask"><span>Ask Claude</span><kbd data-mod-key>⌘K</kbd></span>
+                </div>
+                <div class="board-main">
+                  <div class="board-head">
+                    <span class="board-title">Pipeline</span>
+                    <span class="board-note" data-board-note aria-live="polite">Good morning, Jordan. 5 cards are waiting on you.</span>
+                  </div>
+                  <div class="board-cols">
+                    <section class="board-col" data-stage="0" aria-label="Saved">
+                      <div class="col-head"><span>Saved</span><span class="col-count" data-col-count>1</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="aw-co aw-title aw-fit aw-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="aw-co" data-co>Adventure Works</span>
+                          <span class="job-title" id="aw-title">Analytics Engineer</span>
+                          <span class="job-fit"><span class="job-score" id="aw-fit"><span class="sr-only">Fit </span>94</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="88%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next" id="aw-next" data-next>Write your application</span>
+                        </article>
+                      </div>
+                    </section>
+                    <section class="board-col" data-stage="1" aria-label="Applying">
+                      <div class="col-head"><span>Applying</span><span class="col-count" data-col-count>1</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="nw-co nw-title nw-fit nw-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="nw-co" data-co>Northwind Traders</span>
+                          <span class="job-title" id="nw-title">Senior Analytics Engineer</span>
+                          <span class="job-fit"><span class="job-score" id="nw-fit"><span class="sr-only">Fit </span>91</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="82%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next" id="nw-next" data-next>Check 1 flagged line</span>
+                        </article>
+                      </div>
+                    </section>
+                    <section class="board-col" data-stage="2" aria-label="Applied">
+                      <div class="col-head"><span>Applied</span><span class="col-count" data-col-count>2</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="rc-co rc-title rc-fit rc-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="rc-co" data-co>Relecloud</span>
+                          <span class="job-title" id="rc-title">Analytics Engineer</span>
+                          <span class="job-fit"><span class="job-score" id="rc-fit"><span class="sr-only">Fit </span>83</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="66%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next" id="rc-next" data-next>Follow up</span>
+                        </article>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="as-co as-title as-fit as-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="as-co" data-co>Alpine Ski House</span>
+                          <span class="job-title" id="as-title">Senior Data Analyst</span>
+                          <span class="job-fit"><span class="job-score" id="as-fit"><span class="sr-only">Fit </span>80</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="60%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next is-waiting" id="as-next" data-next>Waiting to hear back</span>
+                        </article>
+                      </div>
+                    </section>
+                    <section class="board-col" data-stage="3" aria-label="Screen">
+                      <div class="col-head"><span>Screen</span><span class="col-count" data-col-count>1</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="pw-co pw-title pw-fit pw-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="pw-co" data-co>Proseware</span>
+                          <span class="job-title" id="pw-title">Product Analyst</span>
+                          <span class="job-fit"><span class="job-score" id="pw-fit"><span class="sr-only">Fit </span>85</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="70%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next" id="pw-next" data-next>Reply to the recruiter</span>
+                        </article>
+                      </div>
+                    </section>
+                    <section class="board-col" data-stage="4" aria-label="Interview">
+                      <div class="col-head"><span>Interview</span><span class="col-count" data-col-count>1</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="wb-co wb-title wb-fit wb-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="wb-co" data-co>Woodgrove Bank</span>
+                          <span class="job-title" id="wb-title">Senior Data Analyst</span>
+                          <span class="job-fit"><span class="job-score" id="wb-fit"><span class="sr-only">Fit </span>87</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="74%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next" id="wb-next" data-next>Prepare for Thursday</span>
+                        </article>
+                      </div>
+                    </section>
+                    <section class="board-col" data-stage="5" aria-label="Offer">
+                      <div class="col-head"><span>Offer</span><span class="col-count" data-col-count>1</span></div>
+                      <div class="col-cards" data-cards>
+                        <article class="job-card" tabindex="0" draggable="true" data-card aria-labelledby="lw-co lw-title lw-fit lw-next" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight">
+                          <span class="job-co" id="lw-co" data-co>Litware</span>
+                          <span class="job-title" id="lw-title">Analytics Engineer</span>
+                          <span class="job-fit"><span class="job-score" id="lw-fit"><span class="sr-only">Fit </span>89</span><svg class="scale" width="100%" height="10" aria-hidden="true" focusable="false"><line class="scale-base" x1="0" y1="7.5" x2="100%" y2="7.5" /><rect class="scale-mark" x="78%" y="0" width="3" height="10" rx="1" /></svg></span>
+                          <span class="job-next is-waiting" id="lw-next" data-next>Decide by Friday</span>
+                        </article>
+                      </div>
+                    </section>
+                  </div>
+                </div>
               </div>
-              <code id="cmd-unix">curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.sh | bash</code>
-            </div>
-            <div class="card cmd">
-              <div class="cmd-head">
-                <span class="label">Windows · PowerShell</span>
-                <button class="btn btn-outline btn-sm copy" type="button" data-copy="cmd-win" hidden>Copy</button>
-              </div>
-              <code id="cmd-win">irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex</code>
             </div>
           </div>
-          <p class="sr-only" role="status" aria-live="polite" data-status></p>
-          <p class="after">
-            Everything installs in your home folder, and the installer checks the download's checksum
-            before unpacking it.
+          <figcaption class="caption">
+            The real board, with made-up people and companies. Drag a card, or focus one and press
+            <kbd data-alt-key>Alt</kbd> ← →.
+          </figcaption>
+        </figure>
+      </section>
+
+      <!-- Promises -->
+      <section class="band promises" aria-labelledby="promises-title">
+        <div class="wrap promises-grid">
+          <div class="promises-head">
+            <h2 id="promises-title">Three things it will never do</h2>
+            <p>A job search is high stakes. These are the lines RoleHawk is built never to cross.</p>
+          </div>
+          <article class="promise">
+            <span class="promise-k">Your CV</span>
+            <h3>Invent a fact</h3>
+            <p>
+              Every employer, title, date, degree and number comes from your profile. Three checks
+              flag anything that doesn't match, before you ever send it.
+            </p>
+          </article>
+          <article class="promise">
+            <span class="promise-k">Applying</span>
+            <h3>Submit for you</h3>
+            <p>It drafts your documents and can fill in a form, then stops. You read it, and you press submit.</p>
+          </article>
+          <article class="promise">
+            <span class="promise-k">Your data</span>
+            <h3>Phone home</h3>
+            <p>
+              No RoleHawk account, server, analytics or telemetry. It talks to Claude on your key and
+              the job sources you turn on.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="wrap how" aria-labelledby="how-title">
+        <div class="section-head">
+          <span class="kicker">How it works</span>
+          <h2 id="how-title">Your whole search, in the order you live it</h2>
+          <p class="section-lead">
+            Each step hands its work to the next, so you never type the same thing twice, and you
+            always know what to do next.
+          </p>
+        </div>
+
+        <!-- 01 Profile -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">01 · Profile</span>
+            <h3>Start with the resume you already have</h3>
+            <p>
+              Bring a PDF, a Word file, plain text or your LinkedIn export. A short interview fills in
+              the gaps, like the project you're proudest of or the commute you won't do. Nothing is
+              saved until you've read it and said yes.
+            </p>
+          </div>
+          <div class="demo-card profile-demo" role="group" aria-label="Demo: review your profile" data-profile>
+            <div class="profile-head">
+              <span class="profile-title">Review your profile</span>
+              <span class="profile-count"><span data-profile-count>2</span> of 4 checked</span>
+            </div>
+            <label class="check-row">
+              <input class="sr-only" type="checkbox" checked />
+              <span class="check-box" aria-hidden="true"></span>
+              <span class="check-text"><span class="check-label">Experience</span><span class="check-detail">4 roles, 2016 to now</span></span>
+              <span class="check-src">From your resume</span>
+            </label>
+            <label class="check-row">
+              <input class="sr-only" type="checkbox" checked />
+              <span class="check-box" aria-hidden="true"></span>
+              <span class="check-text"><span class="check-label">Skills</span><span class="check-detail">dbt, Snowflake, SQL, Looker and 14 more</span></span>
+              <span class="check-src">From your resume</span>
+            </label>
+            <label class="check-row">
+              <input class="sr-only" type="checkbox" />
+              <span class="check-box" aria-hidden="true"></span>
+              <span class="check-text"><span class="check-label">Goals</span><span class="check-detail">Analytics engineering, remote first</span></span>
+              <span class="check-src">From the interview</span>
+            </label>
+            <label class="check-row">
+              <input class="sr-only" type="checkbox" />
+              <span class="check-box" aria-hidden="true"></span>
+              <span class="check-text"><span class="check-label">Deal breakers</span><span class="check-detail">No more than 2 days in office</span></span>
+              <span class="check-src">From the interview</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 02 Discover -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">02 · Discover</span>
+            <h3>Find the jobs worth your evening</h3>
+            <p>
+              RoleHawk searches Greenhouse, Lever, Ashby and Workable boards for a watchlist of
+              companies you choose, plus Remote OK, We Work Remotely, Adzuna and USAJOBS. You can add
+              any careers page yourself.
+            </p>
+            <p>
+              Every job is scored on the same rubric of experience, skills, goals and logistics, and
+              every score comes with its reasons. You see the cost before it runs.
+            </p>
+          </div>
+          <div class="demo-card discover-demo" role="group" aria-label="Demo: ranked jobs" data-discover>
+            <div class="disc-list">
+              <button type="button" class="disc-job" aria-pressed="true" data-job="j1" data-score="96">
+                <span class="disc-fit">96</span>
+                <span class="disc-text"><span class="disc-title">Analytics Engineer</span><span class="disc-co">Contoso Pharmaceuticals</span></span>
+              </button>
+              <button type="button" class="disc-job" aria-pressed="false" data-job="j2" data-score="92">
+                <span class="disc-fit">92</span>
+                <span class="disc-text"><span class="disc-title">Senior Analytics Engineer</span><span class="disc-co">Fabrikam</span></span>
+              </button>
+              <button type="button" class="disc-job" aria-pressed="false" data-job="j3" data-score="84">
+                <span class="disc-fit">84</span>
+                <span class="disc-text"><span class="disc-title">Data Analyst II</span><span class="disc-co">Tailspin Toys</span></span>
+              </button>
+              <button type="button" class="disc-job" aria-pressed="false" data-job="j4" data-score="74">
+                <span class="disc-fit">74</span>
+                <span class="disc-text"><span class="disc-title">Data Engineer</span><span class="disc-co">VanArsdel</span></span>
+              </button>
+            </div>
+            <div class="disc-detail" aria-live="polite">
+              <div class="disc-score"><span class="disc-big" data-fit-value>96</span><span class="disc-word" data-fit-word>Strong fit</span></div>
+              <svg class="scale scale-lg" width="100%" height="16" aria-hidden="true" focusable="false">
+                <rect class="scale-tick" x="50%" y="7" width="1" height="5" />
+                <line class="scale-base" x1="0" y1="12.5" x2="100%" y2="12.5" />
+                <rect class="scale-mark" x="92%" y="1" width="3" height="15" rx="1" data-fit-mark />
+              </svg>
+              <span class="disc-why">Why it scored this way</span>
+              <ul class="reasons" data-reasons="j1">
+                <li><span class="reason-mark is-plus" aria-hidden="true">+</span><span>dbt, Snowflake and Looker, your exact stack</span></li>
+                <li><span class="reason-mark is-plus" aria-hidden="true">+</span><span>Asks for finance-facing data quality work, which you led</span></li>
+                <li><span class="reason-mark is-minus" aria-hidden="true">−</span><span><span class="sr-only">Gap: </span>Mentions Airflow; you list Dagster. Worth a line in the letter.</span></li>
+              </ul>
+              <ul class="reasons" data-reasons="j2" hidden>
+                <li><span class="reason-mark is-plus" aria-hidden="true">+</span><span>Senior scope matches three years owning your analytics layer</span></li>
+                <li><span class="reason-mark is-minus" aria-hidden="true">−</span><span><span class="sr-only">Gap: </span>Hybrid three days a week; you prefer remote.</span></li>
+              </ul>
+              <ul class="reasons" data-reasons="j3" hidden>
+                <li><span class="reason-mark is-plus" aria-hidden="true">+</span><span>Remote, and inside your salary floor</span></li>
+                <li><span class="reason-mark is-minus" aria-hidden="true">−</span><span><span class="sr-only">Gap: </span>A step below your current level.</span></li>
+              </ul>
+              <ul class="reasons" data-reasons="j4" hidden>
+                <li><span class="reason-mark is-plus" aria-hidden="true">+</span><span>Snowflake and dbt in the stack</span></li>
+                <li><span class="reason-mark is-minus" aria-hidden="true">−</span><span><span class="sr-only">Gap: </span>More pipeline engineering (Spark, Kafka) than modeling.</span></li>
+                <li><span class="reason-mark is-minus" aria-hidden="true">−</span><span><span class="sr-only">Gap: </span>Below your salary target.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 03 Apply -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">03 · Apply</span>
+            <h3>A tailored CV and letter, and every word of it true</h3>
+            <p>
+              One click writes both, as Word and PDF, from templates applicant tracking systems can
+              read. Drafts pull your roles straight from your profile. A fact check flags any number or
+              skill it can't find there, and a second review marks stretches and generic lines, for
+              you to fix or keep.
+            </p>
+            <p>It also checks the posting's requirements against your CV, so you know what's missing before they do.</p>
+          </div>
+          <div class="apply-demo" role="group" aria-label="Demo: fact check" data-factcheck>
+            <div class="demo-card letter">
+              <p>
+                At Bellows &amp; Co. I
+                <mark class="flagged" data-when="open">led the migration of 40+ legacy reports to dbt</mark><span class="fixed" data-when="done" hidden>led the migration of <span data-fixed-count>30+</span> legacy reports to dbt</span>, cutting refresh time by 70%, and built the data-quality checks finance now uses to sign
+                off month-end close.
+              </p>
+            </div>
+            <div class="flag-box" data-when="open">
+              <span class="flag-k">Fact check · 1 line</span>
+              <span class="flag-text">Your resume says <b>30+</b> reports. The letter says <b>40+</b>. Which is right?</span>
+              <div class="flag-actions" data-js-only hidden>
+                <button type="button" class="btn btn-primary btn-sm" data-flag="fixed">Use 30+</button>
+                <button type="button" class="btn btn-flag btn-sm" data-flag="keep">40+ is right, update my profile</button>
+              </div>
+            </div>
+            <div class="flag-done" data-when="done" hidden>
+              <span><span class="ok-mark" aria-hidden="true">✓</span>Every fact matches your profile. Ready for you to read and send.</span>
+              <button type="button" class="link-btn" data-flag="open">Replay</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 04 Track -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">04 · Track</span>
+            <h3>Nothing slips through the cracks</h3>
+            <p>
+              Every application lives on the board you played with above, from Saved to Offer. Each
+              card tells you the one thing to do next: write it, check a flagged line, follow up, or
+              get ready for Thursday.
+            </p>
+            <p>
+              After ten quiet days, RoleHawk drafts a follow-up from what you actually sent. You send
+              it, from your own inbox. RoleHawk never sends anything.
+            </p>
+          </div>
+          <div class="demo-card follow-demo" role="group" aria-label="Demo: follow-up draft">
+            <div class="follow-head">
+              <span class="follow-meta">Relecloud · Applied 10 days ago</span>
+              <span class="follow-next">Follow up</span>
+            </div>
+            <div class="follow-body" id="follow-draft">
+              <p>Hi Dana,</p>
+              <p>
+                I applied for the Analytics Engineer role on October 22 and wanted to check in. The
+                work your team described on self-serve product models is exactly what I've been doing
+                at Bellows, and I'd love to talk about it.
+              </p>
+              <p>Thanks for your time,<br />Jordan</p>
+            </div>
+            <div class="follow-actions">
+              <button type="button" class="btn btn-primary btn-sm" data-copy="follow-draft" data-copied="Draft copied" hidden>Copy draft</button>
+              <span class="hint-sm">You paste it into your email and send it.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 05 Insights -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">05 · Insights</span>
+            <h3>See what's working, and what it costs</h3>
+            <p>
+              Your funnel, response rate by source, weekly activity, and what you've spent on Claude
+              this month. Export a self-contained report to share with a mentor or career coach.
+            </p>
+            <p>
+              As replies and rejections come in, RoleHawk suggests changes to your preferences. You
+              accept or reject each one.
+            </p>
+          </div>
+          <div class="demo-card insights-demo" role="group" aria-label="Demo: insights">
+            <div class="mini">
+              <span class="mini-title">Where applications go</span>
+              <div class="funnel-row"><span>Saved</span><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="100%" height="9" rx="2" /></svg><span class="num">14</span></div>
+              <div class="funnel-row"><span>Applied</span><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="64.3%" height="9" rx="2" /></svg><span class="num">9</span></div>
+              <div class="funnel-row"><span>Screen</span><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="21.4%" height="9" rx="2" /></svg><span class="num">3</span></div>
+              <div class="funnel-row"><span>Interview</span><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="14.3%" height="9" rx="2" /></svg><span class="num">2</span></div>
+              <div class="funnel-row"><span>Offer</span><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="7.1%" height="9" rx="2" /></svg><span class="num">1</span></div>
+            </div>
+            <div class="mini">
+              <span class="mini-title">Reply rate by source</span>
+              <div class="source-row"><div class="source-top"><span>Referrals</span><span>60%</span></div><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill is-accent" width="60%" height="9" rx="2" /></svg></div>
+              <div class="source-row"><div class="source-top"><span>Company sites</span><span>22%</span></div><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="22%" height="9" rx="2" /></svg></div>
+              <div class="source-row"><div class="source-top"><span>Job boards</span><span>12%</span></div><svg class="bar" width="100%" height="9" aria-hidden="true" focusable="false"><rect class="bar-track" width="100%" height="9" rx="2" /><rect class="bar-fill" width="12%" height="9" rx="2" /></svg></div>
+              <div class="spend"><span>Claude this month</span><span class="spend-n">$14.20</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ask Claude -->
+        <div class="step">
+          <div class="step-text">
+            <span class="step-k">Any time · Ask Claude</span>
+            <h3>Someone to think out loud with</h3>
+            <p>
+              Chat opens from any screen and already knows your profile, your pipeline and the page
+              you're on. It remembers what you tell it, like deal breakers, preferences and stories,
+              in plain markdown files, and never changes them without your OK.
+            </p>
+          </div>
+          <div class="chat-demo" role="group" aria-label="Demo: Ask Claude" data-chat>
+            <div class="chat-head">Ask Claude</div>
+            <div class="chat-body" aria-live="polite">
+              <div class="chat-pair" data-chat-pair="0">
+                <p class="bubble-me">What should I focus on today?</p>
+                <div class="bubble-ai">
+                  <p>Three things, in this order:</p>
+                  <ol>
+                    <li>Northwind Traders: fix the one flagged line and you can submit today.</li>
+                    <li>Proseware: reply to the recruiter. She asked for times on Wednesday.</li>
+                    <li>Relecloud: it's been ten days. I've drafted a follow-up for you to send.</li>
+                  </ol>
+                </div>
+              </div>
+              <div class="chat-pair" data-chat-pair="1" hidden>
+                <p class="bubble-me">Which saved job fits me best?</p>
+                <div class="bubble-ai">
+                  <p>
+                    Adventure Works, at 94. It uses your exact stack, and their posting leans on the
+                    data-quality work you're proudest of. The one gap: they want some Python
+                    orchestration, so mention your Dagster work.
+                  </p>
+                </div>
+              </div>
+              <div class="chat-pair" data-chat-pair="2" hidden>
+                <p class="bubble-me">Remember: no more than 2 days in office</p>
+                <div class="bubble-ai">
+                  <p>Got it. I'd like to add this to your deal breakers:</p>
+                  <p>"No more than 2 days a week in office."</p>
+                  <p>Save it? I'll use it when ranking new jobs.</p>
+                </div>
+              </div>
+            </div>
+            <div class="chips" role="group" aria-label="Try a question" data-js-only hidden>
+              <button type="button" class="chip" aria-pressed="true" data-chat-chip="0">What should I focus on today?</button>
+              <button type="button" class="chip" aria-pressed="false" data-chat-chip="1">Which saved job fits me best?</button>
+              <button type="button" class="chip" aria-pressed="false" data-chat-chip="2">Remember: no more than 2 days in office</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="extras">
+          <div class="extra">
+            <h3>Backups before every change</h3>
+            <p>Updates and resets copy your data first. The old version stays until the new one works.</p>
+          </div>
+          <div class="extra">
+            <h3>Learns from your results</h3>
+            <p>Replies and rejections turn into suggested tweaks to your preferences, for you to accept or reject.</p>
+          </div>
+          <div class="extra">
+            <h3>Treats postings with care</h3>
+            <p>Hidden text is stripped, and lines aimed at AI tools are shown to you, never obeyed.</p>
+          </div>
+          <div class="extra">
+            <h3>Works in Claude Code</h3>
+            <p>Already use Claude Code? Skip the API key and run every RoleHawk command through its skills.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Privacy -->
+      <section id="privacy" class="wrap privacy" aria-labelledby="privacy-title">
+        <div class="privacy-card">
+          <div class="privacy-copy">
+            <span class="kicker">Local first, on purpose</span>
+            <h2 id="privacy-title">Your search is personal. It stays on your computer.</h2>
+            <p>
+              Your resume, your pipeline, the notes about why you left your last job: all of it lives
+              in one folder in your home directory. Open it, read it, back it up, or delete it. Copy
+              the folder to move it.
+            </p>
+            <div class="folder">
+              <div>~/RoleHawk/</div>
+              <ul aria-label="What's in the folder">
+                <li>profile and memory<span class="folder-note"> · markdown</span></li>
+                <li>documents<span class="folder-note"> · your CVs and letters</span></li>
+                <li>backups<span class="folder-note"> · made before every change</span></li>
+                <li>database<span class="folder-note"> · one SQLite file</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="facts">
+            <dl>
+              <div class="fact">
+                <dt>Where it runs</dt>
+                <dd>On 127.0.0.1 only. A random token in the launch link keeps other web pages out.</dd>
+              </div>
+              <div class="fact">
+                <dt>Who it talks to</dt>
+                <dd>
+                  Anthropic with your key, the job sources you turn on, employer pages you open with
+                  autofill, and GitHub when you update. Settings lists every one.
+                </dd>
+              </div>
+              <div class="fact">
+                <dt>Your API key</dt>
+                <dd>Kept in your operating system's keychain, never in a file.</dd>
+              </div>
+              <div class="fact">
+                <dt>Your files</dt>
+                <dd>Your profile and memory are plain markdown, plus one SQLite database.</dd>
+              </div>
+              <div class="fact">
+                <dt>Job postings</dt>
+                <dd>Treated as untrusted text, so nothing hidden in a posting can steer the AI.</dd>
+              </div>
+              <div class="fact">
+                <dt>The code</dt>
+                <dd>Open source under the MIT license.</dd>
+              </div>
+            </dl>
+            <p class="facts-link"><a href="https://github.com/travist6983/rolehawk">Read every line on GitHub →</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Setup and install -->
+      <section id="install" class="wrap install" aria-labelledby="install-title">
+        <div class="section-head section-head-wide">
+          <span class="kicker">Setup</span>
+          <h2 id="install-title">Up and running in about ten minutes</h2>
+        </div>
+        <ol class="setup-steps">
+          <li class="setup-step">
+            <span class="setup-n" aria-hidden="true">1</span>
+            <h3>Install with one line</h3>
+            <p>
+              About three minutes, no admin rights, and no Python or Node to set up. It opens in your
+              browser when it's done.
+            </p>
+          </li>
+          <li class="setup-step">
+            <span class="setup-n" aria-hidden="true">2</span>
+            <h3>Connect Claude</h3>
+            <p>
+              Make an API key on the Claude Platform, add $10 to $20 of credit, and set a monthly
+              limit. The app walks you through it.
+            </p>
+          </li>
+          <li class="setup-step">
+            <span class="setup-n" aria-hidden="true">3</span>
+            <h3>Add your resume and search</h3>
+            <p>
+              Import a resume or LinkedIn export, check your profile, pick your target roles, and let
+              it find and rank jobs. Then write your first application.
+            </p>
+          </li>
+        </ol>
+        <div class="install-box" data-install>
+          <div class="install-head">
+            <p class="install-title">Install with one line</p>
+            <div class="os-tabs" role="group" aria-label="Your operating system" data-js-only hidden>
+              <button type="button" aria-pressed="true" data-os="unix">macOS / Linux</button>
+              <button type="button" aria-pressed="false" data-os="win">Windows</button>
+            </div>
+          </div>
+          <div class="cmd-row" data-os-row="unix">
+            <span class="cmd-shell">bash</span>
+            <code class="cmd-code" id="cmd-unix" tabindex="0">curl -fsSL https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.sh | bash</code>
+            <button type="button" class="btn btn-cream btn-sm" data-copy="cmd-unix" data-copied="Command copied" aria-label="Copy the macOS and Linux command" hidden>Copy</button>
+          </div>
+          <div class="cmd-row" data-os-row="win">
+            <span class="cmd-shell">PowerShell</span>
+            <code class="cmd-code" id="cmd-win" tabindex="0">irm https://raw.githubusercontent.com/travist6983/rolehawk/main/scripts/install.ps1 | iex</code>
+            <button type="button" class="btn btn-cream btn-sm" data-copy="cmd-win" data-copied="Command copied" aria-label="Copy the Windows command" hidden>Copy</button>
+          </div>
+          <p class="install-note">
+            Everything installs in your home folder, with no admin rights, and the installer checks
+            the download's checksum before unpacking.
             <a href="https://github.com/travist6983/rolehawk/tree/main/scripts">Read the scripts first</a>
-            if you like. Want to look around before setting it up?
-            <a href="https://github.com/travist6983/rolehawk#try-the-demo">Run the demo</a>, which
-            needs no API key.
+            if you like. Want a look before you set anything up?
+            <a href="https://github.com/travist6983/rolehawk#try-the-demo">Run the demo</a>. It needs no
+            API key.
           </p>
-        </section>
+        </div>
+        <p class="sr-only" role="status" aria-live="polite" data-status></p>
+      </section>
 
-        <!-- Cost -->
-        <section id="cost" class="section" aria-labelledby="cost-title">
-          <div class="phase">
-            <h2 id="cost-title">What it costs</h2>
-            <span>RoleHawk is free; Claude is pay as you go</span>
-          </div>
-          <div class="cost-grid">
-            <div>
-              <p>
-                The AI runs on your own API key from the Claude Platform, so you pay Anthropic only
-                for what you use. Ranking uses Claude Haiku and costs cents. Writing applications uses
-                Claude Opus and is most of the bill.
-              </p>
-              <p>
-                Batch commands show an estimate before they run, Insights shows what you've spent, and
-                a monthly cap in Settings stops new AI calls when you reach it.
-              </p>
-            </div>
-            <div class="card table-wrap">
-              <table>
-                <caption>
-                  Rough monthly cost to Anthropic, by how you use it each week
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Each week</th>
-                    <th scope="col" class="num">Per month</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row"><b>Light</b> <span>20 jobs ranked, 3 applications, a little chat</span></th>
-                    <td class="num">$3 to $6</td>
-                  </tr>
-                  <tr>
-                    <th scope="row"><b>Typical</b> <span>50 jobs ranked, 10 applications, some chat</span></th>
-                    <td class="num">$12 to $25</td>
-                  </tr>
-                  <tr>
-                    <th scope="row"><b>Heavy</b> <span>200 jobs ranked, 25 applications, daily chat</span></th>
-                    <td class="num">$30 to $60</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p class="table-note">
-                Estimates from the app's own pricing table. The range covers how much Claude thinks on
-                each task.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- FAQ -->
-        <section id="faq" class="section faq" aria-labelledby="faq-title">
-          <div class="phase">
-            <h2 id="faq-title">Questions</h2>
-          </div>
-          <details>
-            <summary>Is it really free?</summary>
-            <p>
-              Yes. RoleHawk is open source under the MIT license, with no paid plan and no account.
-              The only cost is the Claude usage you choose to run on your own API key.
-            </p>
-          </details>
-          <details>
-            <summary>Can I use my Claude Pro or Max subscription?</summary>
-            <p>
-              Not inside the app, because other apps can't sign in with a Claude subscription. If you
-              use Claude Code, though, you can run every RoleHawk command there through its skills,
-              and the reasoning happens in your Claude Code session.
-            </p>
-          </details>
-          <details>
-            <summary>Does it apply to jobs automatically?</summary>
-            <p>
-              No. It drafts documents and fills in forms, then stops so you can check everything and
-              press submit yourself.
-            </p>
-          </details>
-          <details>
-            <summary>Will it make things up on my CV?</summary>
-            <p>
-              It's built not to. Employers, titles, dates, degrees, certifications, and numbers come
-              only from your profile. Anything the checks can't match is highlighted for you before
-              you use the document.
-            </p>
-          </details>
-          <details>
-            <summary>Does it work without an API key?</summary>
-            <p>
-              Partly. Importing a LinkedIn export, the setup interview, job search, the pipeline,
-              insights, and reports all work. Reading a resume, ranking, writing, and chat need
-              Claude.
-            </p>
-          </details>
-          <details>
-            <summary>Does it search LinkedIn or Indeed?</summary>
-            <p>
-              Not yet. Searching them breaks their terms, so they'll come later as opt-in, clearly
-              marked experimental sources. Many of the same jobs are on the companies' own boards,
-              which RoleHawk does search.
-            </p>
-          </details>
-          <details>
-            <summary>Where is my data, and how do I move it?</summary>
-            <p>
-              In a RoleHawk folder in your home folder: your profile and memory as markdown files,
-              your documents, backups, and one SQLite database. Copy the folder to move it.
-            </p>
-          </details>
-          <details>
-            <summary>Which countries does it support?</summary>
-            <p>
-              Any. Job sources are filtered by the countries you search in, and Adzuna covers 19
-              countries when you add its free key.
-            </p>
-          </details>
-          <details>
-            <summary>Who makes it?</summary>
-            <p>
-              RoleHawk is built by <a href="https://github.com/travist6983">Travis Terry</a>, a
-              software engineer. Issues, ideas, and pull requests are welcome on
-              <a href="https://github.com/travist6983/rolehawk">GitHub</a>.
-            </p>
-          </details>
-        </section>
-
-        <footer class="site-footer">
-          <ul class="footer-links">
-            <li><a href="https://github.com/travist6983/rolehawk">GitHub</a></li>
-            <li><a href="https://github.com/travist6983/rolehawk/blob/main/LICENSE">MIT license</a></li>
-            <li><a href="https://github.com/travist6983/rolehawk/blob/main/DISCLAIMER.md">Disclaimer</a></li>
-            <li><a href="https://github.com/travist6983/rolehawk/blob/main/SECURITY.md">Security</a></li>
-            <li><a href="https://github.com/travist6983/rolehawk/issues">Report an issue</a></li>
-            <!-- Comparison page: add <li><a href="compare.html">How it compares</a></li> here once it exists. -->
-          </ul>
-          <p class="fine">
-            RoleHawk is an independent open source project, not affiliated with or endorsed by
-            Anthropic. Claude is a trademark of Anthropic. This page uses no cookies and no tracking.
+      <!-- Cost -->
+      <section id="cost" class="wrap cost" aria-labelledby="cost-title">
+        <div class="cost-copy">
+          <span class="kicker">What it costs</span>
+          <h2 id="cost-title">RoleHawk is free. Claude is pay as you go.</h2>
+          <p>
+            The AI runs on your own key from the Claude Platform, so you pay Anthropic only for what
+            you use. Ranking uses Claude Haiku and costs cents. Writing applications uses Claude Opus,
+            and that's most of the bill.
           </p>
-        </footer>
-      </main>
-    </div>
+          <p>
+            Batch jobs show an estimate before they run, Insights shows what you've spent, and a
+            monthly cap in Settings stops new AI calls when you hit it. No surprises.
+          </p>
+        </div>
+        <div class="cost-table">
+          <table>
+            <caption class="sr-only">Rough monthly cost to Anthropic, by how you use RoleHawk each week</caption>
+            <thead>
+              <tr>
+                <th scope="col">If each week you…</th>
+                <th scope="col" class="num">Per month</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><span class="cost-k">Light</span><span class="cost-d">Rank 20 jobs, write 3 applications, a little chat</span></th>
+                <td class="num">$3 to $6</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="cost-k">Typical</span><span class="cost-d">Rank 50 jobs, write 10 applications, some chat</span></th>
+                <td class="num">$12 to $25</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="cost-k">Heavy</span><span class="cost-d">Rank 200 jobs, write 25 applications, daily chat</span></th>
+                <td class="num">$30 to $60</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="cost-note">
+            Rough monthly cost to Anthropic, from the app's own pricing table. The range covers how
+            much Claude thinks on each task.
+          </p>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Questions you might have</h2>
+        <details name="faq" open>
+          <summary>Is it really free?</summary>
+          <p>
+            Yes. RoleHawk is open source under the MIT license, with no paid plan and no account. The
+            only cost is the Claude usage you choose to run on your own API key.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Can I use my Claude Pro or Max subscription?</summary>
+          <p>
+            Not inside the app, because other apps can't sign in with a Claude subscription. If you
+            use Claude Code, though, you can run every RoleHawk command there through its skills, and
+            the thinking happens in your Claude Code session.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Will it apply to jobs for me?</summary>
+          <p>
+            No, and that's on purpose. It drafts your documents and can fill in an application form,
+            then stops so you can read everything and press submit yourself.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Will it make things up on my CV?</summary>
+          <p>
+            It's built not to. Employers, titles, dates, degrees, certifications and numbers come only
+            from your profile. Anything the checks can't match is highlighted before you use the
+            document.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Does it work without an API key?</summary>
+          <p>
+            Partly. Importing a LinkedIn export, the setup interview, job search, the pipeline,
+            insights and reports all work. Reading a resume, ranking, writing and chat need Claude.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Does it search LinkedIn or Indeed?</summary>
+          <p>
+            Not yet. Searching them breaks their terms, so they'll come later as opt-in sources,
+            clearly marked experimental. Many of the same jobs are on the companies' own boards, which
+            RoleHawk does search.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Where is my data, and how do I move it?</summary>
+          <p>
+            In a RoleHawk folder in your home folder: your profile and memory as markdown files, your
+            documents, backups, and one SQLite database. Copy the folder to move it.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Which countries does it support?</summary>
+          <p>
+            Any. Job sources are filtered by the countries you search in, and Adzuna covers 19
+            countries once you add its free key.
+          </p>
+        </details>
+        <details name="faq">
+          <summary>Who makes it?</summary>
+          <p>
+            RoleHawk is built by <a href="https://travisjterry.dev/">Travis Terry</a>, a software
+            engineer. Issues, ideas and pull requests are welcome on
+            <a href="https://github.com/travist6983/rolehawk">GitHub</a>.
+          </p>
+        </details>
+      </section>
+
+      <!-- Closing call to action -->
+      <section class="band cta" aria-labelledby="cta-title">
+        <div class="wrap cta-inner">
+          <h2 id="cta-title">Your next job is out there. <em>Let's go find it.</em></h2>
+          <div class="actions">
+            <a class="btn btn-cream btn-lg" href="#install">Install it free</a>
+            <a class="btn btn-ghost-dark btn-lg" href="https://github.com/travist6983/rolehawk">View on GitHub</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <div class="footer-top">
+        <span class="footer-brand">RoleHawk</span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/travist6983/rolehawk">GitHub</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/LICENSE">MIT license</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/DISCLAIMER.md">Disclaimer</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/blob/main/SECURITY.md">Security</a></li>
+          <li><a href="https://github.com/travist6983/rolehawk/issues">Report an issue</a></li>
+          <!-- Comparison page: add <li><a href="compare.html">How it compares</a></li> here once it exists. -->
+        </ul>
+        <span class="theme-toggle" role="group" aria-label="Theme" data-js-only hidden>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+        </span>
+      </div>
+      <p class="fine">
+        Built by <a href="https://travisjterry.dev/">Travis Terry</a>. RoleHawk is an independent open
+        source project, not affiliated with or endorsed by Anthropic. Claude is a trademark of
+        Anthropic. Every screen on this page uses made-up demo data. This page uses no cookies and no
+        tracking.
+      </p>
+    </footer>
   </body>
 </html>

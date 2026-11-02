@@ -2,8 +2,7 @@
 
     python3 site/tools/build.py _site
 
-Copies site/ (without tools/) and docs/media/ (as media/) into the output folder, then
-fails if the page:
+Copies site/ (without tools/) into the output folder, then fails if the page:
   * uses an em dash or en dash in its copy (house style),
   * loads anything from another origin (scripts, styles, fonts, images: no trackers),
   * points at a local file that isn't there.
@@ -21,7 +20,6 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 SITE = ROOT / "site"
-MEDIA = ROOT / "docs" / "media"
 TEXT_SUFFIXES = {".html", ".css", ".js", ".svg"}
 # Attributes that make the browser fetch something as part of rendering the page.
 LOADING_ATTRS = {("script", "src"), ("img", "src"), ("source", "srcset"), ("link", "href")}
@@ -87,7 +85,6 @@ def main() -> None:
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(SITE, out, ignore=shutil.ignore_patterns("tools", "__pycache__"))
-    shutil.copytree(MEDIA, out / "media")
 
     problems = check(out)
     if problems:
