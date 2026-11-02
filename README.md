@@ -30,8 +30,9 @@ a follow-up after ten quiet days, or prepare for an interview.
 ### Find and rank jobs
 
 RoleHawk searches Greenhouse, Lever, Ashby, and Workable boards for a watchlist of companies
-you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS. Add any careers page
-yourself: RoleHawk finds its feed or structured job data, shows you sample jobs, and runs it in
+you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS, and Indeed through its
+Claude connector when you search from Claude Code. Found a job somewhere else, like LinkedIn?
+**Add a job** pastes it in. Add any careers page yourself: RoleHawk finds its feed or structured job data, shows you sample jobs, and runs it in
 a sandbox. Ranking uses one fit rubric (experience, skills, career goals, logistics, plus
 eligibility and language gates), explains every score, and shows its cost before it runs.
 
@@ -198,7 +199,7 @@ third-party apps to). See [skills/README.md](skills/README.md) for the full list
 - Everything runs on `127.0.0.1`. A random token in the launch link protects the API from
   other web pages, and the app works offline apart from the services below.
 - Data goes only to Anthropic (with your key), the job sources you turn on, employer pages you
-  open with autofill, and GitHub when you run `rolehawk update`. **Settings → Where your
+  open with autofill or ask Add a job to read, and GitHub when you run `rolehawk update`. **Settings → Where your
   data goes** lists them. No analytics, no telemetry, no account.
 - Your API key is stored in your operating system's keychain, never in a file.
 - Job postings and web pages are treated as untrusted text: they can't instruct Claude to
@@ -234,9 +235,13 @@ highlighted for you before you use the document.
 interview, job search, the pipeline, insights, and reports all work. Reading a resume,
 ranking, writing, and chat need Claude: an API key in the app, or Claude Code with the skills.
 
-**Does it search LinkedIn or Indeed?** Not yet. Searching them breaks their terms, so they'll
-come later as opt-in, clearly marked experimental sources. Many of the same jobs are on the
-companies' own boards, which RoleHawk does search.
+**Does it search LinkedIn or Indeed?** Indeed, yes, from Claude Code: if you've added Indeed's
+connector in Claude, `/scrape` searches Indeed through it and adds the matching jobs. Indeed
+only lets Claude's own apps use that connector, so the dashboard's Search button can't. LinkedIn
+isn't searched, because its terms forbid automated access. For a job you find on either site
+(or anywhere else), use **Add a job** in Discover: paste the link and the posting's text, and
+it's ranked and tracked like the rest. Many of the same jobs are also on the companies' own
+boards, which RoleHawk searches.
 
 **Where is my data, and how do I move it?** In `~/RoleHawk`: your profile and memory as
 markdown files, documents, backups, and one SQLite database. Copy the folder to move it.

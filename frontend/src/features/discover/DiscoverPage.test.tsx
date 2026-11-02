@@ -269,6 +269,91 @@ describe("DiscoverPage", () => {
     expect(screen.queryByRole("button", { name: /^Rank \d/ })).not.toBeInTheDocument();
   });
 
+  it("adds a job from a link, filling in what the page says", async () => {
+    withJobs();
+    let added: unknown = null;
+    server.use(
+      http.post("/api/jobs/read-link", () =>
+        HttpResponse.json({
+          url: "https://jobs.example/roles/42",
+          found: "posting",
+          title: "Senior Frontend Engineer",
+          company: "Fabrikam",
+          location: "Austin, US",
+          remote: false,
+          description: "Build the web app.",
+          posted_at: "2026-10-30T21:15:12Z",
+          closes_at: null,
+        }),
+      ),
+      http.post("/api/jobs", async ({ request }) => {
+        added = await request.json();
+        return HttpResponse.json({
+          job_id: 1,
+          created: true,
+          title: "Senior Frontend Engineer",
+          company: "Fabrikam",
+        });
+      }),
+      http.get("/api/jobs/1", () => HttpResponse.json(jobDetail())),
+    );
+    const { user } = await renderApp("/discover");
+    await user.click(await screen.findByRole("button", { name: "Add a job" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a job" });
+    await user.type(
+      within(dialog).getByLabelText("Link to the posting"),
+      "https://jobs.example/roles/42",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Fill in from link" }));
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText("Job title")).toHaveValue("Senior Frontend Engineer");
+    });
+    expect(within(dialog).getByLabelText("Company")).toHaveValue("Fabrikam");
+    expect(within(dialog).getByLabelText("Posting text")).toHaveValue("Build the web app.");
+
+    await user.click(within(dialog).getByRole("button", { name: "Add job" }));
+    await waitFor(() => {
+      expect(added).toEqual({
+        url: "https://jobs.example/roles/42",
+        title: "Senior Frontend Engineer",
+        company: "Fabrikam",
+        location: "Austin, US",
+        description: "Build the web app.",
+        posted_at: "2026-10-30T21:15:12Z",
+        closes_at: null,
+      });
+    });
+    expect(await screen.findByText("Added Senior Frontend Engineer at Fabrikam.")).toBeVisible();
+    // The new job opens so it can be ranked or applied to straight away.
+    expect(await screen.findByRole("heading", { name: "Senior Data Analyst" })).toBeVisible();
+  });
+
+  it("explains when a site can't be read, and the posting can still be pasted", async () => {
+    server.use(
+      http.post("/api/jobs/read-link", () =>
+        HttpResponse.json(
+          {
+            detail:
+              "www.linkedin.com doesn't allow tools to read its pages. Copy the posting's text into the form instead.",
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const { user } = await renderApp("/discover");
+    await user.click(await screen.findByRole("button", { name: "Add a job" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a job" });
+    await user.type(
+      within(dialog).getByLabelText("Link to the posting"),
+      "https://www.linkedin.com/jobs/view/123",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Fill in from link" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "doesn't allow tools to read its pages",
+    );
+    expect(within(dialog).getByLabelText("Posting text")).toBeEnabled();
+  });
+
   it("explains how to rank without an API key", async () => {
     withJobs();
     server.use(

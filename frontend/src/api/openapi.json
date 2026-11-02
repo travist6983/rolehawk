@@ -2195,6 +2195,88 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Add Job",
+        "description": "Add a job the user found anywhere (LinkedIn, Indeed, a company site).",
+        "operationId": "add_job_api_jobs_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Added"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/read-link": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Read Link",
+        "description": "Read a posting page to fill in the Add a job form. Nothing is stored.",
+        "operationId": "read_link_api_jobs_read_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/jobs/{job_id}": {
@@ -3489,6 +3571,35 @@
   },
   "components": {
     "schemas": {
+      "Added": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "created": {
+            "type": "boolean",
+            "title": "Created",
+            "description": "False when the job was already in your list"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "title": "Company"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "created",
+          "title",
+          "company"
+        ],
+        "title": "Added"
+      },
       "AnswerIn": {
         "properties": {
           "question_id": {
@@ -8692,6 +8803,125 @@
         ],
         "title": "LLMStatus"
       },
+      "LinkDraft": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "found": {
+            "type": "string",
+            "enum": [
+              "posting",
+              "page"
+            ],
+            "title": "Found",
+            "description": "posting: the page describes the job in structured data; page: only its text"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "found",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "description",
+          "posted_at",
+          "closes_at"
+        ],
+        "title": "LinkDraft",
+        "description": "What a link's page says, to fill the Add a job form. The user checks it before saving."
+      },
+      "LinkIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "LinkIn"
+      },
       "MarkdownIn": {
         "properties": {
           "markdown": {
@@ -9003,7 +9233,9 @@
           "ats",
           "feed",
           "scraper",
-          "plugin"
+          "plugin",
+          "manual",
+          "connector"
         ],
         "title": "PortalKind"
       },
@@ -9227,6 +9459,117 @@
           "custom"
         ],
         "title": "PortalView"
+      },
+      "PostingIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Url",
+            "description": "Link to the posting"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Company"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "remote": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote"
+          },
+          "salary_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Text"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100000,
+            "title": "Description",
+            "description": "The posting's text",
+            "default": ""
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At",
+            "description": "Application deadline, if stated"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id",
+            "description": "The source's id for the job, when known"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url",
+          "title",
+          "company"
+        ],
+        "title": "PostingIn"
       },
       "PostingIntegrity": {
         "properties": {

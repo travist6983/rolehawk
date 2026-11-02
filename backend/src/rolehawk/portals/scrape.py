@@ -20,7 +20,9 @@ from rolehawk.db.models import (
     Job,
     JobScore,
     Portal,
+    PortalKind,
     RemotePolicy,
+    RiskLevel,
     SearchTarget,
     Task,
     TaskStatus,
@@ -46,6 +48,8 @@ log = logging.getLogger(__name__)
 
 PORTAL_TIMEOUT_S = 300
 MAX_JOBS_PER_PORTAL = 2_000
+# Jobs the user added themselves (jobs/intake.py): kept whatever their title.
+MANUAL_SOURCE = "manual"
 
 Progress = Callable[[float | None, str | None], Awaitable[None]]
 
@@ -114,6 +118,66 @@ def _checked(job: NormalizedJob) -> NormalizedJob:
 
 def _integrity(job: NormalizedJob) -> dict[str, object] | None:
     return job.integrity.stored() if job.integrity else None
+
+
+def store_job(
+    session: Session, portal_id: str, job: NormalizedJob, now: datetime
+) -> tuple[int, bool]:
+    """Store one job: (job id, True if it's new). The same source and id refreshes the stored
+    copy; the same company, title, and location from another source is a duplicate."""
+    job = _checked(job)
+    existing = session.scalar(
+        select(Job).where(Job.portal_id == portal_id, Job.external_id == job.external_id)
+    )
+    if existing is not None:
+        existing.scraped_at = now
+        existing.url = job.url
+        if job.description:
+            existing.description = job.description
+            existing.integrity = _integrity(job)
+        existing.closes_at = job.closes_at or existing.closes_at
+        return existing.id, False
+    digest = job_hash(job.company, job.title, job.location)
+    same = session.scalar(select(Job.id).where(Job.hash == digest))
+    if same is not None:
+        return same, False  # the same job from another source
+    row = Job(
+        portal_id=portal_id,
+        external_id=job.external_id,
+        url=job.url,
+        company=job.company,
+        title=job.title,
+        location=job.location,
+        remote=job.remote,
+        salary_text=job.salary_text,
+        description=job.description,
+        posted_at=job.posted_at,
+        closes_at=job.closes_at,
+        scraped_at=now,
+        hash=digest,
+        integrity=_integrity(job),
+    )
+    session.add(row)
+    session.flush()
+    return row.id, True
+
+
+def ensure_source(session: Session, portal_id: str, name: str, kind: PortalKind) -> None:
+    """A source row for jobs that don't come from a /scrape source (added by the user, or
+    found through one of their Claude connectors). It never appears on the Sources screen."""
+    if session.get(Portal, portal_id) is None:
+        session.add(
+            Portal(
+                id=portal_id,
+                name=name,
+                kind=kind,
+                countries=["*"],
+                enabled=False,
+                risk_level=RiskLevel.LOW,
+                config={},
+            )
+        )
+        session.flush()
 
 
 class Scraper:
@@ -236,13 +300,15 @@ class Scraper:
 
     def _prune(self, queries: list[SearchQuery]) -> int:
         """Remove stored jobs that no longer match a target (the targets changed, or matching
-        got stricter). Jobs the user ranked, saved, applied to, or dismissed stay. A removed
-        job comes back on a later search if a target matches it again."""
+        got stricter). Jobs the user added, ranked, saved, applied to, or dismissed stay. A
+        removed job comes back on a later search if a target matches it again."""
         with self._sessions.begin() as session:
             kept = select(JobScore.job_id).union(select(Application.job_id))
             rows = session.execute(
                 select(Job.id, Job.title, Job.location).where(
-                    Job.dismissed_at.is_(None), Job.id.not_in(kept)
+                    Job.dismissed_at.is_(None),
+                    Job.portal_id != MANUAL_SOURCE,
+                    Job.id.not_in(kept),
                 )
             ).all()
             stale = [
@@ -340,49 +406,12 @@ class Scraper:
         return run
 
     def _store(self, portal_id: str, jobs: list[NormalizedJob]) -> tuple[int, int]:
-        new = duplicates = 0
+        new = 0
         now = utcnow()
         with self._sessions.begin() as session:
-            for job in map(_checked, jobs):
-                existing = session.scalar(
-                    select(Job).where(
-                        Job.portal_id == portal_id, Job.external_id == job.external_id
-                    )
-                )
-                if existing is not None:
-                    existing.scraped_at = now
-                    existing.url = job.url
-                    if job.description:
-                        existing.description = job.description
-                        existing.integrity = _integrity(job)
-                    existing.closes_at = job.closes_at or existing.closes_at
-                    duplicates += 1
-                    continue
-                digest = job_hash(job.company, job.title, job.location)
-                if session.scalar(select(Job.id).where(Job.hash == digest)) is not None:
-                    duplicates += 1  # the same job from another source
-                    continue
-                session.add(
-                    Job(
-                        portal_id=portal_id,
-                        external_id=job.external_id,
-                        url=job.url,
-                        company=job.company,
-                        title=job.title,
-                        location=job.location,
-                        remote=job.remote,
-                        salary_text=job.salary_text,
-                        description=job.description,
-                        posted_at=job.posted_at,
-                        closes_at=job.closes_at,
-                        scraped_at=now,
-                        hash=digest,
-                        integrity=_integrity(job),
-                    )
-                )
-                session.flush()
-                new += 1
-        return new, duplicates
+            for job in jobs:
+                new += store_job(session, portal_id, job, now)[1]
+        return new, len(jobs) - new
 
     def _record(
         self,

@@ -853,7 +853,31 @@ export interface paths {
          */
         get: operations["list_jobs_api_jobs_get"];
         put?: never;
-        post?: never;
+        /**
+         * Add Job
+         * @description Add a job the user found anywhere (LinkedIn, Indeed, a company site).
+         */
+        post: operations["add_job_api_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/read-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Link
+         * @description Read a posting page to fill in the Add a job form. Nothing is stored.
+         */
+        post: operations["read_link_api_jobs_read_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1381,6 +1405,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Added */
+        Added: {
+            /** Job Id */
+            job_id: number;
+            /**
+             * Created
+             * @description False when the job was already in your list
+             */
+            created: boolean;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+        };
         /** AnswerIn */
         AnswerIn: {
             /** Question Id */
@@ -3155,6 +3193,39 @@ export interface components {
             month_to_date_usd: number;
             typical_cost: components["schemas"]["TypicalCost"];
         };
+        /**
+         * LinkDraft
+         * @description What a link's page says, to fill the Add a job form. The user checks it before saving.
+         */
+        LinkDraft: {
+            /** Url */
+            url: string;
+            /**
+             * Found
+             * @description posting: the page describes the job in structured data; page: only its text
+             * @enum {string}
+             */
+            found: "posting" | "page";
+            /** Title */
+            title: string | null;
+            /** Company */
+            company: string | null;
+            /** Location */
+            location: string | null;
+            /** Remote */
+            remote: boolean | null;
+            /** Description */
+            description: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Closes At */
+            closes_at: string | null;
+        };
+        /** LinkIn */
+        LinkIn: {
+            /** Url */
+            url: string;
+        };
         /** MarkdownIn */
         MarkdownIn: {
             /** Markdown */
@@ -3262,7 +3333,7 @@ export interface components {
          * PortalKind
          * @enum {string}
          */
-        PortalKind: "ats" | "feed" | "scraper" | "plugin";
+        PortalKind: "ats" | "feed" | "scraper" | "plugin" | "manual" | "connector";
         /** PortalPatch */
         PortalPatch: {
             /** Enabled */
@@ -3345,6 +3416,42 @@ export interface components {
              * @description Added with /add-portal
              */
             custom: boolean;
+        };
+        /** PostingIn */
+        PostingIn: {
+            /**
+             * Url
+             * @description Link to the posting
+             */
+            url: string;
+            /** Title */
+            title: string;
+            /** Company */
+            company: string;
+            /** Location */
+            location?: string | null;
+            /** Remote */
+            remote?: boolean | null;
+            /** Salary Text */
+            salary_text?: string | null;
+            /**
+             * Description
+             * @description The posting's text
+             * @default
+             */
+            description: string;
+            /** Posted At */
+            posted_at?: string | null;
+            /**
+             * Closes At
+             * @description Application deadline, if stated
+             */
+            closes_at?: string | null;
+            /**
+             * External Id
+             * @description The source's id for the job, when known
+             */
+            external_id?: string | null;
         };
         /**
          * PostingIntegrity
@@ -5698,6 +5805,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_job_api_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Added"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_link_api_jobs_read_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkDraft"];
                 };
             };
             /** @description Validation Error */

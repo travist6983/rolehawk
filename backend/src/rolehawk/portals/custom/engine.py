@@ -40,6 +40,10 @@ class EngineError(RuntimeError):
     pass
 
 
+class RobotsBlockedError(EngineError):
+    """The site's robots.txt asks tools like this one not to read the page."""
+
+
 class Fetcher:
     """GET with every hop checked: same domain, public address, robots.txt, size cap, no
     cookies kept."""
@@ -81,7 +85,9 @@ class Fetcher:
         for _ in range(MAX_REDIRECTS + 1):
             check_url(url, self.domain, allow_private=self.allow_private)
             if not self._allowed(url):
-                raise EngineError(f"the site's robots.txt asks tools like this not to read {url}")
+                raise RobotsBlockedError(
+                    f"the site's robots.txt asks tools like this not to read {url}"
+                )
             response = self.client.get(url)
             if response.is_redirect and "location" in response.headers:
                 url = urljoin(url, response.headers["location"])
@@ -192,7 +198,7 @@ def postings_in(html: str) -> list[dict[str, Any]]:
     return [p for block in _jsonld_blocks(html) for p in _postings(block)]
 
 
-def _from_posting(
+def from_posting(
     posting: dict[str, Any], page_url: str, company: str | None
 ) -> NormalizedJob | None:
     org = posting.get("hiringOrganization")
@@ -233,7 +239,7 @@ def _from_posting(
 def run_jsonld(d: JsonLdDefinition, fetch: Fetcher) -> tuple[list[NormalizedJob], list[str]]:
     page = fetch.get(d.list_url)
     errors: list[str] = []
-    jobs = [j for p in postings_in(page.text) if (j := _from_posting(p, str(page.url), d.company))]
+    jobs = [j for p in postings_in(page.text) if (j := from_posting(p, str(page.url), d.company))]
     if jobs or not d.link_pattern:
         return jobs, errors
     pattern = re.compile(d.link_pattern)
@@ -251,7 +257,7 @@ def run_jsonld(d: JsonLdDefinition, fetch: Fetcher) -> tuple[list[NormalizedJob]
         except (EngineError, UnsafeUrlError, httpx2.HTTPError) as exc:
             errors.append(f"{link}: {exc}")
             continue
-        jobs += [j for p in postings_in(detail.text) if (j := _from_posting(p, link, d.company))]
+        jobs += [j for p in postings_in(detail.text) if (j := from_posting(p, link, d.company))]
     return jobs, errors
 
 

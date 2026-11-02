@@ -2,6 +2,7 @@ import {
   BookmarkIcon,
   CompassIcon,
   EyeOffIcon,
+  PlusIcon,
   SearchIcon,
   SearchXIcon,
   SparklesIcon,
@@ -22,6 +23,7 @@ import {
 } from "@/api/queries";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ApplyDialog } from "@/features/applications/ApplyDialog";
+import { AddJobDialog } from "@/features/discover/AddJobDialog";
 import { TableSkeleton } from "@/components/feedback/Skeletons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -357,6 +359,7 @@ export default function DiscoverPage() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [rank, setRank] = useState<{ jobIds?: number[] } | null>(null);
   const [applyId, setApplyId] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
   const running = useRankProgress();
 
   const rows = useMemo(() => jobs.data?.pages.flatMap((p) => p.items) ?? [], [jobs.data]);
@@ -386,16 +389,40 @@ export default function DiscoverPage() {
         )
       }
       actions={
-        stats && stats.unranked > 0 && !running ? (
+        <>
           <Button
+            variant="outline"
             onClick={() => {
-              setRank({});
+              setAdding(true);
             }}
           >
-            <SparklesIcon /> Rank {plural(stats.unranked, "new job")}
+            <PlusIcon /> Add a job
           </Button>
-        ) : undefined
+          {stats && stats.unranked > 0 && !running && (
+            <Button
+              onClick={() => {
+                setRank({});
+              }}
+            >
+              <SparklesIcon /> Rank {plural(stats.unranked, "new job")}
+            </Button>
+          )}
+        </>
       }
+    />
+  );
+  const addJob = (
+    <AddJobDialog
+      open={adding}
+      onOpenChange={setAdding}
+      onAdded={(added) => {
+        toast(
+          added.created
+            ? `Added ${added.title} at ${added.company}.`
+            : `${added.title} at ${added.company} is already in your list.`,
+        );
+        setOpenId(added.job_id);
+      }}
     />
   );
 
@@ -438,6 +465,7 @@ export default function DiscoverPage() {
             },
           ]}
         />
+        {addJob}
       </>
     );
   }
@@ -549,6 +577,7 @@ export default function DiscoverPage() {
           toast("Ranking started. Scores appear here when it finishes.");
         }}
       />
+      {addJob}
     </>
   );
 }
