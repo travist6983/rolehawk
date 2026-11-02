@@ -87,6 +87,9 @@ class FitView(BaseModel):
 
     score: int
     reasons: list[str]
+    concerns: list[str] = Field(
+        default_factory=list, description="Why it might not fit; empty if none or not asked"
+    )
     must_have_gaps: list[str]
     threshold: int
     passes: bool
@@ -262,15 +265,21 @@ class ApplyService:
         if row is None:
             return None
         gates = Gates.model_validate(row.gates) if row.gates else None
-        return self._fit_view(row.score, row.reasons, row.must_have_gaps, gates)
+        return self._fit_view(row.score, row.reasons, row.concerns or [], row.must_have_gaps, gates)
 
     def _fit_view(
-        self, score: int, reasons: list[str], gaps: list[str], gates: Gates | None = None
+        self,
+        score: int,
+        reasons: list[str],
+        concerns: list[str],
+        gaps: list[str],
+        gates: Gates | None = None,
     ) -> FitView:
         threshold = self._settings().search.fit_threshold
         return FitView(
             score=score,
             reasons=list(reasons),
+            concerns=list(concerns),
             must_have_gaps=list(gaps),
             threshold=threshold,
             passes=score >= threshold,
@@ -332,7 +341,11 @@ class ApplyService:
         if fit is None:
             scored = await self._ranker.score_one(job.id, task_id)
             fit = self._fit_view(
-                scored.score, scored.reasons, scored.must_have_gaps, Gates.of(scored)
+                scored.score,
+                scored.reasons,
+                scored.concerns,
+                scored.must_have_gaps,
+                Gates.of(scored),
             )
         if not fit.passes and not params.force:
             return ApplyOutcome(
@@ -790,7 +803,7 @@ class ApplyService:
             status="needs_review" if rendered.flags else "ready",
             job_id=job.id,
             application_id=application_id,
-            fit=bundle.fit or self._fit_view(0, [], []),
+            fit=bundle.fit or self._fit_view(0, [], [], []),
             flags=rendered.flags,
         )
 

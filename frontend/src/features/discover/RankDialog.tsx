@@ -87,15 +87,25 @@ function PlanDetails({ plan }: { plan: RankPlan }) {
 export function RankDialog({
   open,
   jobIds,
+  rescore: rescoreAtOpen = false,
   onOpenChange,
   onStarted,
 }: {
   open: boolean;
   jobIds?: number[];
+  /** Start with "re-rank jobs that already have a score" ticked. */
+  rescore?: boolean;
   onOpenChange: (open: boolean) => void;
   onStarted?: () => void;
 }) {
-  const [rescore, setRescore] = useState(false);
+  const [rescore, setRescore] = useState(rescoreAtOpen);
+  // Each open starts from the caller's choice (adjusting state while rendering, not in an
+  // effect: https://react.dev/learn/you-might-not-need-an-effect).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setRescore(rescoreAtOpen);
+  }
   const params = { job_ids: jobIds ?? null, rescore };
   const plan = useRankPlan(params, open);
   const start = useStartRank();

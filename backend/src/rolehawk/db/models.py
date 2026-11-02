@@ -250,6 +250,8 @@ class JobScore(Base):
     score: Mapped[int] = mapped_column(Integer)
     must_have_gaps: Mapped[list[str]] = mapped_column(JSON, default=list)
     reasons: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Why it might not fit; null for scores from before the rubric asked (0010).
+    concerns: Mapped[list[str] | None] = mapped_column(JSON)
     # fit/rubric.py: the four parts behind the score, and the eligibility/language gates.
     breakdown: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     gates: Mapped[dict[str, Any] | None] = mapped_column(JSON)

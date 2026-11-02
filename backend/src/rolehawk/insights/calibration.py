@@ -87,6 +87,7 @@ class ResolvedApplication(BaseModel):
     fit_score: int | None
     breakdown: dict[str, int] | None
     reasons: list[str]
+    concerns: list[str]
     gaps: list[str]
     days_to_reply: int | None
 
@@ -172,6 +173,7 @@ class CalibrationService:
                         fit_score=score.score if score else None,
                         breakdown=score.breakdown if score else None,
                         reasons=list(score.reasons) if score else [],
+                        concerns=list(score.concerns or []) if score else [],
                         gaps=list(score.must_have_gaps) if score else [],
                         days_to_reply=max(days, 0) if days is not None else None,
                     )
@@ -245,6 +247,8 @@ def _describe(r: ResolvedApplication) -> str:
     ]
     if r.reasons:
         lines.append("Reasons: " + "; ".join(r.reasons))
+    if r.concerns:
+        lines.append("Concerns: " + "; ".join(r.concerns))
     if r.gaps:
         lines.append("Gaps: " + "; ".join(r.gaps))
     return "\n".join(lines)

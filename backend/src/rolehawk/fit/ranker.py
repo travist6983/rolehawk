@@ -38,7 +38,7 @@ BATCH_SIZE = 20
 CONCURRENCY = 4
 MAX_JOBS_PER_RUN = 1_000
 DESCRIPTION_CHARS = 5_000  # per job; postings rarely put requirements past this
-OUTPUT_TOKENS_PER_JOB = 260  # four parts, two gates with quotes, reasons, gaps
+OUTPUT_TOKENS_PER_JOB = 320  # four parts, two gates with quotes, reasons, concerns, gaps
 
 Progress = Callable[[float | None, str | None], Awaitable[None]]
 
@@ -270,6 +270,7 @@ class Ranker:
                         run_id=task_id,
                         score=fit.score,
                         reasons=fit.reasons,
+                        concerns=fit.concerns,
                         must_have_gaps=fit.must_have_gaps,
                         breakdown=fit.breakdown.model_dump(),
                         gates=Gates.of(fit).model_dump(),

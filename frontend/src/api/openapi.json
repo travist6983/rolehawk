@@ -6958,6 +6958,14 @@
             "type": "array",
             "title": "Reasons"
           },
+          "concerns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Concerns",
+            "description": "Why it might not fit; empty if none or not asked"
+          },
           "must_have_gaps": {
             "items": {
               "type": "string"
@@ -6988,6 +6996,7 @@
         "required": [
           "score",
           "reasons",
+          "concerns",
           "must_have_gaps",
           "threshold",
           "passes",
@@ -7836,6 +7845,21 @@
             "type": "array",
             "title": "Reasons"
           },
+          "concerns": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concerns",
+            "description": "Why it might not fit; null when ranked before the rubric asked"
+          },
           "must_have_gaps": {
             "items": {
               "type": "string"
@@ -7996,6 +8020,7 @@
           "scraped_at",
           "score",
           "reasons",
+          "concerns",
           "must_have_gaps",
           "scored_at",
           "score_model",
@@ -8132,6 +8157,21 @@
             "type": "array",
             "title": "Reasons"
           },
+          "concerns": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concerns",
+            "description": "Why it might not fit; null when ranked before the rubric asked"
+          },
           "must_have_gaps": {
             "items": {
               "type": "string"
@@ -8265,6 +8305,7 @@
           "scraped_at",
           "score",
           "reasons",
+          "concerns",
           "must_have_gaps",
           "scored_at",
           "score_model",

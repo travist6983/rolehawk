@@ -91,3 +91,18 @@ export function FitGates({ gates }: { gates: Gates }) {
     </ul>
   );
 }
+
+/** Why a job might not fit, compactly (the apply dialog and application page). */
+export function FitConcerns({ concerns }: { concerns: string[] }) {
+  if (concerns.length === 0) return null;
+  return (
+    <div>
+      <p className="text-muted-foreground">Might not fit:</p>
+      <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
+        {concerns.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}

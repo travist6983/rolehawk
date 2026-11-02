@@ -408,6 +408,7 @@ export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
   scraped_at: "2026-10-31T09:00:00Z",
   score: 86,
   reasons: ["Your SQL and Looker work matches their stack", "Hybrid in Denver"],
+  concerns: ["They want finance reporting; your analytics work is in marketing"],
   must_have_gaps: ["dbt"],
   scored_at: "2026-10-31T10:00:00Z",
   score_model: "claude-haiku-5-5",
@@ -509,6 +510,7 @@ export const applyPlan = (overrides: Partial<ApplyPlan> = {}): ApplyPlan => ({
   fit: {
     score: 86,
     reasons: ["Your SQL and Looker work matches their stack"],
+    concerns: [],
     must_have_gaps: ["dbt"],
     threshold: 60,
     passes: true,

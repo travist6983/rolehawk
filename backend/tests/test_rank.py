@@ -465,10 +465,15 @@ def test_claude_code_can_score_through_commands(client: TestClient) -> None:
 
     saved = run(
         "rank-save",
-        {"scores": [fit_json(ids[2], 88, reasons=["Good"])]},
+        {"scores": [fit_json(ids[2], 88, reasons=["Good"], concerns=["No salary stated"])]},
     )
     assert saved == {"saved": 1}
     assert runtime.jobs.get(ids[2]).score_model == "claude-code"
+    assert runtime.jobs.get(ids[2]).concerns == ["No salary stated"]
+    older_skill = fit_json(ids[1], 70)
+    del older_skill["concerns"]  # a /rank skill from before concerns still saves
+    assert run("rank-save", {"scores": [older_skill]}) == {"saved": 1}
+    assert runtime.jobs.get(ids[1]).concerns == []
     assert run("rank-candidates", {})["left_after_this_batch"] == 0
 
 
@@ -536,3 +541,37 @@ async def test_parts_and_gates_are_stored_and_listed(runtime: Runtime, fake: Fak
     assert second.score == 70
     assert second.gates is not None
     assert second.gates.language.verdict == "check"
+
+
+async def test_concerns_are_stored_apart_from_reasons(runtime: Runtime, fake: FakeProvider) -> None:
+    set_prefs(runtime)
+    ids = add_jobs(runtime, 2)
+    concerns = ["No salary stated", "They want 8+ years leading teams", "On-site", " ", "Travel"]
+
+    def handler(request: LLMRequest, schema: type[BaseModel]) -> BaseModel:
+        found = [int(i) for i in re.findall(r"^Job (\d+):", request.messages[-1].text, re.M)]
+        return FitBatch(
+            jobs=[fit_of(i, 80, ["Your React matches"], concerns=concerns) for i in found]
+        )
+
+    async def progress(_f: float | None, _m: str | None) -> None:
+        return None
+
+    fake.structured_handler = handler
+    await runtime.ranker.run(RankParams(), progress)
+    job = runtime.jobs.get(ids[0])
+    assert job.reasons == ["Your React matches"]
+    assert job.concerns == concerns[:3]  # clamped to 3, blanks dropped
+
+    # A score from before the rubric asked has no concerns: null, not "nothing stands out".
+    with runtime.sessions.begin() as session:
+        session.add(
+            JobScore(job_id=ids[1], score=70, reasons=["Old"], must_have_gaps=[], model="m")
+        )
+    assert runtime.jobs.get(ids[1]).concerns is None
+
+
+def test_rubric_asks_for_concerns_apart_from_reasons() -> None:
+    assert "`concerns`" in FIT_RUBRIC
+    assert "strengths only" in FIT_RUBRIC
+    assert "Mix strengths and concerns" not in FIT_RUBRIC
