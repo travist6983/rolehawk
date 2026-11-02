@@ -247,6 +247,10 @@ class Portal(Protocol):
 
 **High-risk scrapers (LinkedIn, Indeed)**
 
+> **Status (2026-11-01):** not built. Indeed is searched through the user's own Indeed
+> connector from Claude Code instead (`portals/SOURCES.md`), LinkedIn isn't searched, and
+> Discover's Add a job takes a posting from either site. The plan below is kept for the record.
+
 - Off by default. Enabling shows a modal: "Automated access breaks these sites' terms. Your account can be restricted. Use a secondary browser profile." User must tick a checkbox.
 - Run in a visible Playwright browser using a persistent profile the user logs into themselves. The app never stores their credentials.
 - Human pacing: 8 to 20 second randomized delays, max 100 listings per run, max 2 runs per day per site.

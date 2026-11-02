@@ -254,7 +254,9 @@ export function JobDetailSheet({
                 {[
                   whereText(data),
                   data.salary_text,
-                  `posted ${timeAgo(data.posted_at ?? data.scraped_at)}`,
+                  data.posted_at || data.portal_id !== "manual"
+                    ? `posted ${timeAgo(data.posted_at ?? data.scraped_at)}`
+                    : `added ${timeAgo(data.scraped_at)}`,
                 ]
                   .filter(Boolean)
                   .join(" · ")}

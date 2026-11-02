@@ -14,7 +14,26 @@ Re-verify before each release; change endpoints here and in `ats.py` / `feeds.py
 | Adzuna | `GET https://api.adzuna.com/v1/api/jobs/{country}/search/{page}?app_id=…&app_key=…&what=…` | [developer.adzuna.com/docs/search](https://developer.adzuna.com/docs/search), [terms](https://developer.adzuna.com/docs/terms_of_service) | 401 without key (expected) | Free key. Personal job search is a permitted use; show "Adzuna" with a link on listings. **Unverified:** the country list in `feeds.py` is Adzuna's published markets from prior knowledge; the docs' interactive reference didn't render. Confirm with a key. |
 | USAJOBS | `GET https://data.usajobs.gov/api/search?Keyword=…` with headers `Host`, `User-Agent: <email>`, `Authorization-Key` | [developer.usajobs.gov/api-reference/get-api-search](https://developer.usajobs.gov/api-reference/get-api-search) | 401 without key (expected) | Free key. Max 500 rows/page, 10,000/query. |
 
-No source was dropped. Indeed and LinkedIn (high-risk scrapers) arrive separately, opt-in.
+No source was dropped.
+
+## Indeed and LinkedIn
+
+Checked **2026-11-01**.
+
+- **Indeed: through the user's Claude connector, never scraped.** Indeed's official MCP server
+  is "available only for Claude Connector" ([docs.indeed.com/mcp](https://docs.indeed.com/mcp)):
+  no public server URL or OAuth client for other apps, and its partner APIs need Indeed's
+  written approval. So the dashboard can't search Indeed. The `/scrape` skill in Claude Code
+  searches through the user's own Indeed connector and stores the results with `jobs-import`
+  (source id `indeed`): title-matched, cleaned, and deduped like any source, kept in the user's
+  data folder. Use is subject to Indeed's terms.
+- **LinkedIn: not searched.** Its User Agreement and robots.txt forbid automated access,
+  logged in or not; the logged-out "jobs-guest" endpoints other tools call break both.
+- **Either site, one job at a time:** Discover's **Add a job** (`job-add`) stores a posting the
+  user found. Reading its link (`job-read-link`) is one page request through the custom-source
+  `Fetcher` (public addresses, same site, robots.txt respected), so LinkedIn links are refused
+  and the user pastes the text instead. Added jobs (source id `manual`) are never removed by the
+  search cleanup.
 
 ## Company watchlists
 

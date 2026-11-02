@@ -28,6 +28,7 @@ import time
 import urllib.request
 import webbrowser
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 from rolehawk import __version__
@@ -339,7 +340,13 @@ async def _run_command(name: str, params: dict[str, Any]) -> tuple[int, Any]:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    params = _parse_params(args.param or [], args.params_json)
+    params_json = args.params_json
+    if args.params_file:
+        source = sys.stdin if args.params_file == "-" else None
+        params_json = (
+            source.read() if source else Path(args.params_file).read_text(encoding="utf-8")
+        )
+    params = _parse_params(args.param or [], params_json)
     code, output = asyncio.run(_run_command(args.name, params))
     text = json.dumps(output, indent=None if args.json else 2, default=str)
     print(text, file=sys.stdout if code == 0 else sys.stderr)
@@ -445,6 +452,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--param", action="append", metavar="KEY=VALUE", help="parameter (value may be JSON)"
     )
     run.add_argument("--params-json", help="all parameters as one JSON object")
+    run.add_argument(
+        "--params-file", metavar="PATH", help="read the parameters JSON from a file (- for stdin)"
+    )
     run.add_argument("--json", action="store_true", help="compact JSON output for tools")
     run.set_defaults(func=cmd_run)
 

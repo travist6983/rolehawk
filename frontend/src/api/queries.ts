@@ -573,6 +573,26 @@ export function useSaveJobs() {
   });
 }
 
+export type PostingIn = Schemas["PostingIn"];
+export type LinkDraft = Schemas["LinkDraft"];
+export type AddedJob = Schemas["Added"];
+
+/** Add a job the user found anywhere (LinkedIn, Indeed, a company site). */
+export function useAddJob() {
+  const invalidate = useInvalidateJobs();
+  return useMutation({
+    mutationFn: (posting: PostingIn) => unwrap(api.POST("/api/jobs", { body: posting })),
+    onSuccess: invalidate,
+  });
+}
+
+/** Read a posting page to fill in the Add a job form. Nothing is stored. */
+export function useReadJobLink() {
+  return useMutation({
+    mutationFn: (url: string) => unwrap(api.POST("/api/jobs/read-link", { body: { url } })),
+  });
+}
+
 export function useDismissJobs() {
   const invalidate = useInvalidateJobs();
   return useMutation({

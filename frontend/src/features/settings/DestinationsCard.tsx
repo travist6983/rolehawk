@@ -56,8 +56,9 @@ export function DestinationsCard({ status }: { status: LLMStatus }) {
                 : "None are turned on."}
           </Row>
           <Row name="Employer sites">
-            Only the application pages you open with autofill. It fills in fields and stops; it
-            never submits.
+            Only the application pages you open with autofill, and job pages you ask Add a job to
+            read (a plain page request; nothing of yours is sent). Autofill fills in fields and
+            stops; it never submits.
           </Row>
           <Row name="GitHub">
             Only when you run <code className="font-mono text-xs">rolehawk update</code>, to

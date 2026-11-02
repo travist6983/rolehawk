@@ -9,6 +9,7 @@ from rolehawk.api.deps import RuntimeDep
 from rolehawk.api.routes.portals import TaskRef
 from rolehawk.commands.runner import CommandStarted, run_command
 from rolehawk.fit.ranker import RankParams, RankPlan
+from rolehawk.jobs.intake import Added, IntakeError, LinkDraft, LinkIn, PostingIn
 from rolehawk.jobs.store import Changed, DismissIn, JobDetail, JobPage, JobQuery, SaveIn
 
 router = APIRouter(tags=["jobs"])
@@ -18,6 +19,21 @@ router = APIRouter(tags=["jobs"])
 async def list_jobs(runtime: RuntimeDep, query: Annotated[JobQuery, Query()]) -> JobPage:
     """Scraped jobs with their latest fit score (best fit first by default)."""
     return await asyncio.to_thread(runtime.jobs.list, query)
+
+
+@router.post("/api/jobs")
+async def add_job(body: PostingIn, runtime: RuntimeDep) -> Added:
+    """Add a job the user found anywhere (LinkedIn, Indeed, a company site)."""
+    return await asyncio.to_thread(runtime.intake.add, body)
+
+
+@router.post("/api/jobs/read-link")
+async def read_link(body: LinkIn, runtime: RuntimeDep) -> LinkDraft:
+    """Read a posting page to fill in the Add a job form. Nothing is stored."""
+    try:
+        return await runtime.intake.read_link(body.url)
+    except IntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
 @router.get("/api/jobs/{job_id}")

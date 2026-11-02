@@ -66,6 +66,8 @@ class PortalKind(StrEnum):
     FEED = "feed"
     SCRAPER = "scraper"
     PLUGIN = "plugin"
+    MANUAL = "manual"  # jobs the user added from a link or pasted posting
+    CONNECTOR = "connector"  # jobs Claude Code found through the user's connector (Indeed)
 
 
 class RiskLevel(StrEnum):

@@ -20,6 +20,7 @@ from rolehawk.commands.calibration import register_calibration
 from rolehawk.commands.documents import register_documents
 from rolehawk.commands.followup import register_followup
 from rolehawk.commands.insights import register_insights
+from rolehawk.commands.intake import register_intake
 from rolehawk.commands.rank import register_rank
 from rolehawk.commands.registry import CommandRegistry
 from rolehawk.commands.scrape import register_scrape
@@ -32,6 +33,7 @@ from rolehawk.insights.board import BoardService
 from rolehawk.insights.calibration import CalibrationService
 from rolehawk.insights.service import ReportService
 from rolehawk.insights.stats import InsightsService
+from rolehawk.jobs.intake import JobIntake
 from rolehawk.jobs.store import JobStore
 from rolehawk.llm.errors import LLMError
 from rolehawk.llm.holder import ProviderHolder
@@ -80,6 +82,7 @@ class Runtime:
     scraper: Scraper
     add_portal: AddPortalService
     jobs: JobStore
+    intake: JobIntake
     ranker: Ranker
     documents: DocumentService
     applications: ApplyService
@@ -156,6 +159,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
     register_followup(commands)
     register_calibration(commands)
     register_add_portal(commands)
+    register_intake(commands)
 
     runtime_ref: list[Runtime] = []
     llm = LLMService(holder.get, lambda: runtime_ref[0].settings.llm, SpendMeter(sessions))
@@ -206,6 +210,7 @@ def open_runtime(paths: DataPaths, provider: LLMProvider | None = None) -> Runti
         ),
         add_portal=add_portal,
         jobs=jobs,
+        intake=JobIntake(sessions, lambda: runtime_ref[0].settings.search.country),
         ranker=ranker,
         documents=documents,
         applications=ApplyService(

@@ -56,7 +56,9 @@ backend/                 Python 3.12 package `rolehawk` (uv, FastAPI)
     rendering/           CV + cover letter data (model.py), shared block layout, Jinja2 HTML
                          templates/<id>/ (manifest.json + template.html.j2), python-docx
                          builder, Playwright PDF engine, DocumentService
-    jobs/                JobStore: Discover listing (latest score per job), save, dismiss
+    jobs/                JobStore: Discover listing (latest score per job), save, dismiss;
+                         intake.py: Add a job (link or pasted posting) and jobs-import
+                         (Indeed via the user's Claude connector, from the /scrape skill)
     install/             the installed app: layout (~/.rolehawk/versions/<v> + `current`
                          pointer, shared browsers), release download/verify/unpack,
                          `rolehawk update`, install-skills (Claude Code)
