@@ -149,6 +149,7 @@ describe("SourcesPage", () => {
           started
             ? scrapeSummary({
                 new: 14,
+                removed: 3462,
                 portals: [
                   portalRun({ new: 12, errors: ["gone: not found on this ATS"] }),
                   portalRun({
@@ -195,7 +196,7 @@ describe("SourcesPage", () => {
       );
     });
     expect(await screen.findByText(/Last search/)).toHaveTextContent(
-      "14 new jobs, 28 already seen",
+      "14 new jobs, 28 already seen, 3,462 that no longer match your titles removed",
     );
     expect(screen.getByRole("link", { name: "Review in Discover" })).toHaveAttribute(
       "href",

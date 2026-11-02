@@ -376,6 +376,7 @@ export const scrapeSummary = (overrides: Partial<ScrapeSummary> = {}): ScrapeSum
   found: 1200,
   new: 12,
   duplicates: 28,
+  removed: 0,
   ...overrides,
 });
 

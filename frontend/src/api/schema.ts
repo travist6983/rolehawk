@@ -3877,6 +3877,12 @@ export interface components {
             new: number;
             /** Duplicates */
             duplicates: number;
+            /**
+             * Removed
+             * @description Stored jobs removed because they no longer match a target
+             * @default 0
+             */
+            removed: number;
         };
         /** SearchTargetView */
         SearchTargetView: {

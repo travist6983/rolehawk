@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.3"
+    "version": "0.2.4"
   },
   "paths": {
     "/api/health": {
@@ -10761,6 +10761,12 @@
           "duplicates": {
             "type": "integer",
             "title": "Duplicates"
+          },
+          "removed": {
+            "type": "integer",
+            "title": "Removed",
+            "description": "Stored jobs removed because they no longer match a target",
+            "default": 0
           }
         },
         "type": "object",
@@ -10771,7 +10777,8 @@
           "portals",
           "found",
           "new",
-          "duplicates"
+          "duplicates",
+          "removed"
         ],
         "title": "ScrapeSummary"
       },

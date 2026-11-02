@@ -17,8 +17,17 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from rolehawk import cli, keychain
-from rolehawk.db.models import Company, Job, PortalKind, RiskLevel, SearchTarget
+from rolehawk.db.models import (
+    Application,
+    Company,
+    Job,
+    JobScore,
+    PortalKind,
+    RiskLevel,
+    SearchTarget,
+)
 from rolehawk.db.models import Portal as PortalRow
+from rolehawk.db.types import utcnow
 from rolehawk.keychain import SecretName
 from rolehawk.portals import scrape as scrape_module
 from rolehawk.portals.base import NormalizedJob, Portal, PortalContext, RawJob
@@ -154,6 +163,54 @@ async def test_scrape_keeps_matching_jobs_and_dedupes_reruns(
     assert again.duplicates == summary.new + summary.duplicates
     with sessions() as session:
         assert session.scalar(select(func.count()).select_from(Job)) == 9
+
+
+async def test_jobs_that_no_longer_match_a_target_are_removed(
+    sessions: sessionmaker[Session], store: PortalStore, web: FakeWeb
+) -> None:
+    add_targets(sessions, "Senior Developer")
+    with sessions.begin() as session:
+        jobs = {
+            title: Job(
+                portal_id="greenhouse",
+                external_id=title,
+                url="https://example.com/job",
+                company="Acme",
+                title=title,
+                hash=title,
+            )
+            for title in (
+                "Java Developer",
+                "Controls Engineer",
+                "Data Engineer (ranked)",
+                "Security Engineer (saved)",
+                "Developer Advocate (dismissed)",
+            )
+        }
+        jobs["Developer Advocate (dismissed)"].dismissed_at = utcnow()
+        session.add_all(jobs.values())
+        session.flush()
+        session.add(
+            JobScore(
+                job_id=jobs["Data Engineer (ranked)"].id,
+                score=50,
+                reasons=[],
+                must_have_gaps=[],
+                model="m",
+            )
+        )
+        session.add(Application(job_id=jobs["Security Engineer (saved)"].id))
+
+    summary = await make_scraper(sessions, web, portals=[]).run(Progress())
+
+    assert summary.removed == 1
+    with sessions() as session:
+        assert set(session.scalars(select(Job.title))) == {
+            "Java Developer",
+            "Data Engineer (ranked)",
+            "Security Engineer (saved)",
+            "Developer Advocate (dismissed)",
+        }
 
 
 async def test_same_job_from_two_sources_is_stored_once(

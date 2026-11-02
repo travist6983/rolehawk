@@ -390,6 +390,43 @@ def test_title_matches_ignores_level_words(title: str, expected: bool) -> None:
     assert title_matches(title, queries) is expected
 
 
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        # A bare "Developer" means developers, not every kind of engineer.
+        ("Senior Java Developer - Security", True),
+        ("Salesforce Developer", True),
+        ("Controls Engineer: Power Generation", False),
+        ("Senior Data Engineer, Ads", False),
+        ("Senior Security Engineer", False),
+        ("Senior Software Engineer, Data", False),
+        # "Developer" has to be the job, not what the job is about.
+        ("Developer Advocate", False),
+        ("Product Manager, Developer Experience", False),
+        ("Developer Engagement Lead", False),
+        # Spelling, word order, and trailing details still match.
+        ("Front-End Engineer", True),
+        ("Software Engineer, Frontend (React)", True),
+        ("Staff Frontend Engineer | Canada | Remote", True),
+        ("Senior Full-Stack Software Engineer, Growth", True),
+        ("Frontend Engineer DACH", True),
+        ("Frontend Engineer Contract", True),
+        ("Frontend Platform Advocate", False),
+    ],
+)
+def test_title_matches_the_role_not_just_the_words(title: str, expected: bool) -> None:
+    queries = [
+        SearchQuery("Senior Developer"),
+        SearchQuery("Senior Frontend Developer"),
+        SearchQuery("Senior Full Stack Engineer"),
+    ]
+    assert title_matches(title, queries) is expected
+
+
+def test_a_target_of_only_level_words_matches_nothing() -> None:
+    assert not title_matches("Lead Engineer", [SearchQuery("Lead")])
+
+
 def test_keywords_widen_matching() -> None:
     query = SearchQuery("Data Analyst", keywords=("Business Intelligence",))
     assert title_matches("Business Intelligence Developer", [query])
