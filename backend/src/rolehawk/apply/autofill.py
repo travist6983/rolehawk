@@ -17,6 +17,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import BaseModel
 
+from rolehawk.install.layout import browser_hint
+
 if TYPE_CHECKING:
     from playwright.async_api import Browser, Page, Playwright
 
@@ -27,10 +29,17 @@ FIELD_TIMEOUT_MS = 15_000
 
 
 class AutofillUnavailableError(RuntimeError):
-    user_message = (
-        "Autofill needs the Chromium browser. Run `uv run playwright install chromium` "
-        "(the installer does this for you), then try again."
-    )
+    """Chromium is missing or won't start. The message names the fix for how RoleHawk runs
+    (an installed release or a source checkout), so it's built when shown."""
+
+    @property
+    def user_message(self) -> str:
+        if "Executable doesn't exist" in str(self):
+            return (
+                "Autofill needs the full Chromium browser, which isn't installed. "
+                f"Install it with: {browser_hint()}. Then try again."
+            )
+        return f"Autofill couldn't start Chromium ({self}). Run `rolehawk doctor` for the fix."
 
 
 class Applicant(BaseModel):

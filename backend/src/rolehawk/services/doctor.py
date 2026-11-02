@@ -39,17 +39,20 @@ def _fts5_available() -> bool:
     return True
 
 
-def _chromium() -> Check:
-    """PDF export needs Playwright's Chromium; start it once to be sure."""
+def _chromium() -> list[Check]:
+    """PDF export needs Playwright's headless Chromium; start it once to be sure. Autofill
+    opens a visible window, which needs the full browser: a separate install that a
+    headless-only setup (`--only-shell`) lacks, so it gets its own check."""
     from playwright.sync_api import Error as PlaywrightError
     from playwright.sync_api import sync_playwright
 
+    visible = False
     try:
         with sync_playwright() as p:
+            visible = Path(p.chromium.executable_path).exists()
             browser = p.chromium.launch(headless=True)
             version = browser.version
             browser.close()
-            visible = Path(p.chromium.executable_path).exists()
     except PlaywrightError as exc:
         first = str(exc).strip().splitlines()[0][:120]
         fix = browser_hint()
@@ -57,14 +60,15 @@ def _chromium() -> Check:
             # Installed but won't start: usually system libraries only an admin can add.
             deps = f"sudo {sys.executable} -m playwright install-deps chromium"
             fix += f" (if it still fails: {deps})"
-        return Check("chromium", False, f"{first}. Fix: {fix}")
-    if not visible:
-        return Check(
-            "chromium",
-            True,
-            f"Chromium {version} for PDF export; autofill needs the full browser: {browser_hint()}",
-        )
-    return Check("chromium", True, f"Chromium {version} (PDF export and autofill)")
+        pdf = Check("chromium", False, f"{first}. Fix: {fix}")
+    else:
+        pdf = Check("chromium", True, f"Chromium {version} for PDF export")
+    if visible:
+        autofill = Check("autofill_browser", True, "full Chromium for autofill")
+    else:
+        detail = f"full Chromium isn't installed, so autofill can't run. Fix: {browser_hint()}"
+        autofill = Check("autofill_browser", False, detail)
+    return [pdf, autofill]
 
 
 def run_checks(paths: DataPaths) -> list[Check]:
@@ -105,7 +109,7 @@ def run_checks(paths: DataPaths) -> list[Check]:
     except keyring.errors.KeyringError as exc:
         checks.append(Check("keychain", False, str(exc)))
 
-    checks.append(_chromium())
+    checks.extend(_chromium())
 
     if paths.root.exists():
         free_gb = shutil.disk_usage(paths.root).free / 1e9

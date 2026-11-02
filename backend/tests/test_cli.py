@@ -3,6 +3,7 @@ import json
 import os
 import socket
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +18,19 @@ def test_doctor_json_on_fresh_install(capsys: pytest.CaptureFixture[str]) -> Non
     assert checks["sqlite_fts5"]["ok"] is True
     assert checks["database"]["ok"] is True
     assert code == (0 if all(c["ok"] for c in checks.values()) else 1)
+
+
+def test_doctor_flags_a_missing_autofill_browser(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rolehawk.services.doctor import _chromium
+
+    # An empty browsers folder: neither the headless shell (PDFs) nor full Chromium.
+    monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
+    checks = {check.name: check for check in _chromium()}
+    assert checks["chromium"].ok is False
+    assert checks["autofill_browser"].ok is False
+    assert "uv run playwright install chromium (from backend/)" in checks["autofill_browser"].detail
 
 
 def test_db_upgrade_then_current(capsys: pytest.CaptureFixture[str]) -> None:
