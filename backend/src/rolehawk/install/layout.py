@@ -109,7 +109,8 @@ def configure_browsers() -> None:
 
 
 def browser_hint() -> str:
-    """The command that installs (or repairs) Chromium, for messages and `doctor`."""
+    """The command that installs (or repairs) Chromium, for messages and `doctor`. A source
+    checkout's command only works from `backend/`, where the Python project lives."""
     if running_from():
         return "rolehawk install-browser"
-    return "uv run playwright install chromium"
+    return "uv run playwright install chromium (from backend/)"

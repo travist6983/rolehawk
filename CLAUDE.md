@@ -10,7 +10,7 @@ One Python service layer owns all logic. Three thin callers sit on top of it, so
 2. **Chat drawer** (in the dashboard) calls chat tools, which call services.
 3. **Claude Code skills** (`skills/<command>/SKILL.md`) call `rolehawk run <command> --json`, which calls services.
 
-Backends behind the service layer: SQLite (`rolehawk.db`, WAL, FTS5) plus markdown memory files in the user's data folder, the LLM layer (one `LLMProvider` interface; the in-app provider uses the user's Anthropic API key), job sources (portal plugins), and Playwright for PDF rendering and autofill. PDF tests need Chromium locally: `uv run playwright install --only-shell chromium` (CI installs it).
+Backends behind the service layer: SQLite (`rolehawk.db`, WAL, FTS5) plus markdown memory files in the user's data folder, the LLM layer (one `LLMProvider` interface; the in-app provider uses the user's Anthropic API key), job sources (portal plugins), and Playwright for PDF rendering and autofill. Install Chromium locally from `backend/` with `uv run playwright install chromium`: the full browser, since autofill opens a visible window. CI's tests only need the headless shell (`--only-shell`), but the release smoke test requires both through `rolehawk doctor`.
 
 **Claude access decision (2026-10-31):** Anthropic doesn't allow third-party apps to offer claude.ai login, including through the Agent SDK, so the app has no Claude Code login provider. Claude Code users get the same features through `skills/`: Claude Code does the reasoning in their own session and calls `rolehawk run` for data and actions.
 

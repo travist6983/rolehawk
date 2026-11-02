@@ -20,6 +20,7 @@ from rolehawk.apply.autofill import (
     Applicant,
     Autofiller,
     AutofillReport,
+    AutofillUnavailableError,
     applicant_from,
     application_url,
 )
@@ -690,3 +691,36 @@ def test_autofill_never_clicks_or_submits() -> None:
     for forbidden in (".click(", ".press(", ".submit(", "requestSubmit", "dispatch_event"):
         assert forbidden not in source
         assert forbidden not in js
+
+
+async def test_missing_browser_names_the_install_command_for_this_setup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from playwright.async_api import BrowserType
+    from playwright.async_api import Error as PlaywrightError
+
+    from rolehawk.install import layout
+
+    async def missing(*_args: object, **_kwargs: object) -> None:
+        raise PlaywrightError("BrowserType.launch: Executable doesn't exist at /nowhere\nmore")
+
+    monkeypatch.setattr(BrowserType, "launch", missing)
+    filler = Autofiller(headless=True)
+    try:
+        with pytest.raises(AutofillUnavailableError) as info:
+            await filler.open("https://jobs.lever.co/globex/abc", APPLICANT, None, None, None)
+    finally:
+        await filler.aclose()
+    # A source checkout: the uv command only works from backend/.
+    assert "uv run playwright install chromium (from backend/)" in info.value.user_message
+    # An installed release has no uv project to run in; it has its own command.
+    monkeypatch.setattr(layout, "running_from", lambda *_: (None, "0.2.6"))
+    assert "rolehawk install-browser" in info.value.user_message
+    assert "uv run" not in info.value.user_message
+
+
+def test_browser_that_wont_start_points_to_doctor() -> None:
+    error = AutofillUnavailableError("BrowserType.launch: Missing X server or $DISPLAY")
+    assert "Missing X server" in error.user_message
+    assert "rolehawk doctor" in error.user_message
+    assert "isn't installed" not in error.user_message

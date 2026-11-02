@@ -261,7 +261,7 @@ Start with `rolehawk doctor`. Each line says what's wrong and how to fix it.
   uses port 8765. RoleHawk starts on the next free port and prints the link to open. To stop
   the other copy, press Ctrl+C in its window. To choose a port yourself, use
   `rolehawk start --port 8766`.
-- **PDF export fails**: run `rolehawk install-browser`. On Linux, Chromium may also need
+- **PDF export or autofill fails**: run `rolehawk install-browser`. On Linux, Chromium may also need
   system libraries; `rolehawk doctor` prints the exact command (it needs sudo).
 - **The API key isn't saved (Linux)**: the keychain needs a Secret Service such as GNOME
   Keyring or KWallet. `rolehawk doctor` shows whether one is available.
