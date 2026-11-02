@@ -24,7 +24,7 @@ from rolehawk.portals.base import (
 )
 from rolehawk.portals.feeds import Adzuna, RemoteOK, USAJobs, WeWorkRemotely
 from rolehawk.portals.http import USER_AGENT, HostPacer, HttpError, PoliteClient
-from rolehawk.portals.matching import title_matches, tokens
+from rolehawk.portals.matching import job_matches, title_matches, tokens
 from rolehawk.portals.registry import ATS_IDS, BUILTIN, get_portal
 from rolehawk.portals.text import (
     html_to_text,
@@ -404,6 +404,17 @@ def test_title_matches_ignores_level_words(title: str, expected: bool) -> None:
         ("Developer Advocate", False),
         ("Product Manager, Developer Experience", False),
         ("Developer Engagement Lead", False),
+        ("Copywriter, Developer", False),
+        ("Software Engineer, Developer API", False),
+        # Other trades that share the word.
+        ("Technical Curriculum Developer - AI Agents - Remote", False),
+        ("Instructional Content Developer", False),
+        # The field has to belong to the role, not to a different job in the same title.
+        ("Senior Full-Stack BI Architect / Fabric Data Engineer", False),
+        ("Tech Lead/Senior Developer", True),
+        ("Senior / Staff Fullstack Engineer", True),
+        ("Senior Software Engineer, Backend/Fullstack (Advisor)", True),
+        ("Senior Software Engineer, UI Tooling (Full Stack iOS)", True),
         # Spelling, word order, and trailing details still match.
         ("Front-End Engineer", True),
         ("Software Engineer, Frontend (React)", True),
@@ -421,6 +432,34 @@ def test_title_matches_the_role_not_just_the_words(title: str, expected: bool) -
         SearchQuery("Senior Full Stack Engineer"),
     ]
     assert title_matches(title, queries) is expected
+
+
+def test_a_target_that_names_the_trade_still_matches_it() -> None:
+    assert title_matches("Curriculum Developer", [SearchQuery("Curriculum Developer")])
+
+
+@pytest.mark.parametrize(
+    ("location", "expected"),
+    [
+        ("Bengaluru, India", False),
+        ("Toronto, ON, CA", False),
+        ("Remote - Poland", False),
+        ("San Francisco, CA", True),
+        ("Remote, Canada; Remote, United States", True),
+        ("Anywhere in the World", True),
+        ("Remote", True),  # unknown never filters
+        (None, True),
+    ],
+)
+def test_jobs_only_in_other_countries_do_not_match(location: str | None, expected: bool) -> None:
+    queries = [SearchQuery("Frontend Engineer")]
+    assert job_matches("Frontend Engineer", location, queries) is expected
+
+
+def test_each_target_keeps_its_own_country() -> None:
+    queries = [SearchQuery("Frontend Engineer"), SearchQuery("Data Analyst", country="CA")]
+    assert job_matches("Data Analyst", "Toronto, Canada", queries)
+    assert not job_matches("Frontend Engineer", "Toronto, Canada", queries)
 
 
 def test_a_target_of_only_level_words_matches_nothing() -> None:

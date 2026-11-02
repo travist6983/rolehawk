@@ -37,7 +37,7 @@ from rolehawk.portals.base import (
 from rolehawk.portals.base import Portal as PortalImpl
 from rolehawk.portals.http import HttpError, PoliteClient
 from rolehawk.portals.integrity import clean_posting
-from rolehawk.portals.matching import title_matches
+from rolehawk.portals.matching import job_matches
 from rolehawk.portals.registry import ATS_IDS, BUILTIN
 from rolehawk.portals.state import missing_requirements, stored_secrets
 from rolehawk.portals.text import job_hash
@@ -235,15 +235,19 @@ class Scraper:
         )
 
     def _prune(self, queries: list[SearchQuery]) -> int:
-        """Remove stored jobs whose titles no longer match a target (the targets changed, or
-        matching got stricter). Jobs the user ranked, saved, applied to, or dismissed stay.
-        A removed job comes back on a later search if a target matches it again."""
+        """Remove stored jobs that no longer match a target (the targets changed, or matching
+        got stricter). Jobs the user ranked, saved, applied to, or dismissed stay. A removed
+        job comes back on a later search if a target matches it again."""
         with self._sessions.begin() as session:
             kept = select(JobScore.job_id).union(select(Application.job_id))
             rows = session.execute(
-                select(Job.id, Job.title).where(Job.dismissed_at.is_(None), Job.id.not_in(kept))
+                select(Job.id, Job.title, Job.location).where(
+                    Job.dismissed_at.is_(None), Job.id.not_in(kept)
+                )
             ).all()
-            stale = [job_id for job_id, title in rows if not title_matches(title, queries)]
+            stale = [
+                job_id for job_id, title, where in rows if not job_matches(title, where, queries)
+            ]
             for start in range(0, len(stale), 500):
                 session.execute(delete(Job).where(Job.id.in_(stale[start : start + 500])))
         return len(stale)
@@ -313,7 +317,7 @@ class Scraper:
                         continue
                     if not job.title or not job.url.startswith(("https://", "http://")):
                         continue  # no title, or a link that isn't a web page
-                    if title_matches(job.title, ctx.queries):
+                    if job_matches(job.title, job.location, ctx.queries):
                         matched.append(job)
                         if len(matched) >= MAX_JOBS_PER_PORTAL:
                             run.errors.append(f"stopped at {MAX_JOBS_PER_PORTAL} matching jobs")

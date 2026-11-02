@@ -32,10 +32,11 @@ it works without an API key. You (Claude Code) only summarize the results.
    under a minute). Naming a source runs it even if it's switched off.
 
 3. Summarize from the summary JSON: total `new` and `duplicates` (and `removed` when it's above
-   zero: stored jobs whose titles no longer match a target, which each search clears unless
-   the user ranked, saved, applied to, or dismissed them), then one line per source
-   from `portals` (`status` is `ok`, `error`, or `skipped` with a `detail`). Mention per-company
-   problems in `errors` briefly (for example "3 watchlist companies no longer have a board").
+   zero: stored jobs whose title or country no longer match a target, which each search
+   clears unless the user ranked, saved, applied to, or dismissed them), then one line per
+   source from `portals` (`status` is `ok`, `error`, or `skipped` with a `detail`). Mention
+   per-company problems in `errors` briefly (for example "3 watchlist companies no longer have
+   a board").
    One failing source never fails the run.
 
 4. Suggest the next step: `/rank` to score the new jobs against their profile.

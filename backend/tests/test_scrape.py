@@ -135,25 +135,24 @@ async def test_scrape_keeps_matching_jobs_and_dedupes_reruns(
 
     assert {r.status for r in summary.portals} == {"ok"}
     assert {k: (r.matched, r.new) for k, r in runs.items()} == {
-        "greenhouse": (1, 1),  # Associate Legal Counsel, Japan
-        "lever": (3, 3),  # Administrative Business Partner x3 (different locations)
+        "greenhouse": (0, 0),  # Associate Legal Counsel is in Tokyo, not the US
+        "lever": (2, 2),  # Administrative Business Partner in DC and NY (not Singapore)
         "ashby": (1, 1),  # Software Engineer, Frontend
-        "workable": (3, 1),  # one shortcode listed in three countries
+        "workable": (0, 0),  # an Account Executive in Spain, Albania, and Portugal
         "remoteok": (0, 0),
         "weworkremotely": (0, 0),
         "adzuna": (2, 2),
         "usajobs": (1, 1),
     }
-    assert runs["workable"].duplicates == 2
     assert runs["greenhouse"].found == 3
-    assert summary.new == 9
+    assert summary.new == 6
     assert summary.queries == list(TARGETS)
     assert progress.events[0] == (0.0, "Searching 8 sources")
     assert progress.events[-1][0] == 1.0
 
     with sessions() as session:
         rows = list(session.scalars(select(Job)))
-    assert len(rows) == 9
+    assert len(rows) == 6
     adzuna_job = next(j for j in rows if j.title == "Senior Data Analyst")
     assert (adzuna_job.portal_id, adzuna_job.company) == ("adzuna", "Northwind Analytics")
     assert adzuna_job.scraped_at.tzinfo is not None
@@ -162,7 +161,7 @@ async def test_scrape_keeps_matching_jobs_and_dedupes_reruns(
     assert again.new == 0
     assert again.duplicates == summary.new + summary.duplicates
     with sessions() as session:
-        assert session.scalar(select(func.count()).select_from(Job)) == 9
+        assert session.scalar(select(func.count()).select_from(Job)) == 6
 
 
 async def test_jobs_that_no_longer_match_a_target_are_removed(
@@ -171,20 +170,22 @@ async def test_jobs_that_no_longer_match_a_target_are_removed(
     add_targets(sessions, "Senior Developer")
     with sessions.begin() as session:
         jobs = {
-            title: Job(
+            key: Job(
                 portal_id="greenhouse",
-                external_id=title,
+                external_id=key,
                 url="https://example.com/job",
                 company="Acme",
                 title=title,
-                hash=title,
+                location=location,
+                hash=key,
             )
-            for title in (
-                "Java Developer",
-                "Controls Engineer",
-                "Data Engineer (ranked)",
-                "Security Engineer (saved)",
-                "Developer Advocate (dismissed)",
+            for key, title, location in (
+                ("Java Developer", "Java Developer", "Austin, TX"),
+                ("Java Developer (India)", "Java Developer", "Bengaluru, India"),
+                ("Controls Engineer", "Controls Engineer", None),
+                ("Data Engineer (ranked)", "Data Engineer", None),
+                ("Security Engineer (saved)", "Security Engineer", None),
+                ("Developer Advocate (dismissed)", "Developer Advocate", None),
             )
         }
         jobs["Developer Advocate (dismissed)"].dismissed_at = utcnow()
@@ -203,9 +204,9 @@ async def test_jobs_that_no_longer_match_a_target_are_removed(
 
     summary = await make_scraper(sessions, web, portals=[]).run(Progress())
 
-    assert summary.removed == 1
+    assert summary.removed == 2
     with sessions() as session:
-        assert set(session.scalars(select(Job.title))) == {
+        assert set(session.scalars(select(Job.external_id))) == {
             "Java Developer",
             "Data Engineer (ranked)",
             "Security Engineer (saved)",
@@ -216,7 +217,7 @@ async def test_jobs_that_no_longer_match_a_target_are_removed(
 async def test_same_job_from_two_sources_is_stored_once(
     sessions: sessionmaker[Session], store: PortalStore, web: FakeWeb
 ) -> None:
-    add_targets(sessions, "Legal Counsel")
+    add_targets(sessions, "Legal Counsel", country="JP")
     store.add_companies("greenhouse", [CompanyIn(slug="airbnb", name="Airbnb")])
     web.json(
         "remoteok.com/api",
