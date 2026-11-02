@@ -1,6 +1,7 @@
 """/scrape: run every enabled, ready source concurrently, keep jobs matching a search target,
 normalize, and dedupe (by source + external id, then by company/title/location hash).
-One failing source never fails the run."""
+One failing source never fails the run. Afterwards, stored jobs that no longer match a target
+are removed unless the user ranked, saved, applied to, or dismissed them."""
 
 from __future__ import annotations
 
@@ -10,12 +11,14 @@ from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from rolehawk.db.models import (
+    Application,
     Company,
     Job,
+    JobScore,
     Portal,
     RemotePolicy,
     SearchTarget,
@@ -73,6 +76,8 @@ class CompanyCheck(BaseModel):
 
 
 class ScrapeSummary(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     started_at: datetime
     finished_at: datetime
     queries: list[str]
@@ -80,6 +85,9 @@ class ScrapeSummary(BaseModel):
     found: int
     new: int
     duplicates: int
+    removed: int = Field(
+        default=0, description="Stored jobs removed because they no longer match a target"
+    )
 
 
 def load_queries(session: Session, default_country: str) -> list[SearchQuery]:
@@ -212,6 +220,7 @@ class Scraper:
         finally:
             await http.aclose()
 
+        removed = await asyncio.to_thread(self._prune, queries)
         order = {p.id: i for i, p in enumerate(portals)}
         runs.sort(key=lambda r: order.get(r.portal_id, 99))
         return ScrapeSummary(
@@ -222,7 +231,22 @@ class Scraper:
             found=sum(r.found for r in runs),
             new=sum(r.new for r in runs),
             duplicates=sum(r.duplicates for r in runs),
+            removed=removed,
         )
+
+    def _prune(self, queries: list[SearchQuery]) -> int:
+        """Remove stored jobs whose titles no longer match a target (the targets changed, or
+        matching got stricter). Jobs the user ranked, saved, applied to, or dismissed stay.
+        A removed job comes back on a later search if a target matches it again."""
+        with self._sessions.begin() as session:
+            kept = select(JobScore.job_id).union(select(Application.job_id))
+            rows = session.execute(
+                select(Job.id, Job.title).where(Job.dismissed_at.is_(None), Job.id.not_in(kept))
+            ).all()
+            stale = [job_id for job_id, title in rows if not title_matches(title, queries)]
+            for start in range(0, len(stale), 500):
+                session.execute(delete(Job).where(Job.id.in_(stale[start : start + 500])))
+        return len(stale)
 
     def last_summary(self) -> ScrapeSummary | None:
         """The most recent successful run's results, for the Sources screen."""
