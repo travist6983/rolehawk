@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Literal
 
 from pydantic import BaseModel
 from sqlalchemy import ColumnElement, Select, exists, func, or_, select
@@ -22,6 +23,9 @@ from rolehawk.portals.text import looks_remote
 from rolehawk.profile.model import Preferences, SalaryFloor, SalaryPeriod
 
 HOURS_PER_YEAR = 2080
+
+# Why the preference filters skip a job, in the order they're checked.
+SkipReason = Literal["excluded", "country", "location", "salary"]
 
 
 class FilterCounts(BaseModel):
@@ -46,8 +50,9 @@ class TargetRule:
     country: str
     remote_only: bool
     onsite: bool
-    places: tuple[str, ...]  # lowercased first part of each location ("denver")
+    places: tuple[str, ...]  # the folded city of each location ("denver", "sterling heights")
     exclude: tuple[re.Pattern[str], ...]
+    regions: frozenset[str] = frozenset()  # states/provinces the locations name ("US-MI")
 
 
 @dataclass
@@ -85,10 +90,11 @@ def build_rules(targets: Sequence[SearchTarget], prefs: Preferences) -> Rules:
                 country=(t.country or "").upper(),
                 remote_only=t.remote_policy is RemotePolicy.REMOTE,
                 onsite=t.remote_policy is RemotePolicy.ONSITE,
-                places=tuple(
-                    p.split(",")[0].strip().casefold() for p in t.locations or () if p.strip()
-                ),
+                places=tuple(city for p in t.locations or () if (city := geo.city_part(p))),
                 exclude=tuple(_word(x) for x in t.exclude or () if x.strip()),
+                regions=frozenset[str]().union(
+                    *(geo.place_subdivisions(p) for p in t.locations or ())
+                ),
             )
         )
     rules.exclude = [_word(term) for term in deal_breaker_terms(prefs.deal_breakers)]
@@ -96,6 +102,12 @@ def build_rules(targets: Sequence[SearchTarget], prefs: Preferences) -> Rules:
         rules.floor_per_year = per_year(prefs.salary_floor)
         rules.floor_currency = prefs.salary_floor.currency.upper()
     return rules
+
+
+def load_rules(session: Session, prefs: Preferences) -> Rules:
+    """Rules from the active search targets and the preferences."""
+    active = select(SearchTarget).where(SearchTarget.active.is_(True))
+    return build_rules(list(session.scalars(active)), prefs)
 
 
 def per_year(floor: SalaryFloor) -> float:
@@ -162,11 +174,15 @@ def country_ok(job: Job, rules: Rules) -> bool:
 
 
 def location_ok(job: Job, rules: Rules) -> bool:
-    """Passes if any search target accepts it. Unknown locations always pass."""
+    """Passes if any search target accepts it: remote (unless the target is on-site only),
+    in one of its cities, or in the same state or province as one. Locations that name no
+    state or known city ("United States", "Troy, Oakland County", "N/A") pass too: there's
+    nothing to check, and the AI scorer weighs the commute."""
     if not rules.targets:
         return True
     remote = _is_remote(job)
-    where = (job.location or "").casefold()
+    where = f" {geo.fold(job.location)} " if job.location else ""
+    places = geo.detect(job.location)
     for target in rules.targets:
         if target.remote_only:
             if remote:
@@ -176,7 +192,11 @@ def location_ok(job: Job, rules: Rules) -> bool:
             return True
         if remote and not target.onsite:
             return True
-        if any(place in where for place in target.places):
+        if any(f" {place} " in where for place in target.places):
+            return True
+        if target.regions & places.subdivisions:
+            return True
+        if not places.local and not remote:
             return True
     return False
 
@@ -194,6 +214,19 @@ def salary_ok(job: Job, rules: Rules) -> bool:
         return True
     top = salary_max(job.salary_text, rules.floor_currency)
     return top is None or top >= rules.floor_per_year
+
+
+def skip_reason(job: Job, rules: Rules) -> SkipReason | None:
+    """Why the preference filters skip this job, or None when it could work."""
+    if excluded(job, rules):
+        return "excluded"
+    if not country_ok(job, rules):
+        return "country"
+    if not location_ok(job, rules):
+        return "location"
+    if not salary_ok(job, rules):
+        return "salary"
+    return None
 
 
 # --- the candidate query ------------------------------------------------------------------
@@ -242,16 +275,11 @@ def candidates(
 
     kept: list[Job] = []
     for job in session.scalars(stmt):
-        if excluded(job, rules):
-            counts.excluded += 1
-        elif not country_ok(job, rules):
-            counts.country += 1
-        elif not location_ok(job, rules):
-            counts.location += 1
-        elif not salary_ok(job, rules):
-            counts.salary += 1
-        else:
+        reason = skip_reason(job, rules)
+        if reason is None:
             kept.append(job)
+        else:
+            setattr(counts, reason, getattr(counts, reason) + 1)
     if limit is not None:
         kept = kept[:limit]
     return kept, counts

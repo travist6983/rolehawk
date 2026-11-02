@@ -58,29 +58,36 @@ ALPHA2 = {
 
 # --- sub-national -------------------------------------------------------------------------
 
-US_STATES = {
-    "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut",
-    "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa",
-    "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan",
-    "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire",
-    "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
-    "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota",
-    "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia",
-    "wisconsin", "wyoming", "district of columbia", "puerto rico",
+US_STATE_BY_NAME: dict[str, str] = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA",
+    "colorado": "CO", "connecticut": "CT", "delaware": "DE", "florida": "FL", "georgia": "GA",
+    "hawaii": "HI", "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA",
+    "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", "new hampshire": "NH",
+    "new jersey": "NJ", "new mexico": "NM", "new york": "NY", "north carolina": "NC",
+    "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA",
+    "rhode island": "RI", "south carolina": "SC", "south dakota": "SD", "tennessee": "TN",
+    "texas": "TX", "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
+    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+    "puerto rico": "PR",
 }  # fmt: skip
+US_STATES = set(US_STATE_BY_NAME)
+US_STATE_CODES = set(US_STATE_BY_NAME.values())
 
-US_STATE_CODES = {
-    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA",
-    "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-    "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT",
-    "VA", "WA", "WV", "WI", "WY", "DC", "PR",
+CA_PROVINCE_BY_NAME: dict[str, str] = {
+    "ontario": "ON", "quebec": "QC", "british columbia": "BC", "alberta": "AB",
+    "manitoba": "MB", "saskatchewan": "SK", "nova scotia": "NS", "new brunswick": "NB",
+    "newfoundland": "NL", "prince edward island": "PE", "yukon": "YT",
 }  # fmt: skip
+CA_PROVINCES = set(CA_PROVINCE_BY_NAME)
+CA_PROVINCE_CODES = set(CA_PROVINCE_BY_NAME.values())
 
-CA_PROVINCES = {
-    "ontario", "quebec", "british columbia", "alberta", "manitoba", "saskatchewan",
-    "nova scotia", "new brunswick", "newfoundland", "prince edward island", "yukon",
-}  # fmt: skip
-CA_PROVINCE_CODES = {"ON", "QC", "BC", "AB", "MB", "SK", "NS", "NB", "NL", "PE", "YT"}
+# States and provinces as "US-MI" and "CA-ON", by folded name.
+SUBDIVISIONS: dict[str, str] = {
+    **{name: f"US-{code}" for name, code in US_STATE_BY_NAME.items()},
+    **{name: f"CA-{code}" for name, code in CA_PROVINCE_BY_NAME.items()},
+}
 
 OTHER_REGIONS: dict[str, str] = {
     "new south wales": "AU", "queensland": "AU", "western australia": "AU",
@@ -169,10 +176,17 @@ WORLDWIDE = ("worldwide", "anywhere", "global", "globally", "any location", "int
 class Places:
     countries: frozenset[str] = frozenset()
     worldwide: bool = False
+    subdivisions: frozenset[str] = frozenset()  # "US-MI", "CA-ON"
+    cities: frozenset[str] = frozenset()  # well-known cities only (CITIES), folded
 
     @property
     def known(self) -> bool:
         return self.worldwide or bool(self.countries)
+
+    @property
+    def local(self) -> bool:
+        """Names a state, province, or well-known city: somewhere narrower than a country."""
+        return bool(self.subdivisions or self.cities)
 
     def allows(self, country: str) -> bool:
         """True unless the location clearly names only other countries."""
@@ -199,6 +213,40 @@ def _phrases() -> list[tuple[str, str | frozenset[str]]]:
     return sorted(table.items(), key=lambda item: -len(item[0]))
 
 
+def fold(text: str) -> str:
+    """`_fold` without the padding: "Sterling Heights, MI" -> "sterling heights mi"."""
+    return _fold(text).strip()
+
+
+# What can trail a city in a place the user typed ("Austin TX", "Leeds United Kingdom").
+_QUALIFIERS = sorted(
+    {
+        *US_STATES,
+        *CA_PROVINCES,
+        *COUNTRY_NAMES,
+        *(code.casefold() for code in US_STATE_CODES | CA_PROVINCE_CODES | ALPHA2),
+    },
+    key=len,
+    reverse=True,
+)
+
+
+def city_part(place: str) -> str:
+    """The city in a place the user typed, folded: "Denver, CO", "Sterling Heights MI" and
+    "Sterling Heights, Michigan, USA" give "denver" and "sterling heights". Trailing states,
+    provinces and countries are dropped unless nothing else is left ("New York" stays)."""
+    city = fold(place.split(",")[0])
+    trimmed = True
+    while trimmed:
+        trimmed = False
+        for qualifier in _QUALIFIERS:
+            if city.endswith(f" {qualifier}"):
+                city = city.removesuffix(qualifier).strip()
+                trimmed = True
+                break
+    return city
+
+
 _PHRASES = _phrases()
 _DOTTED = re.compile(r"\b(?:U\.S\.A\.?|U\.S\.|U\.K\.|D\.C\.)", re.IGNORECASE)
 _CODE = re.compile(r"\b[A-Z]{2,3}\b")
@@ -213,13 +261,19 @@ def detect(location: str | None) -> Places:
         return Places(worldwide=True)
 
     found: set[str] = set()
+    subdivisions: set[str] = set()
+    cities: set[str] = set()
     for phrase, value in _PHRASES:
         needle = f" {phrase} "
         if needle in text:
             found.update({value} if isinstance(value, str) else value)
+            if phrase in SUBDIVISIONS:
+                subdivisions.add(SUBDIVISIONS[phrase])
+            elif phrase in CITIES:
+                cities.add(phrase)
             text = text.replace(needle, " ")  # "new mexico" mustn't also match "mexico"
 
-    us_codes = False
+    states: set[str] = set()
     for code in _CODE.findall(raw):
         if code in ALPHA3:
             found.add(ALPHA3[code])
@@ -227,9 +281,33 @@ def detect(location: str | None) -> Places:
             found.add("GB" if code == "UK" else code)
         elif code in CA_PROVINCE_CODES and code not in US_STATE_CODES:
             found.add("CA")
+            subdivisions.add(f"CA-{code}")
         elif code in US_STATE_CODES:
-            us_codes = True
+            states.add(f"US-{code}")
     # "San Francisco, CA" is California; "Toronto, ON, CA" is Canada.
-    if us_codes and (not found or "US" in found):
+    if states and (not found or "US" in found):
         found.add("US")
-    return Places(countries=frozenset(found))
+        subdivisions |= states
+    return Places(
+        countries=frozenset(found),
+        subdivisions=frozenset(subdivisions),
+        cities=frozenset(cities),
+    )
+
+
+def place_subdivisions(place: str) -> frozenset[str]:
+    """The states and provinces a place the user typed names after its city, in any case:
+    "Sterling Heights mi" and "Sterling Heights, Michigan" give {"US-MI"}."""
+    city = city_part(place)
+    rest = fold(place).removeprefix(city)
+    if not rest:
+        return frozenset()
+    padded = f" {rest} "
+    found = {code for name, code in SUBDIVISIONS.items() if f" {name} " in padded}
+    for word in rest.split():
+        code = word.upper()
+        if code in US_STATE_CODES:
+            found.add(f"US-{code}")
+        elif code in CA_PROVINCE_CODES:
+            found.add(f"CA-{code}")
+    return frozenset(found)

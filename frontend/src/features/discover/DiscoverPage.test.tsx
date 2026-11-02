@@ -78,6 +78,10 @@ describe("DiscoverPage", () => {
     await waitFor(() => {
       expect(requests.at(-1)?.get("remote")).toBe("true");
     });
+    await user.click(screen.getByRole("button", { name: "Matches my preferences" }));
+    await waitFor(() => {
+      expect(requests.at(-1)?.get("fits_preferences")).toBe("true");
+    });
     const last = requests.at(-1);
     expect(last?.get("limit")).toBe("200");
     expect(last?.has("portal_id")).toBe(false); // empty filters aren't sent
@@ -281,7 +285,7 @@ describe("DiscoverPage", () => {
     );
     await user.click(within(dialog).getByRole("button", { name: "Rank 42 jobs" }));
     await waitFor(() => {
-      expect(started).toEqual({ job_ids: null, rescore: false });
+      expect(started).toEqual({ job_ids: null, rescore: false, ignore_preferences: false });
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -380,6 +384,62 @@ describe("DiscoverPage", () => {
       "doesn't allow tools to read its pages",
     );
     expect(within(dialog).getByLabelText("Posting text")).toBeEnabled();
+  });
+
+  it("labels jobs outside your preferences and can rank picked ones anyway", async () => {
+    const abroad = { title: "Staff Engineer", company: "Okta", score: null, reasons: [] };
+    server.use(
+      http.get("/api/jobs", () =>
+        HttpResponse.json(
+          jobPage([
+            jobRow({
+              id: 4,
+              location: "Tel Aviv, Israel",
+              outside_preferences: "country",
+              ...abroad,
+            }),
+          ]),
+        ),
+      ),
+    );
+    const plans: unknown[] = [];
+    let started: unknown = null;
+    const skipped = { ...rankPlan().filtered, country: 1, location: 0, salary: 0 };
+    server.use(
+      http.post("/api/rank/plan", async ({ request }) => {
+        const body = (await request.json()) as { ignore_preferences: boolean };
+        plans.push(body);
+        return HttpResponse.json(
+          body.ignore_preferences
+            ? rankPlan({ candidates: 1, batches: 1, filtered: { ...skipped, country: 0 } })
+            : rankPlan({ candidates: 0, batches: 0, filtered: skipped }),
+        );
+      }),
+      http.post("/api/rank", async ({ request }) => {
+        started = await request.json();
+        return HttpResponse.json({ task_id: "r1" }, { status: 202 });
+      }),
+    );
+    const { user } = await renderApp("/discover");
+    const row = (await screen.findByRole("table")).querySelector("tbody tr");
+    expect(row).toHaveTextContent("Other country");
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Staff Engineer at Okta" }));
+    const toolbar = screen.getByRole("toolbar", { name: "Selected jobs" });
+    await user.click(within(toolbar).getByRole("button", { name: "Rank" }));
+    const dialog = await screen.findByRole("dialog", { name: "Rank 1 selected job" });
+    expect(await within(dialog).findByText("Nothing new to rank.")).toBeVisible();
+    expect(dialog).toHaveTextContent("Skipped 1: 1 in other countries.");
+    expect(within(dialog).getByRole("button", { name: "Rank" })).toBeDisabled();
+
+    await user.click(
+      within(dialog).getByRole("checkbox", { name: "Also rank jobs your preferences skip" }),
+    );
+    await user.click(await within(dialog).findByRole("button", { name: "Rank 1 job" }));
+    await waitFor(() => {
+      expect(started).toEqual({ job_ids: [4], rescore: false, ignore_preferences: true });
+    });
+    expect(plans[0]).toEqual({ job_ids: [4], rescore: false, ignore_preferences: false });
   });
 
   it("explains how to rank without an API key", async () => {

@@ -164,6 +164,7 @@ Every command is available three ways: a button in the dashboard, a slash comman
 
 - Input: a scrape run or any job filter.
 - Flow: hard filters first in SQL (location, remote, salary, exclude keywords); then batch LLM scoring of up to 20 jobs per call using structured output: score, must-have gaps, top 3 reasons.
+- Discover labels the jobs these filters skip (other country, outside your locations, below your salary floor, excluded word) and can hide them. Jobs the user picks can be ranked anyway; the whole backlog never skips the filters.
 - Output: job\_scores rows, a ranked shortlist view.
 - Accept when: 200 jobs rank in under 3 minutes; cost estimate shows before running.
 

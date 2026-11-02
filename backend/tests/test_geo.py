@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from rolehawk.geo import detect
+from rolehawk.geo import city_part, detect, place_subdivisions
 
 
 @pytest.mark.parametrize(
@@ -75,3 +75,48 @@ def test_regions() -> None:
 def test_allows_is_case_insensitive() -> None:
     assert detect("Remote - India").allows("in")
     assert not detect("Remote - India").allows("us")
+
+
+@pytest.mark.parametrize(
+    ("place", "city"),
+    [
+        ("Denver, CO", "denver"),
+        ("Sterling Heights MI", "sterling heights"),
+        ("Sterling Heights, Michigan", "sterling heights"),
+        ("sterling heights mi usa", "sterling heights"),
+        ("Austin TX, United States", "austin"),
+        ("Toronto ON", "toronto"),
+        ("New York", "new york"),  # a state name, but nothing else is left
+        ("New York NY", "new york"),
+        ("St. Louis", "st louis"),
+        ("São Paulo", "sao paulo"),
+        ("Remote", "remote"),
+    ],
+)
+def test_city_part(place: str, city: str) -> None:
+    assert city_part(place) == city
+
+
+@pytest.mark.parametrize(
+    ("place", "regions"),
+    [
+        ("Sterling Heights MI", {"US-MI"}),
+        ("sterling heights, michigan", {"US-MI"}),
+        ("Denver, CO, USA", {"US-CO"}),
+        ("Toronto ON", {"CA-ON"}),
+        ("New York", set()),  # the city: no state after it
+        ("Denver", set()),
+    ],
+)
+def test_place_subdivisions(place: str, regions: set[str]) -> None:
+    assert place_subdivisions(place) == regions
+
+
+def test_states_provinces_and_cities() -> None:
+    assert detect("Troy, MI 48084").subdivisions == {"US-MI"}
+    assert detect("Detroit, Michigan").subdivisions == {"US-MI"}
+    assert detect("Toronto, ON, CA").subdivisions == {"CA-ON"}
+    assert detect("Seattle").cities == {"seattle"}
+    assert not detect("United States").local  # a country, no narrower place
+    assert not detect("Warren, Macomb County").local  # unknown: nothing to go on
+    assert detect("San Francisco, CA").local

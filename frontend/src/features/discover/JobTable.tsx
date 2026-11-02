@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { deadlineText, gateNote, staleText, whereText } from "./discoverText";
+import { OUTSIDE_TEXT, deadlineText, gateNote, staleText, whereText } from "./discoverText";
 
 const ROW_HEIGHT = 66;
 const LOAD_MORE_WITHIN = 30; // rows from the end
@@ -176,6 +176,14 @@ export function JobTable({
                         )}
                       >
                         {gate.label}
+                      </span>
+                    )}
+                    {job.outside_preferences && (
+                      <span
+                        className="shrink-0 text-[10px] font-medium text-muted-foreground"
+                        title="Outside your preferences, so ranking skips it unless you pick it and rank it anyway"
+                      >
+                        {OUTSIDE_TEXT[job.outside_preferences]}
                       </span>
                     )}
                     {job.integrity === "warning" && (

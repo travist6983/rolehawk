@@ -20,6 +20,7 @@ from rolehawk.db.models import Application, Job, JobScore, RemotePolicy, SearchT
 from rolehawk.db.types import utcnow
 from rolehawk.fit import ranker as ranker_module
 from rolehawk.fit.filters import (
+    FilterCounts,
     Rules,
     build_rules,
     deal_breaker_terms,
@@ -160,6 +161,25 @@ def test_location_rules() -> None:
     assert not location_ok(job("Remote", remote=True), onsite)
     assert location_ok(job("Remote"), Rules())  # no targets: no location filter
 
+    # However the place is written, the city is what's matched, as a whole word.
+    sterling = build_rules([target(RemotePolicy.HYBRID, "Sterling Heights MI")], prefs)
+    assert location_ok(job("Sterling Heights, MI"), sterling)
+    assert location_ok(job("Sterling Heights, Michigan, United States"), sterling)
+    assert location_ok(job("STERLING HEIGHTS"), sterling)
+    assert not location_ok(job("Seattle, WA"), sterling)
+    assert not location_ok(job("San Francisco"), sterling)
+    assert not location_ok(job("Denverton, TX"), denver)
+
+    # Same state counts (the AI scorer weighs the commute), and so does a location with no
+    # state or known city to check: there's nothing to filter on.
+    assert location_ok(job("Detroit, Michigan"), sterling)
+    assert location_ok(job("Troy, MI 48084"), sterling)
+    assert location_ok(job("Warren, Macomb County"), sterling)
+    assert location_ok(job("United States"), sterling)
+    assert location_ok(job("In-person"), sterling)
+    assert location_ok(job("Home based - Worldwide"), sterling)
+    assert not location_ok(job("Remote"), onsite)  # "Remote" is no place for on-site only
+
 
 async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
     set_prefs(
@@ -200,6 +220,28 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
 
     rescore = runtime.ranker.plan(RankParams(rescore=True))
     assert rescore.candidates == len(keep) + 2
+
+
+async def test_chosen_jobs_can_be_ranked_despite_preferences(runtime: Runtime) -> None:
+    set_prefs(runtime, locations=["Denver"], remote=RemotePreference.HYBRID)
+    (fits,) = add_jobs(runtime, 1)
+    austin = add_jobs(runtime, 2, location="Austin, TX")
+    (india,) = add_jobs(runtime, 1, location="Remote - India", remote=True)
+    (dismissed,) = add_jobs(runtime, 1, location="Austin, TX")
+    runtime.jobs.set_dismissed([dismissed])
+    chosen = [fits, *austin, india, dismissed]
+
+    plan = runtime.ranker.plan(RankParams(job_ids=chosen))
+    assert plan.candidates == 1
+    assert (plan.filtered.location, plan.filtered.country) == (2, 1)
+
+    anyway = runtime.ranker.plan(RankParams(job_ids=chosen, ignore_preferences=True))
+    assert anyway.candidates == 4
+    assert anyway.filtered.model_dump() == {**FilterCounts().model_dump(), "dismissed": 1}
+
+    # Only for jobs the user picked: never the whole backlog.
+    with pytest.raises(ValueError, match="job_ids"):
+        RankParams(ignore_preferences=True)
 
 
 # --- scoring ------------------------------------------------------------------------------
@@ -372,6 +414,36 @@ async def test_job_listing_sorts_filters_and_counts(runtime: Runtime) -> None:
     assert detail.source == "Greenhouse"
     with pytest.raises(KeyError):
         runtime.jobs.get(99_999)
+
+
+async def test_job_listing_labels_jobs_outside_preferences(runtime: Runtime) -> None:
+    set_prefs(
+        runtime,
+        locations=["Denver CO"],
+        remote=RemotePreference.HYBRID,
+        salary_floor=SalaryFloor(amount=100_000, currency="USD"),
+        deal_breakers=["no crypto"],
+    )
+    (fits,) = add_jobs(runtime, 1)
+    (india,) = add_jobs(runtime, 1, location="Bengaluru, India")
+    (austin,) = add_jobs(runtime, 1, location="Austin, TX")
+    (low,) = add_jobs(runtime, 1, salary="$60,000 - $80,000")
+    (crypto,) = add_jobs(runtime, 1, company="CryptoCo Crypto")
+
+    page = runtime.jobs.list(JobQuery(sort="newest"))
+    assert {j.id: j.outside_preferences for j in page.items} == {
+        fits: None,
+        india: "country",
+        austin: "location",
+        low: "salary",
+        crypto: "excluded",
+    }
+    assert runtime.jobs.get(india).outside_preferences == "country"
+
+    fitting = runtime.jobs.list(JobQuery(fits_preferences=True))
+    assert [j.id for j in fitting.items] == [fits]
+    assert fitting.total == 1
+    assert fitting.stats.jobs == 5  # the header counts stay over every job
 
 
 async def test_save_and_dismiss_rules(runtime: Runtime) -> None:

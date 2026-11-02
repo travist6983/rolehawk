@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { deadlineText, safeUrl, staleText, whereText } from "./discoverText";
+import { OUTSIDE_DETAIL, deadlineText, safeUrl, staleText, whereText } from "./discoverText";
 import { FitBreakdown, FitGates } from "./FitDetails";
 import { IntegrityNotice } from "./IntegrityNotice";
 
@@ -76,6 +76,13 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: (rescore: boolean
         <p className="mt-1 text-muted-foreground">
           Rank it to see how well it fits your profile, with reasons and gaps.
         </p>
+        {job.outside_preferences && (
+          <p className="mt-2 text-muted-foreground">
+            <span className="font-medium text-foreground">Outside your preferences.</span>{" "}
+            {OUTSIDE_DETAIL[job.outside_preferences]} Ranking skips it unless you choose to rank it
+            anyway.
+          </p>
+        )}
         <Button
           size="sm"
           variant="outline"

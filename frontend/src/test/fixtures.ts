@@ -424,6 +424,7 @@ export const jobRow = (overrides: Partial<JobRow> = {}): JobRow => ({
   deadline: null,
   stale_days: null,
   integrity: "clean",
+  outside_preferences: null,
   ...overrides,
 });
 

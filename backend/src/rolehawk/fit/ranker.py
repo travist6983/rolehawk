@@ -10,13 +10,14 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import date
+from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from rolehawk.db.models import Job, JobScore, SearchTarget
-from rolehawk.fit.filters import FilterCounts, build_rules, candidates
+from rolehawk.db.models import Job, JobScore
+from rolehawk.fit.filters import FilterCounts, Rules, candidates, load_rules
 from rolehawk.fit.rubric import FIT_RUBRIC, FitBatch, Gates, JobFit
 from rolehawk.llm.errors import (
     LLMError,
@@ -48,6 +49,17 @@ class RankParams(BaseModel):
         default=None, max_length=MAX_JOBS_PER_RUN, description="Only these jobs (default: all)"
     )
     rescore: bool = Field(default=False, description="Score jobs again even if already ranked")
+    ignore_preferences: bool = Field(
+        default=False,
+        description="Rank the chosen job_ids even if your country, locations, salary floor, "
+        "or excluded words would skip them",
+    )
+
+    @model_validator(mode="after")
+    def _chosen_jobs_only(self) -> Self:
+        if self.ignore_preferences and self.job_ids is None:
+            raise ValueError("ignore_preferences only works with job_ids")
+        return self
 
 
 class RankPlan(BaseModel):
@@ -125,8 +137,8 @@ class Ranker:
     def select(self, params: RankParams) -> tuple[list[Job], FilterCounts, int]:
         prefs = self._preferences()
         with self._sessions() as session:
-            active = select(SearchTarget).where(SearchTarget.active.is_(True))
-            rules = build_rules(list(session.scalars(active)), prefs)
+            # No rules: the user picked these jobs and chose to rank them anyway.
+            rules = Rules() if params.ignore_preferences else load_rules(session, prefs)
             jobs, counts = candidates(
                 session, rules, job_ids=params.job_ids, rescore=params.rescore
             )

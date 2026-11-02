@@ -3,13 +3,13 @@ detail, save to the pipeline, dismiss."""
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Select, delete, false, func, or_, select, text, update
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, load_only, sessionmaker
 
 from rolehawk.db.fts import to_match_query
 from rolehawk.db.models import (
@@ -22,8 +22,10 @@ from rolehawk.db.models import (
     StageEventSource,
 )
 from rolehawk.db.types import utcnow
+from rolehawk.fit.filters import Rules, SkipReason, load_rules, skip_reason
 from rolehawk.fit.rubric import Breakdown, Gates
 from rolehawk.portals.integrity import IntegrityView, Verdict
+from rolehawk.profile.model import Preferences
 
 MAX_PAGE = 500
 CLOSING_SOON_DAYS = 7
@@ -50,6 +52,10 @@ class JobQuery(BaseModel):
     min_score: int | None = Field(default=None, ge=0, le=100)
     portal_id: str | None = None
     remote: bool = Field(default=False, description="Only jobs marked remote")
+    fits_preferences: bool = Field(
+        default=False,
+        description="Only jobs your country, locations, salary floor, and excluded words allow",
+    )
     sort: Literal["score", "newest"] = "score"
     limit: int = Field(default=100, ge=1, le=MAX_PAGE)
     offset: int = Field(default=0, ge=0)
@@ -89,6 +95,10 @@ class JobRow(BaseModel):
         description=f"Days since posting, when older than {STALE_DAYS} days (still may be open)"
     )
     integrity: Verdict = Field(description="clean, cleaned (hidden text removed), or warning")
+    outside_preferences: SkipReason | None = Field(
+        description="Why /rank skips this job (an excluded word, another country, outside "
+        "your locations, below your salary floor); null when your preferences allow it"
+    )
 
 
 class JobDetail(JobRow):
@@ -144,8 +154,24 @@ def _latest_scores() -> Any:
 
 
 class JobStore:
-    def __init__(self, sessions: sessionmaker[Session]) -> None:
+    def __init__(
+        self,
+        sessions: sessionmaker[Session],
+        preferences: Callable[[], Preferences] = Preferences,
+    ) -> None:
         self._sessions = sessions
+        self._preferences = preferences
+
+    def _rules(self, session: Session) -> Rules:
+        return load_rules(session, self._preferences())
+
+    @staticmethod
+    def _outside_ids(session: Session, rules: Rules) -> list[int]:
+        """Jobs the preference filters skip. They need text parsing, so this reads the few
+        columns they use for every job and checks them in Python."""
+        columns = (Job.title, Job.company, Job.location, Job.remote, Job.salary_text)
+        jobs = session.scalars(select(Job).options(load_only(*columns)))
+        return [job.id for job in jobs if skip_reason(job, rules) is not None]
 
     def _base(self) -> tuple[Select[Any], Any]:
         score = _latest_scores()
@@ -171,7 +197,7 @@ class JobStore:
         return stmt, score
 
     @staticmethod
-    def _row(values: Any) -> dict[str, Any]:
+    def _row(values: Any, rules: Rules) -> dict[str, Any]:
         (
             job,
             score,
@@ -219,6 +245,7 @@ class JobStore:
             "integrity_report": report,
             "description": job.description,
             "application_id": app_id,
+            "outside_preferences": skip_reason(job, rules),
         }
 
     def list(self, query: JobQuery) -> JobPage:
@@ -262,9 +289,12 @@ class JobStore:
             stmt = stmt.order_by(*newest)
 
         with self._sessions() as session:
+            rules = self._rules(session)
+            if query.fits_preferences:
+                stmt = stmt.where(Job.id.not_in(self._outside_ids(session, rules)))
             total = session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
             rows = session.execute(stmt.limit(query.limit).offset(query.offset)).all()
-            items = [JobRow.model_validate(self._row(r)) for r in rows]
+            items = [JobRow.model_validate(self._row(r, rules)) for r in rows]
             stats = self._stats(session)
         return JobPage(items=items, total=total or 0, stats=stats)
 
@@ -304,9 +334,9 @@ class JobStore:
         stmt, _ = self._base()
         with self._sessions() as session:
             row = session.execute(stmt.where(Job.id == job_id)).first()
-        if row is None:
-            raise KeyError(job_id)
-        return JobDetail.model_validate(self._row(row))
+            if row is None:
+                raise KeyError(job_id)
+            return JobDetail.model_validate(self._row(row, self._rules(session)))
 
     def set_saved(self, job_ids: Sequence[int], saved: bool = True) -> Changed:
         """Saving puts a job in the pipeline at Saved (and un-dismisses it). Unsaving only
