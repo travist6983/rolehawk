@@ -560,6 +560,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/setup/interview/back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Back */
+        post: operations["back_api_setup_interview_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/setup/interview/restart": {
         parameters: {
             query?: never;
@@ -2810,6 +2827,8 @@ export interface components {
             remaining: number;
             /** Complete */
             complete: boolean;
+            /** Can Go Back */
+            can_go_back: boolean;
         };
         /** JobDetail */
         JobDetail: {
@@ -5104,6 +5123,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    back_api_setup_interview_back_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewState"];
                 };
             };
         };

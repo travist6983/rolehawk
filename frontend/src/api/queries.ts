@@ -307,6 +307,16 @@ export function useSkipQuestion() {
   });
 }
 
+export function useInterviewBack() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/api/setup/interview/back")),
+    onSuccess: (state) => {
+      client.setQueryData(setupKeys.interview, state);
+    },
+  });
+}
+
 export function useSaveMemoryFile() {
   const invalidate = useInvalidateProfile();
   return useMutation({

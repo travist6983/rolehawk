@@ -70,7 +70,15 @@ rolehawk run setup-skip --params-json '{"question_id": "profile.education"}' --j
 ```
 
 `value` is a string for `single`/`text`/`list` questions, a list for `multi`, and an object of
-field values for `form`. Repeat until `complete` is true.
+field values for `form`. A question's `value` is what's saved now: an answer replaces it, so
+for lists include the saved items the user wants to keep. Repeat until `complete` is true.
+
+To change the previous answer, go back; the question comes again with the saved answer, and
+skipping it keeps that answer:
+
+```bash
+rolehawk run setup-back --json
+```
 
 ## Rules
 

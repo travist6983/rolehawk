@@ -123,6 +123,14 @@ async def skip(body: SkipIn, runtime: RuntimeDep) -> InterviewState:
         raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
+@router.post("/interview/back")
+async def back(runtime: RuntimeDep) -> InterviewState:
+    try:
+        return await asyncio.to_thread(runtime.setup.back)
+    except AnswerError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+
 @router.post("/interview/restart")
 async def restart(runtime: RuntimeDep) -> InterviewState:
     return await asyncio.to_thread(runtime.setup.restart_interview)

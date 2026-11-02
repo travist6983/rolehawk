@@ -278,6 +278,7 @@ export const interviewState = (overrides: Partial<InterviewState> = {}): Intervi
   answered: 2,
   remaining: 6,
   complete: false,
+  can_go_back: false,
   ...overrides,
 });
 

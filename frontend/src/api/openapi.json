@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.2"
+    "version": "0.2.3"
   },
   "paths": {
     "/api/health": {
@@ -1305,6 +1305,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/interview/back": {
+      "post": {
+        "tags": [
+          "setup"
+        ],
+        "summary": "Back",
+        "operationId": "back_api_setup_interview_back_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewState"
                 }
               }
             }
@@ -7705,6 +7726,10 @@
           "complete": {
             "type": "boolean",
             "title": "Complete"
+          },
+          "can_go_back": {
+            "type": "boolean",
+            "title": "Can Go Back"
           }
         },
         "type": "object",
@@ -7712,7 +7737,8 @@
           "question",
           "answered",
           "remaining",
-          "complete"
+          "complete",
+          "can_go_back"
         ],
         "title": "InterviewState"
       },

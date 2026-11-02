@@ -100,6 +100,16 @@ def test_interview_endpoints(client: TestClient) -> None:
     assert after["question"]["id"] == "role.add"
     skipped = client.post("/api/setup/interview/skip", json={"question_id": "role.add"}).json()
     assert skipped["question"]["id"] == "profile.skills"
+    assert skipped["can_go_back"] is True
+    back = client.post("/api/setup/interview/back").json()
+    assert back["question"]["id"] == "role.add"
+    back = client.post("/api/setup/interview/back").json()
+    assert back["question"]["id"] == "basics.contact"
+    assert back["question"]["value"] == {"name": "Sam Rivera"}
+    assert back["can_go_back"] is False
+    nothing = client.post("/api/setup/interview/back")
+    assert nothing.status_code == 422
+    assert "no earlier question" in nothing.json()["detail"]
     restarted = client.post("/api/setup/interview/restart").json()
     assert restarted["question"]["id"] == "role.add"
 

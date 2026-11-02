@@ -108,6 +108,11 @@ async def _skip(ctx: CommandContext, params: SkipParams) -> dict[str, Any]:
     return state.model_dump(mode="json")
 
 
+async def _back(ctx: CommandContext, _params: NoParams) -> dict[str, Any]:
+    state = await asyncio.to_thread(ctx.runtime.setup.back)
+    return state.model_dump(mode="json")
+
+
 def register_setup(registry: CommandRegistry) -> None:
     for spec in [
         CommandSpec(
@@ -166,6 +171,13 @@ def register_setup(registry: CommandRegistry) -> None:
             "Skip an optional gap-interview question.",
             _skip,
             SkipParams,
+            read_only=False,
+            chat_allowed=False,
+        ),
+        CommandSpec(
+            "setup-back",
+            "Go back to the previous gap-interview question, filled in with the saved answer.",
+            _back,
             read_only=False,
             chat_allowed=False,
         ),

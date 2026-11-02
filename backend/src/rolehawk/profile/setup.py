@@ -266,17 +266,20 @@ class SetupService:
         return interview.state(new_profile, new_prefs, progress)
 
     def skip(self, question_id: str) -> InterviewState:
-        current = self.interview_state()
-        open_ids = {
-            q.id: q
-            for q in interview.open_questions(
-                self._profiles.load_profile(), self._profiles.load_preferences(), self._progress()
-            )
-        }
-        question = open_ids.get(question_id)
-        if question is None:
-            return current
-        progress = interview.skip(question_id, self._progress(), required=not question.optional)
+        """Skip an open question (or keep the saved answer to one that Back went to)."""
+        profile = self._profiles.load_profile()
+        prefs = self._profiles.load_preferences()
+        progress = self._progress()
+        questions = interview.open_questions(profile, prefs, progress)
+        question = next((q for q in questions if q.id == question_id), None)
+        if question is not None:
+            progress = interview.skip(question, progress)
+            self._state.set(INTERVIEW_KEY, progress.model_dump())
+        return interview.state(profile, prefs, progress)
+
+    def back(self) -> InterviewState:
+        """Ask the previous question again, filled in with the saved answer."""
+        progress = interview.back(self._progress())
         self._state.set(INTERVIEW_KEY, progress.model_dump())
         return self.interview_state()
 

@@ -1,7 +1,7 @@
-import { PartyPopperIcon } from "lucide-react";
+import { ArrowLeftIcon, PartyPopperIcon } from "lucide-react";
 
 import { errorText } from "@/api/errors";
-import { useAnswer, useInterview, useSkipQuestion } from "@/api/queries";
+import { useAnswer, useInterview, useInterviewBack, useSkipQuestion } from "@/api/queries";
 import { FormSkeleton } from "@/components/feedback/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +12,7 @@ export function InterviewStep({ onDone }: { onDone: () => void }) {
   const interview = useInterview();
   const answer = useAnswer();
   const skip = useSkipQuestion();
+  const back = useInterviewBack();
 
   if (interview.isPending) return <FormSkeleton label="Loading questions" />;
   if (interview.isError) {
@@ -23,7 +24,12 @@ export function InterviewStep({ onDone }: { onDone: () => void }) {
   const { question, answered, remaining, complete } = interview.data;
   const total = answered + remaining;
   const percent = total === 0 ? 100 : Math.round((answered / total) * 100);
-  const failure = answer.error ?? skip.error;
+  const failure = answer.error ?? skip.error ?? back.error;
+  const resetAll = () => {
+    answer.reset();
+    skip.reset();
+    back.reset();
+  };
 
   if (complete || !question) {
     return (
@@ -34,7 +40,26 @@ export function InterviewStep({ onDone }: { onDone: () => void }) {
           Everything you told me is in your profile and preferences. You can edit them any time on
           the Profile page.
         </p>
-        <Button onClick={onDone}>Continue</Button>
+        <div className="flex items-center gap-2">
+          {interview.data.can_go_back && (
+            <Button
+              variant="ghost"
+              disabled={back.isPending}
+              onClick={() => {
+                back.mutate();
+              }}
+            >
+              <ArrowLeftIcon aria-hidden />
+              Back
+            </Button>
+          )}
+          <Button onClick={onDone}>Continue</Button>
+        </div>
+        {back.error && (
+          <p role="alert" className="text-sm text-destructive">
+            {errorText(back.error, "Couldn't go back. Try again.")}
+          </p>
+        )}
       </div>
     );
   }
@@ -51,17 +76,23 @@ export function InterviewStep({ onDone }: { onDone: () => void }) {
         <Progress value={percent} aria-label="Setup progress" className="h-1.5" />
       </div>
       <QuestionCard
-        key={question.id}
+        // A new card per question, and per saved answer when Back asks one again.
+        key={`${question.id}|${question.skip_label}|${JSON.stringify(question.value)}`}
         question={question}
-        pending={answer.isPending || skip.isPending}
+        pending={answer.isPending || skip.isPending || back.isPending}
         error={failure ? errorText(failure, "Something went wrong. Try again.") : null}
+        canGoBack={interview.data.can_go_back}
         onAnswer={(value) => {
-          skip.reset();
+          resetAll();
           answer.mutate({ questionId: question.id, value });
         }}
         onSkip={() => {
-          answer.reset();
+          resetAll();
           skip.mutate(question.id);
+        }}
+        onBack={() => {
+          resetAll();
+          back.mutate();
         }}
       />
     </div>

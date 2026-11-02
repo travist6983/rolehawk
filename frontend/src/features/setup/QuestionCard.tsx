@@ -1,5 +1,5 @@
-import { CheckIcon, PlusIcon, XIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { ArrowLeftIcon, CheckIcon, PlusIcon, XIcon } from "lucide-react";
+import { type KeyboardEvent, useId, useState } from "react";
 
 import type { AnswerValue, Question } from "@/api/queries";
 import { Button } from "@/components/ui/button";
@@ -12,24 +12,64 @@ interface QuestionCardProps {
   question: Question;
   pending: boolean;
   error: string | null;
+  canGoBack: boolean;
   onAnswer: (value: AnswerValue) => void;
   onSkip: () => void;
+  onBack: () => void;
 }
 
+/** Questions that collect several items: chips, plus a box that adds more with Enter. */
+function collectsItems(question: Question): boolean {
+  return question.kind === "multi" || question.kind === "list";
+}
+
+function splitItems(text: string): string[] {
+  return text
+    .split(/[,\n]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function isChoice(question: Question, value: string): boolean {
+  return question.choices.some((choice) => choice.value === value);
+}
+
+/** The text box's starting value. A saved single answer shows there only when it isn't one of
+ * the choices (a typed "other"); item lists start as chips instead. */
 function initialText(question: Question): string {
   const { value } = question;
+  if (collectsItems(question)) return "";
+  if (question.kind === "single") {
+    return typeof value === "string" && !isChoice(question, value) ? value : "";
+  }
   if (typeof value === "string") return value;
   if (Array.isArray(value)) return value.join(", ");
   return "";
 }
 
+/** Saved items (multi and list questions start with them selected). */
+function initialItems(question: Question): string[] {
+  const { value } = question;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") return splitItems(value);
+  return [];
+}
+
 type FormValues = Record<string, string | string[]>;
 
-/** List fields (links) start with one empty box; text fields start empty. */
+/** A form starts from the saved answer; list fields (links) always show at least one box. */
 function initialForm(question: Question): FormValues {
+  const saved = question.value && typeof question.value === "object" ? question.value : {};
+  const values = Array.isArray(saved) ? {} : saved;
   const form: FormValues = {};
   for (const field of question.fields) {
-    if (field.kind === "list") form[field.name] = [""];
+    const value = values[field.name];
+    if (field.kind === "list") {
+      const items = Array.isArray(value) ? value : value ? [value] : [];
+      form[field.name] = items.length > 0 ? [...items] : [""];
+    } else if (typeof value === "string") {
+      form[field.name] = value;
+    }
   }
   return form;
 }
@@ -48,37 +88,62 @@ function filled(value: string | string[] | undefined): boolean {
   return (value ?? "").trim() !== "";
 }
 
-function splitOther(text: string): string[] {
-  return text
-    .split(/[,\n]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
+/** Enter in a box that collects items adds them; it never submits the question. */
+function enterAdds(event: KeyboardEvent<HTMLInputElement>, add: () => void) {
+  if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  add();
 }
 
-/** One interview question. Remount it per question (key={question.id}) to reset its state. */
-export function QuestionCard({ question, pending, error, onAnswer, onSkip }: QuestionCardProps) {
+/** One interview question. Remount it per question (see InterviewStep's key) to reset it. */
+export function QuestionCard({
+  question,
+  pending,
+  error,
+  canGoBack,
+  onAnswer,
+  onSkip,
+  onBack,
+}: QuestionCardProps) {
   const promptId = useId();
   const errorId = useId();
   const [text, setText] = useState(() => initialText(question));
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(() => initialItems(question));
+  // Items typed in (not among the choices), shown as chips after the choices.
+  const [added, setAdded] = useState<string[]>(() =>
+    initialItems(question).filter((item) => !isChoice(question, item)),
+  );
   const [form, setForm] = useState<FormValues>(() => initialForm(question));
 
+  const chips = [...question.choices, ...added.map((item) => ({ value: item, label: item }))];
+
+  const addTyped = () => {
+    const items = splitItems(text);
+    if (items.length === 0) return;
+    const known = new Set(chips.map((chip) => chip.value.toLowerCase()));
+    const values = items.map(
+      (item) =>
+        chips.find((chip) => chip.value.toLowerCase() === item.toLowerCase())?.value ?? item,
+    );
+    setAdded([...added, ...items.filter((item) => !known.has(item.toLowerCase()))]);
+    setSelected([...selected, ...values.filter((value) => !selected.includes(value))]);
+    setText("");
+  };
+
   const submit = () => {
-    switch (question.kind) {
-      case "multi":
-        onAnswer([...selected, ...splitOther(text)]);
-        break;
-      case "form":
-        onAnswer(formAnswer(form));
-        break;
-      default:
-        onAnswer(text);
+    if (collectsItems(question)) {
+      const typed = splitItems(text).filter((item) => !selected.includes(item));
+      onAnswer([...selected, ...typed]);
+    } else if (question.kind === "form") {
+      onAnswer(formAnswer(form));
+    } else {
+      onAnswer(text);
     }
   };
 
   const canSubmit =
     !pending &&
-    (question.kind === "multi"
+    (collectsItems(question)
       ? selected.length > 0 || text.trim() !== ""
       : question.kind === "form"
         ? question.fields.every((f) => !f.required || filled(form[f.name]))
@@ -103,36 +168,45 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
       </div>
 
       {question.kind === "single" && (
-        // Choosing an option answers immediately, so these are plain buttons in a group.
+        // Choosing an option answers immediately, so these are plain buttons in a group. After
+        // Back, the saved answer is marked.
         <div role="group" aria-labelledby={promptId} className="grid gap-2 sm:grid-cols-2">
-          {question.choices.map((choice) => (
-            <button
-              key={choice.value}
-              type="button"
-              disabled={pending}
-              onClick={() => {
-                onAnswer(choice.value);
-              }}
-              className="rounded-lg border bg-card px-4 py-3 text-left text-sm font-medium transition-colors duration-150 hover:border-primary hover:bg-primary/5 disabled:opacity-50"
-            >
-              {choice.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {question.kind === "multi" && (
-        <div className="flex flex-wrap gap-2" role="group" aria-labelledby={promptId}>
           {question.choices.map((choice) => {
-            const on = selected.includes(choice.value);
+            const saved = choice.value === question.value;
             return (
               <button
                 key={choice.value}
                 type="button"
+                disabled={pending}
+                aria-pressed={saved}
+                onClick={() => {
+                  onAnswer(choice.value);
+                }}
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded-lg border bg-card px-4 py-3 text-left text-sm font-medium transition-colors duration-150 hover:border-primary hover:bg-primary/5 disabled:opacity-50",
+                  saved && "border-primary bg-primary/5",
+                )}
+              >
+                {choice.label}
+                {saved && <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {collectsItems(question) && chips.length > 0 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby={promptId}>
+          {chips.map((chip) => {
+            const on = selected.includes(chip.value);
+            return (
+              <button
+                key={chip.value}
+                type="button"
                 aria-pressed={on}
                 onClick={() => {
                   setSelected(
-                    on ? selected.filter((v) => v !== choice.value) : [...selected, choice.value],
+                    on ? selected.filter((v) => v !== chip.value) : [...selected, chip.value],
                   );
                 }}
                 className={cn(
@@ -143,20 +217,49 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
                 )}
               >
                 {on && <CheckIcon className="size-3.5" aria-hidden />}
-                {choice.label}
+                {chip.label}
               </button>
             );
           })}
         </div>
       )}
 
-      {(question.kind === "text" ||
-        question.kind === "list" ||
-        (question.allow_other && question.kind !== "form")) && (
+      {collectsItems(question) && (question.kind === "list" || question.allow_other) && (
+        <div className="space-y-1.5">
+          {question.kind === "multi" && (
+            <Label htmlFor={`${promptId}-text`} className="text-muted-foreground">
+              Add your own
+            </Label>
+          )}
+          <div className="flex gap-2">
+            <Input
+              id={`${promptId}-text`}
+              autoComplete="off"
+              aria-labelledby={question.kind === "list" ? promptId : undefined}
+              aria-describedby={described}
+              value={text}
+              placeholder={question.placeholder ?? undefined}
+              onChange={(e) => {
+                setText(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                enterAdds(e, addTyped);
+              }}
+              autoFocus
+            />
+            <Button type="button" variant="outline" disabled={!text.trim()} onClick={addTyped}>
+              <PlusIcon aria-hidden />
+              Add
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {(question.kind === "text" || (question.allow_other && question.kind === "single")) && (
         <div className="space-y-1.5">
           {question.allow_other && (
             <Label htmlFor={`${promptId}-text`} className="text-muted-foreground">
-              {question.kind === "single" ? "Or type your own" : "Others (comma separated)"}
+              Or type your own
             </Label>
           )}
           {question.kind === "text" &&
@@ -266,6 +369,12 @@ export function QuestionCard({ question, pending, error, onAnswer, onSkip }: Que
       )}
 
       <div className="flex flex-wrap items-center gap-2">
+        {canGoBack && (
+          <Button type="button" variant="ghost" disabled={pending} onClick={onBack}>
+            <ArrowLeftIcon aria-hidden />
+            Back
+          </Button>
+        )}
         {question.kind !== "single" && (
           <Button type="submit" disabled={!canSubmit}>
             {pending ? "Saving…" : "Continue"}
@@ -290,10 +399,20 @@ interface ListFieldProps {
   onChange: (items: string[]) => void;
 }
 
-/** One box per item, a button to add another, and a remove button on each extra box. */
+/** One box per item, a button to add another, and a remove button on each extra box. Enter in
+ * a filled box moves to an empty one (adding it if needed) instead of submitting. */
 function ListField({ id, label, placeholder, items, describedBy, onChange }: ListFieldProps) {
   const labelId = `${id}-label`;
   const [focusLast, setFocusLast] = useState(false);
+  const addBox = () => {
+    const last = items.length - 1;
+    if (items[last]?.trim() === "") {
+      document.getElementById(`${id}-${last}`)?.focus();
+      return;
+    }
+    setFocusLast(true);
+    onChange([...items, ""]);
+  };
   return (
     <div role="group" aria-labelledby={labelId} className="space-y-2 sm:col-span-2">
       <Label id={labelId} htmlFor={`${id}-0`}>
@@ -316,6 +435,11 @@ function ListField({ id, label, placeholder, items, describedBy, onChange }: Lis
                 autoFocus={focusLast && index === items.length - 1}
                 onChange={(e) => {
                   onChange(items.map((v, i) => (i === index ? e.target.value : v)));
+                }}
+                onKeyDown={(e) => {
+                  enterAdds(e, () => {
+                    if (item.trim()) addBox();
+                  });
                 }}
               />
               {items.length > 1 && (
