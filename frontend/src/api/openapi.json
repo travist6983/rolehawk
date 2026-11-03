@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.10"
+    "version": "0.2.11"
   },
   "paths": {
     "/api/health": {
@@ -8137,6 +8137,10 @@
             "title": "Outside Preferences",
             "description": "Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it"
           },
+          "facts": {
+            "$ref": "#/components/schemas/JobFacts",
+            "description": "Quick facts read from the posting, with no AI"
+          },
           "description": {
             "type": "string",
             "title": "Description",
@@ -8199,12 +8203,61 @@
           "stale_days",
           "integrity",
           "outside_preferences",
+          "facts",
           "description",
           "summary_only",
           "application_id",
           "integrity_report"
         ],
         "title": "JobDetail"
+      },
+      "JobFacts": {
+        "properties": {
+          "work_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "remote",
+                  "hybrid",
+                  "on-site"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Mode",
+            "description": "Remote, hybrid, or on-site, when the posting says"
+          },
+          "years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Years",
+            "description": "The most years of experience the posting asks for"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills",
+            "description": "The user's skills the posting names, profile order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "work_mode",
+          "years",
+          "skills"
+        ],
+        "title": "JobFacts"
       },
       "JobPage": {
         "properties": {
@@ -8482,6 +8535,10 @@
             ],
             "title": "Outside Preferences",
             "description": "Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/JobFacts",
+            "description": "Quick facts read from the posting, with no AI"
           }
         },
         "type": "object",
@@ -8511,7 +8568,8 @@
           "deadline",
           "stale_days",
           "integrity",
-          "outside_preferences"
+          "outside_preferences",
+          "facts"
         ],
         "title": "JobRow"
       },

@@ -95,6 +95,24 @@ export const OUTSIDE_DETAIL: Record<OutsideReason, string> = {
   excluded: "Its title or company has one of your excluded words or deal breakers.",
 };
 
+export const WORK_MODE: Record<NonNullable<JobRow["facts"]["work_mode"]>, string> = {
+  remote: "Remote",
+  hybrid: "Hybrid",
+  "on-site": "On-site",
+};
+
+/** "Hybrid · 5+ yrs · React, TypeScript, Node.js +2": the posting's quick facts, or null. */
+export function factsText(facts: JobRow["facts"], shown = 3): string | null {
+  const skills = facts.skills.slice(0, shown).join(", ");
+  const more = facts.skills.length - shown;
+  const parts = [
+    facts.work_mode && WORK_MODE[facts.work_mode],
+    facts.years !== null && `${String(facts.years)}+ yrs`,
+    skills && (more > 0 ? `${skills} +${String(more)}` : skills),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 export function whereText(job: Pick<JobRow, "location" | "remote">): string {
   if (job.location && job.remote && !/remote/i.test(job.location)) {
     return `${job.location} (remote)`;

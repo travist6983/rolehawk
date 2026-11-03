@@ -104,6 +104,28 @@ describe("DiscoverPage", () => {
     });
   });
 
+  it("shows quick facts from the posting before ranking", async () => {
+    const facts = {
+      work_mode: "hybrid" as const,
+      years: 5,
+      skills: ["React", "TypeScript", "Node.js", "Postgres"],
+    };
+    server.use(
+      http.get("/api/jobs", () =>
+        HttpResponse.json(jobPage([jobRow({ id: 1, score: null, reasons: [], facts })])),
+      ),
+      http.get("/api/jobs/1", () => HttpResponse.json(jobDetail({ score: null, facts }))),
+    );
+    const { user } = await renderApp("/discover");
+    const row = (await screen.findByRole("table")).querySelector("tbody tr");
+    expect(row).toHaveTextContent("Hybrid · 5+ yrs · React, TypeScript, Node.js +1");
+
+    await user.click(screen.getByRole("button", { name: "Senior Data Analyst" }));
+    const sheet = await screen.findByRole("dialog");
+    expect(sheet).toHaveTextContent("Hybrid · Asks for 5+ years of experience");
+    expect(sheet).toHaveTextContent("Your skills it names: React, TypeScript, Node.js, Postgres");
+  });
+
   it("sends filters to the API", async () => {
     const requests = withJobs();
     const { user } = await renderApp("/discover");
@@ -347,6 +369,7 @@ describe("DiscoverPage", () => {
     expect(dialog).toHaveTextContent(
       "Skipped 16: 5 in other countries, 8 outside your locations, 3 below your salary floor.",
     );
+    expect(dialog).toHaveTextContent("on your Claude plan instead of API credit");
     await user.click(within(dialog).getByRole("button", { name: "Rank 42 jobs" }));
     await waitFor(() => {
       expect(started).toEqual({ job_ids: null, rescore: false });

@@ -74,6 +74,13 @@ function PlanDetails({ plan }: { plan: RankPlan }) {
         </p>
       )}
       {skipped && <p className="text-muted-foreground">{skipped}</p>}
+      <p className="flex gap-2 text-muted-foreground">
+        <TerminalIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>
+          Using Claude Code? Run <span className="font-mono">/rank</span> there to score these on
+          your Claude plan instead of API credit.
+        </span>
+      </p>
       {plan.exceeds_cap && (
         <p className="flex gap-2 text-destructive" role="alert">
           <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />

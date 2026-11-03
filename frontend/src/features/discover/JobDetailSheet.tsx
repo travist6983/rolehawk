@@ -24,7 +24,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { OUTSIDE_DETAIL, deadlineText, safeUrl, staleText, whereText } from "./discoverText";
+import {
+  OUTSIDE_DETAIL,
+  deadlineText,
+  WORK_MODE,
+  safeUrl,
+  staleText,
+  whereText,
+} from "./discoverText";
 import { FitBreakdown, FitGates } from "./FitDetails";
 import { IntegrityNotice } from "./IntegrityNotice";
 
@@ -63,6 +70,27 @@ function Concerns({ concerns, onRescore }: { concerns: string[] | null; onRescor
         <FitList items={concerns} marker="−" tone="text-caution" />
       ) : (
         <p className="text-muted-foreground">Nothing stands out against it.</p>
+      )}
+    </div>
+  );
+}
+
+/** What the posting says about the work, the experience it asks for, and the user's skills
+ * it names: read without AI, so it shows before the job is ranked. */
+function JobFactsLine({ facts }: { facts: JobDetail["facts"] }) {
+  const work = [
+    facts.work_mode && WORK_MODE[facts.work_mode],
+    facts.years !== null && `Asks for ${String(facts.years)}+ years of experience`,
+  ].filter(Boolean);
+  if (work.length === 0 && facts.skills.length === 0) return null;
+  return (
+    <div className="space-y-0.5 pt-1 text-sm">
+      {work.length > 0 && <p className="text-foreground-2">{work.join(" · ")}</p>}
+      {facts.skills.length > 0 && (
+        <p className="text-foreground-2">
+          <span className="text-muted-foreground">Your skills it names: </span>
+          {facts.skills.join(", ")}
+        </p>
       )}
     </div>
   );
@@ -256,6 +284,7 @@ export function JobDetailSheet({
                   .filter(Boolean)
                   .join(" · ")}
               </SheetDescription>
+              <JobFactsLine facts={data.facts} />
               <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span>via {data.source}</span>
                 {deadlineText(data) && (

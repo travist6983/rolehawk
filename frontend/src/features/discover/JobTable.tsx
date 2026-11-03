@@ -9,9 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { OUTSIDE_TEXT, deadlineText, gateNote, staleText, whereText } from "./discoverText";
+import {
+  OUTSIDE_TEXT,
+  deadlineText,
+  factsText,
+  gateNote,
+  staleText,
+  whereText,
+} from "./discoverText";
 
-const ROW_HEIGHT = 66;
+const ROW_HEIGHT = 84; // title, company, and quick facts
 const LOAD_MORE_WITHIN = 30; // rows from the end
 // A container that measures 0 (hidden, or jsdom in tests) still renders a screenful of rows.
 const FALLBACK_RECT = { width: 1024, height: 900 };
@@ -197,6 +204,11 @@ export function JobTable({
                     )}
                     <span className="truncate md:hidden">· {whereText(job)}</span>
                   </span>
+                  {factsText(job.facts) && (
+                    <span className="block truncate text-[12.5px] text-muted-foreground">
+                      {factsText(job.facts)}
+                    </span>
+                  )}
                 </td>
                 <td className="hidden truncate pr-3 md:table-cell">{whereText(job)}</td>
                 <td className="hidden truncate pr-3 tabular-nums xl:table-cell">
