@@ -16,7 +16,15 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 
 from rolehawk.chat.tools import ToolContext, chat_tools, execute
-from rolehawk.db.models import Application, Job, JobScore, RemotePolicy, SearchTarget, Stage
+from rolehawk.db.models import (
+    Application,
+    Job,
+    JobScore,
+    PortalKind,
+    RemotePolicy,
+    SearchTarget,
+    Stage,
+)
 from rolehawk.db.types import utcnow
 from rolehawk.fit import ranker as ranker_module
 from rolehawk.fit.filters import (
@@ -27,13 +35,14 @@ from rolehawk.fit.filters import (
     location_ok,
     salary_max,
 )
-from rolehawk.fit.ranker import NothingToRankError, Ranker, RankParams
+from rolehawk.fit.ranker import NothingToRankError, Ranker, RankParams, job_text
 from rolehawk.fit.rubric import FIT_RUBRIC, FitBatch, Gate
 from rolehawk.jobs.store import JobQuery
 from rolehawk.llm.errors import LLMNotConfiguredError, LLMUnavailableError, SpendCapExceededError
 from rolehawk.llm.fake import FakeProvider
 from rolehawk.llm.service import LLMService
 from rolehawk.llm.types import LLMRequest, Task
+from rolehawk.portals.scrape import ensure_source
 from rolehawk.profile.model import Preferences, RemotePreference, SalaryFloor
 from rolehawk.services.runtime import Runtime
 from tests.fits import fit_json, fit_of
@@ -78,11 +87,12 @@ def add_jobs(
     salary: str | None = None,
     company: str = "Acme",
     remote: bool | None = None,
+    portal_id: str = "greenhouse",
 ) -> list[int]:
     with runtime.sessions.begin() as session:
         jobs = [
             Job(
-                portal_id="greenhouse",
+                portal_id=portal_id,
                 external_id=f"job-{next(_UNIQUE)}",
                 url=f"https://example.com/{i}",
                 company=company,
@@ -553,6 +563,39 @@ def test_claude_code_can_score_through_commands(client: TestClient) -> None:
     assert run("rank-save", {"scores": [older_skill]}) == {"saved": 1}
     assert runtime.jobs.get(ids[1]).concerns == []
     assert run("rank-candidates", {})["left_after_this_batch"] == 0
+
+
+async def test_job_listing_counts_and_filters_by_target(runtime: Runtime) -> None:
+    with runtime.sessions.begin() as session:
+        session.add_all(
+            [
+                SearchTarget(title="Data Analyst", country="US"),
+                SearchTarget(title="Staff Engineer", country="US"),
+            ]
+        )
+    analysts = add_jobs(runtime, 2)
+    (staff,) = add_jobs(runtime, 1, title="Staff Software Engineer, Backend")
+    (chef,) = add_jobs(runtime, 1, title="Pastry Chef")
+    runtime.jobs.set_dismissed([analysts[1]])
+
+    page = runtime.jobs.list(JobQuery())
+    assert {t.title: t.jobs for t in page.targets} == {"Data Analyst": 1, "Staff Engineer": 1}
+    assert [j.id for j in runtime.jobs.list(JobQuery(target="Staff Engineer")).items] == [staff]
+    assert runtime.jobs.list(JobQuery(target="Gone")).total == 0
+    assert chef in [j.id for j in page.items]
+
+
+async def test_summary_only_postings_are_marked(runtime: Runtime) -> None:
+    with runtime.sessions.begin() as session:
+        ensure_source(session, "adzuna", "Adzuna", PortalKind.FEED)
+    (summary,) = add_jobs(runtime, 1, portal_id="adzuna")
+    (full,) = add_jobs(runtime, 1)
+    assert runtime.jobs.get(summary).summary_only is True
+    assert runtime.jobs.get(full).summary_only is False
+    with runtime.sessions() as session:
+        jobs = {j.id: j for j in session.scalars(select(Job))}
+        assert "short summary, not the full posting" in job_text(jobs[summary])
+        assert "short summary" not in job_text(jobs[full])
 
 
 async def test_chat_sees_job_text_as_untrusted(runtime: Runtime) -> None:

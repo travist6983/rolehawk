@@ -484,6 +484,7 @@ export type JobRow = Schemas["JobRow"];
 export type JobDetail = Schemas["JobDetail"];
 export type JobPage = Schemas["JobPage"];
 export type JobStats = Schemas["JobStats"];
+export type TargetCount = Schemas["TargetCount"];
 export type RankPlan = Schemas["RankPlan"];
 export type RankParams = Schemas["RankParams"];
 export type FilterCounts = Schemas["FilterCounts"];
@@ -509,6 +510,7 @@ function compact(filters: JobFilters): JobFilters {
     ...filters,
     q: filters.q || undefined,
     portal_id: filters.portal_id || undefined,
+    target: filters.target || undefined,
     min_score: filters.min_score ?? undefined,
   };
 }

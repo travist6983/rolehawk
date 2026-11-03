@@ -7,10 +7,11 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 
 from rolehawk.db.models import PortalKind, RiskLevel
-from rolehawk.portals.base import NormalizedJob, PortalContext, PortalError, RawJob
+from rolehawk.portals.base import NormalizedJob, PortalContext, PortalError, RawJob, SearchQuery
 from rolehawk.portals.http import HttpError
 from rolehawk.portals.integrity import clean_posting
 from rolehawk.portals.text import (
+    fix_mojibake,
     html_to_text,
     looks_remote,
     parse_date,
@@ -50,19 +51,25 @@ class RemoteOK:
 
     def normalize(self, raw: RawJob) -> NormalizedJob:
         job = raw.data
-        desc = clean_posting(job.get("description"))
+        # Some postings arrive as UTF-8 read as Latin-1 ("we\u00e2\u0080\u0099re").
+        desc = clean_posting(fix_mojibake(job.get("description")))
         return NormalizedJob(
             external_id=raw.external_id,
             url=job.get("url") or f"https://remoteok.com/remote-jobs/{raw.external_id}",
-            company=html_to_text(job.get("company")),
-            title=html_to_text(job["position"]),  # titles arrive entity-encoded
-            location=job.get("location") or "Remote",
+            company=html_to_text(fix_mojibake(job.get("company"))),
+            title=html_to_text(fix_mojibake(job["position"])),  # titles arrive entity-encoded
+            location=fix_mojibake(job.get("location")) or "Remote",
             remote=True,
             salary_text=salary_range(job.get("salary_min"), job.get("salary_max"), "USD", "year"),
             description=desc.text,
             integrity=desc.integrity,
             posted_at=parse_datetime(job.get("date") or job.get("epoch")),
         )
+
+
+# Sources whose API returns only a short summary of each posting (Adzuna: about 500
+# characters). Their job pages refuse tools, so the full text needs the user's browser.
+SUMMARY_ONLY_SOURCES: frozenset[str] = frozenset({"adzuna"})
 
 
 class WeWorkRemotely:
@@ -129,36 +136,53 @@ class Adzuna:
     docs_url = "https://developer.adzuna.com/docs/search"
     PAGES = 2
     PER_PAGE = 50
+    COMMUTE_KM = 40  # about 25 miles around a target's location (Adzuna's default is tiny)
+
+    @classmethod
+    def _searches(cls, query: SearchQuery) -> list[dict[str, str | int]]:
+        """A target with a location is searched twice: within commuting distance of it, and
+        across the country for remote postings (which name some other city, or none)."""
+        if not query.locations or query.remote_only:
+            return [{"what": query.title}]
+        return [
+            {"what": query.title, "where": query.locations[0], "distance": cls.COMMUTE_KM},
+            {"what": f"{query.title} remote"},
+        ]
 
     async def search(self, ctx: PortalContext, since: datetime | None) -> AsyncIterator[RawJob]:
         for query in ctx.queries:
             country = query.country.lower()
             if query.country.upper() not in self.countries:
                 continue
-            for page in range(1, self.PAGES + 1):
-                params: dict[str, str | int] = {
-                    "app_id": ctx.secrets["adzuna_app_id"],
-                    "app_key": ctx.secrets["adzuna_app_key"],
-                    "what": query.title,
-                    "results_per_page": self.PER_PAGE,
-                    "max_days_old": 30,
-                    "content-type": "application/json",
-                }
-                if query.locations and not query.remote_only:
-                    params["where"] = query.locations[0]
-                try:
-                    data = await ctx.http.json(
-                        f"https://{self.host}/v1/api/jobs/{country}/search/{page}", params=params
-                    )
-                except HttpError as exc:
-                    if exc.status in (401, 403):
-                        raise PortalError("Adzuna rejected the app ID or key") from exc
-                    raise
-                results = data.get("results", [])
-                for job in results:
-                    yield RawJob(str(job["id"]), job)
-                if len(results) < self.PER_PAGE:
-                    break
+            for search in self._searches(query):
+                async for raw in self._pages(ctx, country, search):
+                    yield raw
+
+    async def _pages(
+        self, ctx: PortalContext, country: str, search: dict[str, str | int]
+    ) -> AsyncIterator[RawJob]:
+        for page in range(1, self.PAGES + 1):
+            params: dict[str, str | int] = {
+                "app_id": ctx.secrets["adzuna_app_id"],
+                "app_key": ctx.secrets["adzuna_app_key"],
+                **search,
+                "results_per_page": self.PER_PAGE,
+                "max_days_old": 30,
+                "content-type": "application/json",
+            }
+            try:
+                data = await ctx.http.json(
+                    f"https://{self.host}/v1/api/jobs/{country}/search/{page}", params=params
+                )
+            except HttpError as exc:
+                if exc.status in (401, 403):
+                    raise PortalError("Adzuna rejected the app ID or key") from exc
+                raise
+            results = data.get("results", [])
+            for job in results:
+                yield RawJob(str(job["id"]), job)
+            if len(results) < self.PER_PAGE:
+                break
 
     def normalize(self, raw: RawJob) -> NormalizedJob:
         job = raw.data

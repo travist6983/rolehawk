@@ -9,6 +9,32 @@ from datetime import UTC, date, datetime
 from rolehawk.portals.integrity import clean_posting
 
 
+def _chars(low: int, high: int) -> str:
+    return f"[{chr(low)}-{chr(high)}]"
+
+
+# A UTF-8 character that was decoded as Latin-1: its lead byte, then its continuation bytes.
+_TAIL = _chars(0x80, 0xBF)
+_MOJIBAKE = re.compile(
+    f"{_chars(0xC2, 0xDF)}{_TAIL}|{_chars(0xE0, 0xEF)}{_TAIL}{{2}}|{_chars(0xF0, 0xF4)}{_TAIL}{{3}}"
+)
+
+
+def fix_mojibake(text: str | None) -> str | None:
+    """Undo UTF-8 that was read as Latin-1 (a curly apostrophe arriving as three odd
+    characters), which some feeds send. A run that doesn't decode as UTF-8 is left as it is."""
+    if not text:
+        return text
+
+    def repair(match: re.Match[str]) -> str:
+        try:
+            return match.group().encode("latin-1").decode("utf-8")
+        except UnicodeDecodeError:
+            return match.group()
+
+    return _MOJIBAKE.sub(repair, text)
+
+
 def html_to_text(markup: str | None) -> str:
     """Readable plain text from HTML (entity-escaped HTML too), with hidden elements and
     invisible characters removed (portals/integrity.py). Descriptions use clean_posting()

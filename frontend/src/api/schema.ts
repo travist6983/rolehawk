@@ -2953,6 +2953,12 @@ export interface components {
              * @description Third-party text from the posting
              */
             description: string;
+            /**
+             * Summary Only
+             * @description The source shares only a short summary; the full posting is on its page
+             * @default false
+             */
+            summary_only: boolean;
             /** Application Id */
             application_id: number | null;
             /** @description What the integrity check removed or found; null when nothing */
@@ -2965,6 +2971,11 @@ export interface components {
             /** Total */
             total: number;
             stats: components["schemas"]["JobStats"];
+            /**
+             * Targets
+             * @description Each target and how many jobs it matches
+             */
+            targets?: components["schemas"]["TargetCount"][];
         };
         /** JobRow */
         JobRow: {
@@ -4114,6 +4125,19 @@ export interface components {
             stage?: components["schemas"]["Stage"] | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** TargetCount */
+        TargetCount: {
+            /**
+             * Title
+             * @description An active search target's title
+             */
+            title: string;
+            /**
+             * Jobs
+             * @description Jobs that aren't dismissed whose title matches it
+             */
+            jobs: number;
         };
         /**
          * Task
@@ -5821,6 +5845,8 @@ export interface operations {
                 remote?: boolean;
                 /** @description Only jobs your country, locations, salary floor, and excluded words allow (Discover turns this on by default) */
                 fits_preferences?: boolean;
+                /** @description Only jobs whose title matches this target */
+                target?: string | null;
                 sort?: "score" | "newest";
                 limit?: number;
                 offset?: number;

@@ -27,6 +27,7 @@ from rolehawk.portals.http import USER_AGENT, HostPacer, HttpError, PoliteClient
 from rolehawk.portals.matching import job_matches, title_matches, tokens
 from rolehawk.portals.registry import ATS_IDS, BUILTIN, get_portal
 from rolehawk.portals.text import (
+    fix_mojibake,
     html_to_text,
     job_hash,
     looks_remote,
@@ -176,6 +177,27 @@ async def test_remoteok_skips_legal_notice_and_links_back() -> None:
     assert jobs[2].title == "Online Client Support & Travel Booking We Will Train You"
 
 
+async def test_remoteok_repairs_text_sent_as_latin_1() -> None:
+    # Remote OK sends some postings as UTF-8 bytes read as Latin-1.
+    company = b"Sotheby\xe2\x80\x99s"
+    text = b"<p>$85,000\xe2\x80\x93$100,000 \xc2\xb7 caf\xc3\xa9</p>"
+    web = FakeWeb()
+    posting = {
+        "id": 9,
+        "position": "Front End Developer",
+        "company": company.decode("latin-1"),
+        "location": "",
+        "description": text.decode("latin-1"),
+    }
+    web.json("remoteok.com/api", [{"legal": "..."}, posting])
+    (job,), _ = await collect(RemoteOK(), web)
+    assert job.company == company.decode("utf-8")
+    assert f"<p>{job.description}</p>" == text.decode("utf-8")
+    cut_short = b"\xe2\x80".decode("latin-1")  # not a whole UTF-8 character: kept
+    word = b"na\xc3\xafve"
+    assert fix_mojibake(f"{word.decode('latin-1')} {cut_short}") == f"{word.decode()} {cut_short}"
+
+
 async def test_weworkremotely_splits_company_from_title() -> None:
     web = FakeWeb().standard()
     jobs, _ = await collect(WeWorkRemotely(), web)
@@ -209,6 +231,22 @@ async def test_adzuna_sends_keys_and_marks_estimates() -> None:
     assert first.salary_text == "95,000-120,000"
     assert second.salary_text == "70,321 (Adzuna estimate)"
     assert second.remote is True
+
+
+async def test_adzuna_searches_a_commute_around_the_target_and_remote_jobs() -> None:
+    web = FakeWeb().standard()
+    secrets = {"adzuna_app_id": "id-1", "adzuna_app_key": "key-1"}
+    near = SearchQuery("Data Analyst", locations=("Sterling Heights, Michigan",), country="US")
+    await collect(Adzuna(), web, secrets=secrets, queries=[near])
+    searches = [dict(r.url.params) for r in web.requests]
+    assert [(p["what"], p.get("where"), p.get("distance")) for p in searches] == [
+        ("Data Analyst", "Sterling Heights, Michigan", "40"),
+        ("Data Analyst remote", None, None),
+    ]
+    web.requests.clear()
+    remote = dataclasses.replace(near, remote_only=True)
+    await collect(Adzuna(), web, secrets=secrets, queries=[remote])
+    assert [r.url.params.get("where") for r in web.requests] == [None]
 
 
 async def test_adzuna_skips_unsupported_countries_and_explains_bad_keys() -> None:
