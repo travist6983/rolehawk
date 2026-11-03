@@ -465,6 +465,15 @@ export function useSetCompanyEnabled() {
   });
 }
 
+export function useSwitchCompanies() {
+  const invalidate = useInvalidateSources();
+  return useMutation({
+    mutationFn: (body: { ids: number[]; enabled: boolean }) =>
+      unwrap(api.POST("/api/companies/enabled", { body })),
+    onSuccess: invalidate,
+  });
+}
+
 export function useRemoveCompany() {
   const invalidate = useInvalidateSources();
   return useMutation({

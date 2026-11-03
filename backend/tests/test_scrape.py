@@ -80,6 +80,7 @@ def watch(store: PortalStore) -> None:
         ("lever", "palantir", "Palantir"),
         ("ashby", "ramp", "Ramp"),
         ("workable", "workmotion", "WorkMotion"),
+        ("smartrecruiters", "BoschGroup", "Bosch"),
     ]:
         store.add_companies(ats, [CompanyIn(slug=slug, name=name)])
 
@@ -139,20 +140,21 @@ async def test_scrape_keeps_matching_jobs_and_dedupes_reruns(
         "lever": (2, 2),  # Administrative Business Partner in DC and NY (not Singapore)
         "ashby": (1, 1),  # Software Engineer, Frontend
         "workable": (0, 0),  # an Account Executive in Spain, Albania, and Portugal
+        "smartrecruiters": (2, 2),  # two Data Analyst roles in the US (not the engineer)
         "remoteok": (0, 0),
         "weworkremotely": (0, 0),
         "adzuna": (2, 2),
         "usajobs": (1, 1),
     }
     assert runs["greenhouse"].found == 3
-    assert summary.new == 6
+    assert summary.new == 8
     assert summary.queries == list(TARGETS)
-    assert progress.events[0] == (0.0, "Searching 8 sources")
+    assert progress.events[0] == (0.0, "Searching 9 sources")
     assert progress.events[-1][0] == 1.0
 
     with sessions() as session:
         rows = list(session.scalars(select(Job)))
-    assert len(rows) == 6
+    assert len(rows) == 8
     adzuna_job = next(j for j in rows if j.title == "Senior Data Analyst")
     assert (adzuna_job.portal_id, adzuna_job.company) == ("adzuna", "Northwind Analytics")
     assert adzuna_job.scraped_at.tzinfo is not None
@@ -161,7 +163,7 @@ async def test_scrape_keeps_matching_jobs_and_dedupes_reruns(
     assert again.new == 0
     assert again.duplicates == summary.new + summary.duplicates
     with sessions() as session:
-        assert session.scalar(select(func.count()).select_from(Job)) == 6
+        assert session.scalar(select(func.count()).select_from(Job)) == 8
 
 
 async def test_jobs_that_no_longer_match_a_target_are_removed(
@@ -567,6 +569,13 @@ def test_companies_api(api: tuple[TestClient, Runtime]) -> None:
 
     off = client.patch(f"/api/companies/{company['id']}", json={"enabled": False}).json()
     assert off["enabled"] is False
+    ids = [c["id"] for c in client.get("/api/companies?ats=ashby").json()]
+    switched = client.post("/api/companies/enabled", json={"ids": ids, "enabled": False})
+    assert switched.json()["changed"] == len(ids) - 1  # acme was already off
+    assert not any(c["enabled"] for c in client.get("/api/companies?ats=ashby").json())
+    assert client.post("/api/companies/enabled", json={"ids": ids, "enabled": True}).json() == {
+        "changed": len(ids)
+    }
     assert client.delete(f"/api/companies/{company['id']}").status_code == 204
     assert client.delete(f"/api/companies/{company['id']}").status_code == 404
     assert client.patch("/api/companies/99999", json={"enabled": True}).status_code == 404

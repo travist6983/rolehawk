@@ -36,7 +36,7 @@ backend/                 Python 3.12 package `rolehawk` (uv, FastAPI)
                          TXT/LinkedIn ZIP), extraction, gap interview, /setup
     chat/                chat turns (streaming, tool loop), tools, read-only pipeline SQL
     portals/             job sources: Portal protocol, ATS boards (Greenhouse, Lever, Ashby,
-                         Workable) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
+                         Workable, SmartRecruiters) and feeds (Remote OK, WWR, Adzuna, USAJOBS), PoliteClient
                          (pacing, retries), title matching, Scraper (/scrape, dedupe),
                          PortalStore (source settings, company watchlist), integrity.py
                          (hidden text, invisible characters, lines aimed at AI), SOURCES.md

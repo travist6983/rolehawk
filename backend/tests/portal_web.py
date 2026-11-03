@@ -63,6 +63,10 @@ class FakeWeb:
         for page in (1, 2):
             self.fixture(f"api.adzuna.com/v1/api/jobs/us/search/{page}", "adzuna_us.json")
         self.fixture("data.usajobs.gov/api/search", "usajobs.json")
+        smart = "api.smartrecruiters.com/v1/companies/BoschGroup/postings"
+        self.fixture(smart, "smartrecruiters_list.json")
+        for posting in ("744000159434190", "744000159430569"):
+            self.fixture(f"{smart}/{posting}", f"smartrecruiters_{posting}.json")
         return self
 
     def handle(self, request: httpx2.Request) -> httpx2.Response:

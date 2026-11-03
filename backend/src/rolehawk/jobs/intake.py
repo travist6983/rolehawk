@@ -226,8 +226,9 @@ class JobIntake:
         return await asyncio.to_thread(self._from_page, url, host)
 
     async def _from_board(self, url: str) -> LinkDraft | None:
-        """A job on a Greenhouse, Lever, Ashby, or Workable board, from the board's public API:
-        it names the company and location, which the job page often doesn't."""
+        """A job on a Greenhouse, Lever, Ashby, Workable, or SmartRecruiters board, from the
+        board's public API: it names the company and location, which the job page often
+        doesn't."""
         found = ats_link(url)
         impl = next((p for p in BUILTIN if found and p.id == found[0]), None)
         if found is None or not isinstance(impl, AtsPortal):
@@ -239,7 +240,9 @@ class JobIntake:
             )
             ids = _link_ids(url)
             raw = next((r for r in raws if r.external_id in ids), None)
-            return _draft(url, impl.normalize(raw)) if raw else None
+            job = impl.normalize(raw) if raw else None
+            # A board whose list leaves out descriptions (SmartRecruiters): read the page.
+            return _draft(url, job) if job and job.description else None
         except (PortalError, HttpError, httpx2.HTTPError, KeyError, TypeError, ValueError):
             return None  # read the page instead
         finally:

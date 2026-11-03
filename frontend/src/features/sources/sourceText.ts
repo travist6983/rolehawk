@@ -21,13 +21,14 @@ export function isCompanyInTitle(value: string): value is CompanyInTitle {
   return value in COMPANY_IN_TITLE;
 }
 
-export type AtsId = "greenhouse" | "lever" | "ashby" | "workable";
+export type AtsId = "greenhouse" | "lever" | "ashby" | "workable" | "smartrecruiters";
 
 export const ATS_NAMES: Record<AtsId, string> = {
   greenhouse: "Greenhouse",
   lever: "Lever",
   ashby: "Ashby",
   workable: "Workable",
+  smartrecruiters: "SmartRecruiters",
 };
 
 export const ATS_IDS = Object.keys(ATS_NAMES) as AtsId[];
@@ -46,9 +47,11 @@ const BOARD_URLS: [RegExp, AtsId][] = [
   [/^jobs(?:\.eu)?\.lever\.co$/, "lever"],
   [/^jobs\.ashbyhq\.com$/, "ashby"],
   [/^apply\.workable\.com$/, "workable"],
+  [/^(?:jobs|careers)\.smartrecruiters\.com$/, "smartrecruiters"],
 ];
 
-const ATS_DOMAIN = /\.(?:greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com)$/i;
+const ATS_DOMAIN =
+  /\.(?:greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com)$/i;
 
 export interface CompanyEntry {
   ats: AtsId;

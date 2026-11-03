@@ -13,7 +13,7 @@ from typing import Any
 import httpx2
 import pytest
 
-from rolehawk.portals.ats import Ashby, Greenhouse, Lever, Workable
+from rolehawk.portals.ats import Ashby, Greenhouse, Lever, SmartRecruiters, Workable
 from rolehawk.portals.base import (
     CompanyRef,
     NormalizedJob,
@@ -59,7 +59,7 @@ async def collect(
 def test_registry_has_unique_ids_and_ats_need_watchlist() -> None:
     ids = [p.id for p in BUILTIN]
     assert len(ids) == len(set(ids))
-    assert {"greenhouse", "lever", "ashby", "workable"} == ATS_IDS
+    assert {"greenhouse", "lever", "ashby", "workable", "smartrecruiters"} == ATS_IDS
     assert get_portal("remoteok").name == "Remote OK"
     with pytest.raises(KeyError):
         get_portal("nope")
@@ -163,6 +163,41 @@ async def test_ats_company_failures_are_reported_not_fatal() -> None:
     assert errors["gone"] == "not found on this ATS"
     assert errors["broken"].startswith("unexpected response")
     assert errors["down"] == "HTTP 403"
+
+
+async def test_smartrecruiters_lists_per_country_and_reads_only_matching_postings() -> None:
+    base = "api.smartrecruiters.com/v1/companies/BoschGroup/postings"
+    web = FakeWeb()
+    web.fixture(base, "smartrecruiters_list.json")
+    for pid in ("744000159434190", "744000159430569"):
+        web.fixture(f"{base}/{pid}", f"smartrecruiters_{pid}.json")
+    jobs, _ = await collect(
+        SmartRecruiters(), web, companies=[CompanyRef("BoschGroup", "BoschGroup")]
+    )
+    assert [j.title for j in jobs] == ["Lead Data Analyst", "Data Analyst, Manufacturing"]
+    assert [r.url.params["country"] for r in web.hits(base)] == ["us"]
+    assert not web.hits(f"{base}/744000159420605")  # its title matches no target: not read
+    first = jobs[0]
+    assert first.company == "Bosch Group"
+    assert first.remote is True
+    assert first.url.startswith("https://jobs.smartrecruiters.com/BoschGroup/744000159434190")
+    assert first.description.startswith("Job Description")
+    assert "At Bosch, we care" not in first.description  # the company blurb is left out
+    assert jobs[1].location == "Farmington Hills, MI, United States"
+
+
+async def test_smartrecruiters_board_check_is_one_request() -> None:
+    web = FakeWeb()
+    web.fixture(
+        "api.smartrecruiters.com/v1/companies/BoschGroup/postings", "smartrecruiters_list.json"
+    )
+    http = web.client()
+    ctx = PortalContext(http=http, queries=())
+    jobs = await SmartRecruiters().fetch_company(ctx, CompanyRef("BoschGroup", "BoschGroup"))
+    await http.aclose()
+    assert len(jobs) == 3
+    assert len(web.requests) == 1
+    assert SmartRecruiters().normalize(jobs[0]).company == "Bosch Group"
 
 
 # --- feeds --------------------------------------------------------------------------------

@@ -32,6 +32,7 @@ ATS_LINKS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^jobs(?:\.eu)?\.lever\.co/([A-Za-z0-9._-]+)"), "lever"),
     (re.compile(r"^jobs\.ashbyhq\.com/([A-Za-z0-9._-]+)"), "ashby"),
     (re.compile(r"^apply\.workable\.com/([A-Za-z0-9._-]+)"), "workable"),
+    (re.compile(r"^(?:jobs|careers)\.smartrecruiters\.com/([A-Za-z0-9._-]+)"), "smartrecruiters"),
 ]
 TITLE_KEYS = ("title", "jobTitle", "job_title", "name", "position", "text")
 URL_KEYS = ("url", "absolute_url", "hostedUrl", "jobUrl", "applyUrl", "apply_url", "link", "href")

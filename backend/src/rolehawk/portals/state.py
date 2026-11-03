@@ -303,6 +303,17 @@ class PortalStore:
             session.flush()
             return CompanyView.model_validate(row)
 
+    def set_companies_enabled(self, company_ids: Sequence[int], enabled: bool) -> int:
+        """Switch many companies on or off at once (the ones the user is looking at)."""
+        with self._sessions.begin() as session:
+            rows = session.scalars(select(Company).where(Company.id.in_(company_ids)))
+            changed = 0
+            for row in rows:
+                if row.enabled != enabled:
+                    row.enabled = enabled
+                    changed += 1
+            return changed
+
     def remove_company(self, company_id: int) -> None:
         """User-added companies are deleted; starter ones are disabled so seeding won't
         bring them back."""

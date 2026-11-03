@@ -726,6 +726,26 @@ export interface paths {
         patch: operations["patch_company_api_companies__company_id__patch"];
         trace?: never;
     };
+    "/api/companies/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch Companies
+         * @description Switch many companies on or off at once.
+         */
+        post: operations["switch_companies_api_companies_enabled_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/companies/check": {
         parameters: {
             query?: never;
@@ -1867,6 +1887,13 @@ export interface components {
             ats: string;
             /** Companies */
             companies: components["schemas"]["CompanyIn"][];
+        };
+        /** CompaniesSwitch */
+        CompaniesSwitch: {
+            /** Ids */
+            ids: number[];
+            /** Enabled */
+            enabled: boolean;
         };
         /** CompanyCheck */
         CompanyCheck: {
@@ -4169,6 +4196,11 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** Switched */
+        Switched: {
+            /** Changed */
+            changed: number;
+        };
         /** TargetCount */
         TargetCount: {
             /**
@@ -5667,6 +5699,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompanyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    switch_companies_api_companies_enabled_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompaniesSwitch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Switched"];
                 };
             };
             /** @description Validation Error */

@@ -29,8 +29,8 @@ a follow-up after ten quiet days, or prepare for an interview.
 
 ### Find and rank jobs
 
-RoleHawk searches Greenhouse, Lever, Ashby, and Workable boards for a watchlist of companies
-you control, plus Remote OK, We Work Remotely, Adzuna, and USAJOBS, and Indeed through its
+RoleHawk searches Greenhouse, Lever, Ashby, Workable, and SmartRecruiters boards for a watchlist
+of companies you control (the /companies skill builds one around where you live), plus Remote OK, We Work Remotely, Adzuna, and USAJOBS, and Indeed through its
 Claude connector when you search from Claude Code. Found a job somewhere else, like LinkedIn?
 **Add a job** pastes it in. Add any careers page yourself: RoleHawk finds its feed or structured job data, shows you sample jobs, and runs it in
 a sandbox. Ranking uses one fit rubric (experience, skills, career goals, logistics, plus

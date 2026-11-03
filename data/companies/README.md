@@ -1,6 +1,6 @@
 # Company watchlists
 
-ATS sources (Greenhouse, Lever, Ashby, Workable) list jobs per company, not by keyword, so
+ATS sources (Greenhouse, Lever, Ashby, Workable, SmartRecruiters) list jobs per company, not by keyword, so
 /scrape walks a watchlist. Each CSV is the starter list for one ATS:
 
 - `slug`: the company's board identifier in that ATS (for example, the part after
@@ -10,7 +10,9 @@ ATS sources (Greenhouse, Lever, Ashby, Workable) list jobs per company, not by k
 - `country`: ISO 3166-1 alpha-2 code for the company's main market, or `*`
 
 Every row was checked live (a public board with open jobs) on 2026-10-31: Greenhouse 59,
-Ashby 33, Lever 16, Workable 6. The app loads these into the `companies` table on start
+Ashby 33, Lever 16, Workable 6. SmartRecruiters 7 were checked on 2026-11-03
+(US postings: Bosch 360, Continental 93, ServiceNow 424, Western Digital 83, Intuitive 468,
+Experian 42, NBCUniversal 313). The app loads these into the `companies` table on start
 (idempotent); users add or remove companies in the Sources screen, and removed starter rows
 stay removed.
 
