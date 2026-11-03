@@ -262,6 +262,11 @@ function Aside({
           </Button>
         )}
       </div>
+      {docs === null && (
+        <p className="text-[13.5px] text-muted-foreground">
+          Autofill is ready once the CV and cover letter are written.
+        </p>
+      )}
       {report && <AutofillResult report={report} />}
     </aside>
   );

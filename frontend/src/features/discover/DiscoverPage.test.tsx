@@ -53,6 +53,33 @@ describe("DiscoverPage", () => {
     expect(screen.getByRole("button", { name: "Rank 1 new job" })).toBeEnabled();
   });
 
+  it("hides jobs outside your preferences until you ask for them", async () => {
+    const requests: URLSearchParams[] = [];
+    server.use(
+      http.get("/api/jobs", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        requests.push(params);
+        const fits = params.get("fits_preferences") === "true";
+        const rows = fits ? [] : [jobRow({ id: 9, outside_preferences: "location" })];
+        return HttpResponse.json(
+          jobPage(rows, { jobs: 1_340, unranked: 1_340, outside_preferences: 1_340 }),
+        );
+      }),
+    );
+    const { user } = await renderApp("/discover");
+    expect(await screen.findByText("No jobs match")).toBeVisible();
+    expect(screen.getByRole("main")).toHaveTextContent("0 jobs to review.");
+    await user.click(
+      screen.getByRole("button", { name: "Show 1,340 jobs outside your preferences" }),
+    );
+    expect(await screen.findByRole("table")).toBeVisible();
+    expect(requests.at(-1)?.get("fits_preferences")).toBe("false");
+    expect(screen.getByRole("button", { name: "Matches my preferences" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
   it("sends filters to the API", async () => {
     const requests = withJobs();
     const { user } = await renderApp("/discover");
@@ -78,9 +105,10 @@ describe("DiscoverPage", () => {
     await waitFor(() => {
       expect(requests.at(-1)?.get("remote")).toBe("true");
     });
+    expect(requests[0]?.get("fits_preferences")).toBe("true"); // on by default
     await user.click(screen.getByRole("button", { name: "Matches my preferences" }));
     await waitFor(() => {
-      expect(requests.at(-1)?.get("fits_preferences")).toBe("true");
+      expect(requests.at(-1)?.get("fits_preferences")).toBe("false");
     });
     const last = requests.at(-1);
     expect(last?.get("limit")).toBe("200");

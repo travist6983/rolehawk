@@ -54,7 +54,8 @@ class JobQuery(BaseModel):
     remote: bool = Field(default=False, description="Only jobs marked remote")
     fits_preferences: bool = Field(
         default=False,
-        description="Only jobs your country, locations, salary floor, and excluded words allow",
+        description="Only jobs your country, locations, salary floor, and excluded words allow "
+        "(Discover turns this on by default)",
     )
     sort: Literal["score", "newest"] = "score"
     limit: int = Field(default=100, ge=1, le=MAX_PAGE)
@@ -118,6 +119,11 @@ class JobStats(BaseModel):
     saved: int
     dismissed: int
     closed: int = Field(description="Not dismissed, but the deadline has passed")
+    outside_preferences: int = Field(
+        default=0,
+        description="Not dismissed, but your country, locations, salary floor, or excluded "
+        "words rule it out (Discover hides these by default)",
+    )
 
 
 class JobPage(BaseModel):
@@ -290,15 +296,16 @@ class JobStore:
 
         with self._sessions() as session:
             rules = self._rules(session)
+            outside = self._outside_ids(session, rules)
             if query.fits_preferences:
-                stmt = stmt.where(Job.id.not_in(self._outside_ids(session, rules)))
+                stmt = stmt.where(Job.id.not_in(outside))
             total = session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
             rows = session.execute(stmt.limit(query.limit).offset(query.offset)).all()
             items = [JobRow.model_validate(self._row(r, rules)) for r in rows]
-            stats = self._stats(session)
+            stats = self._stats(session, outside)
         return JobPage(items=items, total=total or 0, stats=stats)
 
-    def _stats(self, session: Session) -> JobStats:
+    def _stats(self, session: Session, outside: Sequence[int]) -> JobStats:
         scored = select(JobScore.job_id).distinct().subquery()
         active = Job.dismissed_at.is_(None)
         jobs = session.scalar(select(func.count()).select_from(Job).where(active)) or 0
@@ -326,6 +333,10 @@ class JobStore:
             dismissed=dismissed,
             closed=session.scalar(
                 select(func.count()).select_from(Job).where(active, Job.closes_at < utcnow().date())
+            )
+            or 0,
+            outside_preferences=session.scalar(
+                select(func.count()).select_from(Job).where(active, Job.id.in_(outside))
             )
             or 0,
         )

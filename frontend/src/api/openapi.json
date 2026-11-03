@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.8"
+    "version": "0.2.9"
   },
   "paths": {
     "/api/health": {
@@ -2141,11 +2141,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "Only jobs your country, locations, salary floor, and excluded words allow",
+              "description": "Only jobs your country, locations, salary floor, and excluded words allow (Discover turns this on by default)",
               "default": false,
               "title": "Fits Preferences"
             },
-            "description": "Only jobs your country, locations, salary floor, and excluded words allow"
+            "description": "Only jobs your country, locations, salary floor, and excluded words allow (Discover turns this on by default)"
           },
           {
             "name": "sort",
@@ -8507,6 +8507,12 @@
             "type": "integer",
             "title": "Closed",
             "description": "Not dismissed, but the deadline has passed"
+          },
+          "outside_preferences": {
+            "type": "integer",
+            "title": "Outside Preferences",
+            "description": "Not dismissed, but your country, locations, salary floor, or excluded words rule it out (Discover hides these by default)",
+            "default": 0
           }
         },
         "type": "object",

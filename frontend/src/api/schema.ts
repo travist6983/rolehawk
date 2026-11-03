@@ -3062,6 +3062,12 @@ export interface components {
              * @description Not dismissed, but the deadline has passed
              */
             closed: number;
+            /**
+             * Outside Preferences
+             * @description Not dismissed, but your country, locations, salary floor, or excluded words rule it out (Discover hides these by default)
+             * @default 0
+             */
+            outside_preferences: number;
         };
         /** JsonApiDefinition */
         JsonApiDefinition: {
@@ -5813,7 +5819,7 @@ export interface operations {
                 portal_id?: string | null;
                 /** @description Only jobs marked remote */
                 remote?: boolean;
-                /** @description Only jobs your country, locations, salary floor, and excluded words allow */
+                /** @description Only jobs your country, locations, salary floor, and excluded words allow (Discover turns this on by default) */
                 fits_preferences?: boolean;
                 sort?: "score" | "newest";
                 limit?: number;
