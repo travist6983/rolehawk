@@ -13,6 +13,7 @@ describe("parseCompanyList", () => {
       "https://jobs.ashbyhq.com/ramp/abc-123",
       "https://apply.workable.com/workmotion/",
       "acme.workable.com",
+      "https://jobs.smartrecruiters.com/BoschGroup/744000159430569-engineer",
       "notion, linear",
     ].join("\n");
     expect(parseCompanyList(text, "ashby")).toEqual({
@@ -25,6 +26,7 @@ describe("parseCompanyList", () => {
         { ats: "ashby", slug: "ramp" },
         { ats: "workable", slug: "workmotion" },
         { ats: "workable", slug: "acme" },
+        { ats: "smartrecruiters", slug: "BoschGroup" },
         { ats: "ashby", slug: "notion" },
         { ats: "ashby", slug: "linear" },
       ],

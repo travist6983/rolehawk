@@ -225,6 +225,25 @@ describe("Company watchlist", () => {
     expect(list).toHaveTextContent("Airbnb");
   });
 
+  it("switches all the companies shown off at once", async () => {
+    let switched: unknown = null;
+    server.use(
+      http.post("/api/companies/enabled", async ({ request }) => {
+        switched = await request.json();
+        return HttpResponse.json({ changed: 1 });
+      }),
+    );
+    const { user } = await renderApp("/sources");
+    const list = await screen.findByRole("list", { name: "Companies" });
+    await user.click(within(card("Lever")).getByRole("button", { name: "16 companies" }));
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Switch all off" }));
+    await waitFor(() => {
+      expect(switched).toMatchObject({ enabled: false });
+    });
+    expect((switched as { ids: number[] }).ids).toHaveLength(1); // only the companies shown
+  });
+
   it("checks pasted boards and adds the ones that exist", async () => {
     const checked: unknown[] = [];
     let added: unknown = null;

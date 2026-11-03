@@ -9,6 +9,7 @@ import {
   useCompanies,
   useRemoveCompany,
   useSetCompanyEnabled,
+  useSwitchCompanies,
   type CompanyView,
 } from "@/api/queries";
 import { Badge } from "@/components/ui/badge";
@@ -186,8 +187,8 @@ function ImportForm() {
           }}
         />
         <p className="text-xs text-muted-foreground">
-          Paste careers-page links (Greenhouse, Lever, Ashby, Workable) or board names, one per
-          line. Each one is checked before it's added.
+          Paste careers-page links (Greenhouse, Lever, Ashby, Workable, SmartRecruiters) or board
+          names, one per line. Each one is checked before it's added.
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
@@ -261,6 +262,7 @@ export function Watchlist({
     );
   }, [companies.data, filter, query]);
   const enabled = visible.filter((c) => c.enabled).length;
+  const switchAll = useSwitchCompanies();
 
   return (
     <Card aria-labelledby={`${filterId}-title`}>
@@ -318,6 +320,26 @@ export function Watchlist({
           <p className="pb-2 text-sm text-muted-foreground" aria-live="polite">
             {enabled} of {plural(visible.length, "company", "companies")} on
           </p>
+          {visible.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mb-1"
+              disabled={switchAll.isPending}
+              onClick={() => {
+                const on = enabled === 0;
+                switchAll.mutate(
+                  { ids: visible.map((c) => c.id), enabled: on },
+                  {
+                    onError: (error) =>
+                      toast.error(errorText(error, "Couldn't switch the companies")),
+                  },
+                );
+              }}
+            >
+              {enabled === 0 ? "Switch all on" : "Switch all off"}
+            </Button>
+          )}
         </div>
         {companies.isPending ? (
           <div className="space-y-2" aria-label="Loading companies">

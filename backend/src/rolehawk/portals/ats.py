@@ -1,5 +1,6 @@
 """Applicant tracking systems with public job board APIs. They list jobs per company, so they
-walk the company watchlist. Endpoints verified 2026-10-31 (see SOURCES.md)."""
+walk the company watchlist. Endpoints verified 2026-10-31, SmartRecruiters 2026-11-03 (see
+SOURCES.md)."""
 
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ from rolehawk.db.models import PortalKind, RiskLevel
 from rolehawk.portals.base import CompanyRef, NormalizedJob, PortalContext, RawJob
 from rolehawk.portals.http import HttpError
 from rolehawk.portals.integrity import CleanPosting, clean_posting, combine
+from rolehawk.portals.matching import title_matches
 from rolehawk.portals.text import (
     html_to_text,
     looks_remote,
@@ -231,4 +233,88 @@ class Workable(AtsPortal):
             description=desc.text,
             integrity=desc.integrity,
             posted_at=parse_datetime(job.get("published_on") or job.get("created_at")),
+        )
+
+
+class SmartRecruiters(AtsPortal):
+    """Public Posting API (no key). The list has no descriptions, so each company is listed
+    once per target country and only postings whose titles match a target get a detail
+    request. Rate limit: 10 requests a second per caller (we pace at 4)."""
+
+    id = "smartrecruiters"
+    name = "SmartRecruiters"
+    host = "api.smartrecruiters.com"
+    docs_url = "https://developers.smartrecruiters.com/docs/posting-api"
+    min_interval_s = 0.25
+    PAGE = 100
+    MAX_PAGES = 10  # 1,000 postings per country: large employers list thousands worldwide
+    MAX_DETAILS = 40  # matching postings read in full per company
+
+    async def _list(self, ctx: PortalContext, slug: str, country: str | None) -> list[Any]:
+        items: list[Any] = []
+        for page in range(self.MAX_PAGES if ctx.queries else 1):
+            params: dict[str, str | int] = {"limit": self.PAGE, "offset": page * self.PAGE}
+            if country:
+                params["country"] = country.lower()
+            data = await ctx.http.json(
+                f"https://{self.host}/v1/companies/{slug}/postings", params=params
+            )
+            content = data.get("content") or []
+            items.extend(content)
+            if len(content) < self.PAGE or len(items) >= int(data.get("totalFound") or 0):
+                break
+        return items
+
+    async def fetch_company(self, ctx: PortalContext, company: CompanyRef) -> list[RawJob]:
+        if not ctx.queries:  # a board check: one page, no details
+            listed = await self._list(ctx, company.slug, None)
+            return [RawJob(str(p["id"]), p, company) for p in listed]
+        found = sorted({q.country for q in ctx.queries if q.country != "*"})
+        countries: list[str | None] = [*found] or [None]  # no country: list them all
+        seen: dict[str, Any] = {}
+        for country in countries:
+            for posting in await self._list(ctx, company.slug, country):
+                seen.setdefault(str(posting["id"]), posting)
+        wanted = [
+            (pid, p)
+            for pid, p in seen.items()
+            if title_matches(str(p.get("name", "")), ctx.queries)
+        ][: self.MAX_DETAILS]
+        jobs: list[RawJob] = []
+        for pid, posting in wanted:
+            detail = await ctx.http.json(
+                f"https://{self.host}/v1/companies/{company.slug}/postings/{pid}"
+            )
+            jobs.append(RawJob(pid, {**posting, **detail}, company))
+        return jobs
+
+    def normalize(self, raw: RawJob) -> NormalizedJob:
+        job = raw.data
+        place = job.get("location") or {}
+        location = place.get("fullLocation") or ", ".join(
+            p for p in [place.get("city"), place.get("region"), place.get("country")] if p
+        )
+        # The role, its qualifications, and extra details; the company blurb is left out.
+        sections = (job.get("jobAd") or {}).get("sections") or {}
+        parts = []
+        for key in ("jobDescription", "qualifications", "additionalInformation"):
+            section = sections.get(key) or {}
+            body = clean_posting(section.get("text"))
+            heading = html_to_text(section.get("title"))
+            if body.text:
+                parts.append(CleanPosting(f"{heading}\n{body.text}".strip(), body.integrity))
+        desc = combine(parts)
+        slug = raw.company.slug if raw.company else (job.get("company") or {}).get("identifier")
+        return NormalizedJob(
+            external_id=raw.external_id,
+            url=job.get("postingUrl")
+            or f"https://jobs.smartrecruiters.com/{slug}/{raw.external_id}",
+            company=(job.get("company") or {}).get("name")
+            or (raw.company.name if raw.company else ""),
+            title=str(job["name"]).strip(),
+            location=location or None,
+            remote=True if place.get("remote") else looks_remote(location),
+            description=desc.text,
+            integrity=desc.integrity,
+            posted_at=parse_datetime(job.get("releasedDate")),
         )

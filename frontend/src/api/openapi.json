@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.12"
+    "version": "0.2.13"
   },
   "paths": {
     "/api/health": {
@@ -1770,6 +1770,48 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companies/enabled": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Switch Companies",
+        "description": "Switch many companies on or off at once.",
+        "operationId": "switch_companies_api_companies_enabled_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompaniesSwitch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Switched"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -4938,6 +4980,29 @@
           "companies"
         ],
         "title": "CompaniesIn"
+      },
+      "CompaniesSwitch": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Ids"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ids",
+          "enabled"
+        ],
+        "title": "CompaniesSwitch"
       },
       "CompanyCheck": {
         "properties": {
@@ -11641,6 +11706,19 @@
         },
         "type": "object",
         "title": "StagePatch"
+      },
+      "Switched": {
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "title": "Changed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "changed"
+        ],
+        "title": "Switched"
       },
       "TargetCount": {
         "properties": {

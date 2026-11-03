@@ -27,7 +27,7 @@ async def _scrape(ctx: CommandContext, params: ScrapeParams) -> dict[str, Any]:
 
 class WatchlistAddParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    ats: str = Field(description="greenhouse, lever, ashby, or workable")
+    ats: str = Field(description="greenhouse, lever, ashby, workable, or smartrecruiters")
     slugs: list[Annotated[str, Field(pattern=SLUG_PATTERN, max_length=128)]] = Field(
         min_length=1,
         max_length=50,

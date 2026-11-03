@@ -1,0 +1,101 @@
+{
+ "offset": 0,
+ "limit": 100,
+ "totalFound": 3,
+ "content": [
+  {
+   "id": "744000159434190",
+   "name": "Lead Data Analyst",
+   "uuid": "1db68692-f459-469a-89a1-f087f6e21618",
+   "refNumber": "REF299648C",
+   "company": {
+    "name": "Bosch Group",
+    "identifier": "BoschGroup"
+   },
+   "releasedDate": "2026-11-03T16:13:23.260Z",
+   "location": {
+    "city": "Anderson",
+    "region": "SC",
+    "country": "us",
+    "address": "1010 Scotts Bridge Road",
+    "postalCode": "29621",
+    "remote": true,
+    "hybrid": false,
+    "latitude": "34.621947",
+    "longitude": "-82.6075769",
+    "fullLocation": "Anderson, SC, United States"
+   },
+   "typeOfEmployment": {
+    "id": "permanent",
+    "label": "Full-time"
+   },
+   "experienceLevel": {
+    "id": "associate",
+    "label": "Associate"
+   }
+  },
+  {
+   "id": "744000159430569",
+   "name": "Data Analyst, Manufacturing",
+   "uuid": "5d36e13c-0f7b-4713-a1f3-349996f212bf",
+   "refNumber": "REF300047V",
+   "company": {
+    "name": "Bosch Group",
+    "identifier": "BoschGroup"
+   },
+   "releasedDate": "2026-11-03T15:58:10.379Z",
+   "location": {
+    "city": "Farmington Hills",
+    "region": "MI",
+    "country": "us",
+    "address": "38000 Hills Tech Drive",
+    "postalCode": "48331",
+    "remote": false,
+    "hybrid": true,
+    "hybridDescription": "60% On-site required",
+    "latitude": "42.4922209",
+    "longitude": "-83.4230436",
+    "fullLocation": "Farmington Hills, MI, United States"
+   },
+   "typeOfEmployment": {
+    "id": "permanent",
+    "label": "Full-time"
+   },
+   "experienceLevel": {
+    "id": "entry_level",
+    "label": "Entry Level"
+   }
+  },
+  {
+   "id": "744000159420605",
+   "name": "Diesel Fuel Systems Calibration Engineer",
+   "uuid": "c7186573-bb2d-4025-bfdf-25a42994b873",
+   "refNumber": "REF297014W",
+   "company": {
+    "name": "Bosch Group",
+    "identifier": "BoschGroup"
+   },
+   "releasedDate": "2026-11-03T15:34:56.321Z",
+   "location": {
+    "city": "Atlanta",
+    "region": "GA",
+    "country": "us",
+    "address": "6555 Fulton Industrial Boulevard Southwest",
+    "postalCode": "30336",
+    "remote": false,
+    "hybrid": false,
+    "latitude": "33.7018675",
+    "longitude": "-84.6046097",
+    "fullLocation": "Atlanta, GA, United States"
+   },
+   "typeOfEmployment": {
+    "id": "permanent",
+    "label": "Full-time"
+   },
+   "experienceLevel": {
+    "id": "associate",
+    "label": "Associate"
+   }
+  }
+ ]
+}

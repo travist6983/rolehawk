@@ -1,0 +1,44 @@
+{
+ "id": "744000159434190",
+ "uuid": "1db68692-f459-469a-89a1-f087f6e21618",
+ "name": "Lead Data Analyst",
+ "company": {
+  "name": "Bosch Group",
+  "identifier": "BoschGroup"
+ },
+ "releasedDate": "2026-11-03T16:13:23.260Z",
+ "location": {
+  "city": "Anderson",
+  "region": "SC",
+  "country": "us",
+  "address": "1010 Scotts Bridge Road",
+  "postalCode": "29621",
+  "remote": true,
+  "hybrid": false,
+  "latitude": "34.621947",
+  "longitude": "-82.6075769",
+  "fullLocation": "Anderson, SC, United States"
+ },
+ "postingUrl": "https://jobs.smartrecruiters.com/BoschGroup/744000159434190-logistics-specialist-focus-on-make-and-deliver-planning",
+ "applyUrl": "https://jobs.smartrecruiters.com/BoschGroup/744000159434190-logistics-specialist-focus-on-make-and-deliver-planning?oga=true",
+ "jobAd": {
+  "sections": {
+   "companyDescription": {
+    "title": "Company Description",
+    "text": "<p><strong>At Bosch, we care.&#xa0; For you, our business, and our environment.</strong><br>\nLet\u2019s turn visions into reality.&#xa0; At Bosch, we shape the future by inventing high-quality technologies and services that spark enthusiasm and enrich people\u2019s lives.&#xa0; Our areas of activity are every bit as diverse as our outstanding Bosch teams around the world.&#xa0; Their creativity is the key to innovation through connected living, mobility or industry.&#xa0; Our responsibility goes far beyond business.&#xa0; We\u2019re independent of stock markets and bound to the purpose of the Robert Bosch Fo"
+   },
+   "jobDescription": {
+    "title": "Job Description",
+    "text": "<p><strong>Customer Order Management</strong></p><ul><li>Establish positive customer relationships and ensure on time delivery of finished products</li><li>Confirm and monitor customer orders in SAP</li><li>Maintain a rolling 21 month volume forecast in SAP</li><li>Finished goods inventory monitoring and analysis</li><li>Analyze customer demand behavior/customer waterfalls</li></ul><p><strong>Production Scheduling</strong></p><ul><li>Create and maintain master production schedule and align with production</li><li>Capacity management</li><li>Support engineering changes, manage ramp-up and ramp-"
+   },
+   "qualifications": {
+    "title": "Qualifications",
+    "text": "<p><strong><em><u>Indefinite U.S. work authorized individuals only. Future sponsorship for work authorization is unavailable.</u></em></strong></p><ul><li>Bachelors Degree (industrial engineer, business, supply chain, finance),&#xa0;<strong><em>OR</em></strong></li><li>3-5 years exp. in customer-, production- and procurement planning required</li><li>comprehensive SAP ERP knowledge</li></ul><p>&#xa0;</p>"
+   },
+   "additionalInformation": {
+    "title": "Additional Information",
+    "text": "<p>Equal Opportunity Employer, including disability / veterans.</p><p>&#xa0;</p>"
+   }
+  }
+ }
+}

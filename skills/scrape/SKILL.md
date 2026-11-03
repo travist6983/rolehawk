@@ -1,6 +1,6 @@
 ---
 name: rolehawk-scrape
-description: Fetch new jobs from the user's enabled job sources (company job boards on Greenhouse, Lever, Ashby, Workable; Remote OK, We Work Remotely, Adzuna, USAJOBS) and from Indeed through the user's Indeed connector, for their active search targets, and report new jobs, duplicates, and problems per source. Also adds a single job the user found (LinkedIn, Indeed, anywhere). Use when the user asks to find, search for, or refresh jobs, search Indeed, add a job they found, or add companies to their watchlist.
+description: Fetch new jobs from the user's enabled job sources (company job boards on Greenhouse, Lever, Ashby, Workable, SmartRecruiters; Remote OK, We Work Remotely, Adzuna, USAJOBS) and from Indeed through the user's Indeed connector, for their active search targets, and report new jobs, duplicates, and problems per source. Also adds a single job the user found (LinkedIn, Indeed, anywhere). Use when the user asks to find, search for, or refresh jobs, search Indeed, add a job they found, or add companies to their watchlist.
 ---
 
 # /scrape (v1.0)

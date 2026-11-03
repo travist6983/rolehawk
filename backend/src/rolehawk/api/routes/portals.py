@@ -48,6 +48,16 @@ class CompanyPatch(BaseModel):
     enabled: bool
 
 
+class CompaniesSwitch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ids: list[int] = Field(max_length=10_000)
+    enabled: bool
+
+
+class Switched(BaseModel):
+    changed: int
+
+
 class CheckIn(BaseModel):
     ats: str
     slug: str = Field(min_length=1, max_length=128, pattern=SLUG_PATTERN)
@@ -124,6 +134,13 @@ async def patch_company(company_id: int, body: CompanyPatch, runtime: RuntimeDep
         )
     except KeyError:
         raise HTTPException(status_code=404, detail="Unknown company") from None
+
+
+@router.post("/api/companies/enabled")
+async def switch_companies(body: CompaniesSwitch, runtime: RuntimeDep) -> Switched:
+    """Switch many companies on or off at once."""
+    changed = await asyncio.to_thread(runtime.portals.set_companies_enabled, body.ids, body.enabled)
+    return Switched(changed=changed)
 
 
 @router.delete("/api/companies/{company_id}", status_code=204)

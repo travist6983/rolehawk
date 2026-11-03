@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rolehawk.portals.ats import Ashby, Greenhouse, Lever, Workable
+from rolehawk.portals.ats import Ashby, Greenhouse, Lever, SmartRecruiters, Workable
 from rolehawk.portals.base import Portal
 from rolehawk.portals.feeds import Adzuna, RemoteOK, USAJobs, WeWorkRemotely
 
@@ -9,6 +9,7 @@ BUILTIN: list[Portal] = [
     Lever(),
     Ashby(),
     Workable(),
+    SmartRecruiters(),
     RemoteOK(),
     WeWorkRemotely(),
     Adzuna(),
