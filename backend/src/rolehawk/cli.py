@@ -325,6 +325,10 @@ async def _run_command(name: str, params: dict[str, Any]) -> tuple[int, Any]:
                 return 2, {"error": "invalid parameters", "details": exc.errors(include_url=False)}
             except LLMError as exc:
                 return 3, {"error": exc.user_message, "kind": type(exc).__name__}
+            except KeyError as exc:  # services raise KeyError(id) for a missing record
+                return 1, {"error": f"not found: {exc.args[0] if exc.args else ''}"}
+            except ValueError as exc:  # something the caller can fix; the message says what
+                return 1, {"error": str(exc)}
             if not isinstance(result, CommandStarted):
                 return 0, result
             while True:

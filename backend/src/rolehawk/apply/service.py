@@ -39,6 +39,7 @@ from rolehawk.apply.drafts import (
     revision_prompt,
     section_prompt,
 )
+from rolehawk.apply.packet import ApplyPacket, build_packet
 from rolehawk.apply.review import REVIEW_RULES, ReviewResult, review_prompt
 from rolehawk.apply.style import check_style, polish
 from rolehawk.apply.truth import Flag, check_cv, check_letter
@@ -62,7 +63,7 @@ from rolehawk.llm.types import Message, SystemBlock, Task
 from rolehawk.memory.context import ContextPack
 from rolehawk.memory.proposals import MemoryService
 from rolehawk.paths import DataPaths
-from rolehawk.profile.model import Profile
+from rolehawk.profile.model import Preferences, Profile
 from rolehawk.rendering.model import CoverLetter, CvDocument, DocumentKind
 from rolehawk.rendering.pdf import PdfUnavailableError
 from rolehawk.rendering.service import FORMATS, DocumentService, Format
@@ -843,6 +844,36 @@ class ApplyService:
         if report.filled or report.attached:
             await asyncio.to_thread(self.mark_autofilled, application_id)
         return report
+
+    def packet(self, application_id: int, prefs: Preferences) -> ApplyPacket:
+        """Everything the application form asks for, for Claude Code to fill it in the
+        user's browser (skills/apply). Facts come from the profile and saved answers only."""
+        bundle = self.load_bundle(application_id)
+        if bundle is None:
+            with self._sessions() as session:
+                if session.get(Application, application_id) is None:
+                    raise KeyError(application_id)
+            raise ValueError(
+                "this application has no CV and cover letter yet: draft them first "
+                "(apply-context, then apply-save)"
+            )
+        job = self.job(bundle.job_id)
+        if not job.url.startswith(("https://", "http://")):
+            raise ValueError("this job has no web link to apply on")
+        letter = bundle.cover_letter
+        text = "\n\n".join(
+            [letter.greeting, *letter.paragraphs, letter.closing,
+             letter.signature or bundle.cv.contact.name or ""]
+        ).strip()  # fmt: skip
+        return build_packet(
+            application_id,
+            job,
+            self._load_profile(),
+            prefs,
+            bundle.files.cv,
+            bundle.files.cover_letter,
+            text,
+        )
 
     def mark_autofilled(self, application_id: int) -> None:
         with self._sessions.begin() as session:

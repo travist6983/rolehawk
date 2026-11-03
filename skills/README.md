@@ -35,6 +35,7 @@ Built-in commands available today:
 | `apply-plan`, `apply` | Fit gate, tailored CV + cover letter, fact checks, Word/PDF, application at Applying (see `apply/SKILL.md`) |
 | `apply-context`, `apply-save` | Draft in Claude Code: context in, draft out, same fact checks |
 | `application`, `application-documents`, `application-regenerate`, `application-update`, `autofill` | Review, edit, rewrite a section, change stage, fill the form (never submits) |
+| `apply-packet`, `application-answers`, `application-answers-save` | Fill the form in the user's Chrome: everything it asks for, plus saved answers to common questions (see `apply/SKILL.md`) |
 | `application-keep-flag` | Keep a flagged line as written (stretch, style, or skipped-requirement flags only) |
 | `followups`, `followup-draft`, `followup-log` | Quiet applications, a follow-up draft from the documents sent (never sent), log one the user sent (see `followup/SKILL.md`) |
 | `stale-applications`, `close-stale` | Applications with no reply in 60+ days; close chosen ones as Ghosted |

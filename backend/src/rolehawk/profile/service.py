@@ -15,12 +15,13 @@ from rolehawk.config import Settings
 from rolehawk.db.models import ProfileItem, ProfileItemKind, RemotePolicy, SearchTarget
 from rolehawk.memory.files import MemoryFiles, MemoryTarget
 from rolehawk.profile.markdown import (
+    answer_key,
     parse_preferences,
     parse_profile,
     render_preferences,
     render_profile,
 )
-from rolehawk.profile.model import Preferences, Profile, SalaryPeriod
+from rolehawk.profile.model import Preferences, Profile, SalaryPeriod, SavedAnswer
 
 _ANNUAL = {SalaryPeriod.YEAR: 1, SalaryPeriod.MONTH: 12, SalaryPeriod.HOUR: 2080}
 
@@ -86,6 +87,17 @@ class ProfileService:
     def save_preferences(self, prefs: Preferences) -> None:
         self._files.write(MemoryTarget.PREFERENCES, render_preferences(prefs))
         self.sync_search_targets(prefs)
+
+    def save_answers(self, answers: list[SavedAnswer]) -> list[SavedAnswer]:
+        """Save answers to application questions the user gave. An answer to a question
+        that's already saved replaces it; returns every saved answer."""
+        prefs = self.load_preferences()
+        merged = {answer_key(a.question): a for a in prefs.answers}
+        for answer in answers:
+            merged[answer_key(answer.question)] = answer
+        prefs.answers = list(merged.values())
+        self.save_preferences(prefs)
+        return prefs.answers
 
     def save_raw(self, target: MemoryTarget, markdown: str) -> None:
         """The user's own edit: stored exactly as typed, then the derived tables refresh."""

@@ -16,11 +16,14 @@ from rolehawk.apply.drafts import (
     build_letter,
     indexed_profile,
 )
+from rolehawk.apply.packet import STANDARD_QUESTIONS
 from rolehawk.apply.review import REVIEW_RULES
 from rolehawk.apply.service import ApplyParams, DocumentsIn, FlagRef, StagePatch
 from rolehawk.apply.style import check_style, polish
 from rolehawk.apply.truth import check_cv, check_letter
-from rolehawk.commands.registry import CommandContext, CommandRegistry, CommandSpec
+from rolehawk.commands.registry import CommandContext, CommandRegistry, CommandSpec, NoParams
+from rolehawk.profile.markdown import answer_key
+from rolehawk.profile.model import SavedAnswer
 
 EXTERNAL_MODEL = "claude-code"
 
@@ -50,6 +53,11 @@ class RegenerateParams(BaseModel):
     application_id: int
     section: Section = Field(description=f"One of: {', '.join(SECTIONS)}")
     instruction: str | None = Field(default=None, max_length=1_000)
+
+
+class AnswersIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    answers: list[SavedAnswer] = Field(min_length=1, max_length=50)
 
 
 class KeepFlagParams(FlagRef):
@@ -151,6 +159,26 @@ async def _apply_save(ctx: CommandContext, params: SaveDraftParams) -> dict[str,
     }
 
 
+async def _packet(ctx: CommandContext, params: ApplicationRef) -> dict[str, Any]:
+    prefs = await asyncio.to_thread(ctx.runtime.profiles.load_preferences)
+    packet = await asyncio.to_thread(ctx.runtime.applications.packet, params.application_id, prefs)
+    return packet.model_dump(mode="json")
+
+
+async def _answers(ctx: CommandContext, _params: NoParams) -> dict[str, Any]:
+    prefs = await asyncio.to_thread(ctx.runtime.profiles.load_preferences)
+    saved = {answer_key(a.question) for a in prefs.answers}
+    return {
+        "answers": [a.model_dump() for a in prefs.answers],
+        "missing": [q for q in STANDARD_QUESTIONS if answer_key(q) not in saved],
+    }
+
+
+async def _answers_save(ctx: CommandContext, params: AnswersIn) -> dict[str, Any]:
+    saved = await asyncio.to_thread(ctx.runtime.profiles.save_answers, params.answers)
+    return {"answers": [a.model_dump() for a in saved]}
+
+
 def register_apply(registry: CommandRegistry) -> None:
     registry.register(
         CommandSpec(
@@ -178,6 +206,35 @@ def register_apply(registry: CommandRegistry) -> None:
             _application,
             ApplicationRef,
             untrusted_output=True,
+        )
+    )
+    registry.register(
+        CommandSpec(
+            "apply-packet",
+            "Everything an application's form asks for (contact details, the CV and cover "
+            "letter files, work history, saved answers, what to leave for the user), for "
+            "filling it in the user's browser. Never submit.",
+            _packet,
+            ApplicationRef,
+            untrusted_output=True,
+        )
+    )
+    registry.register(
+        CommandSpec(
+            "application-answers",
+            "Saved answers to common application questions, and the common ones not yet answered.",
+            _answers,
+            NoParams,
+        )
+    )
+    registry.register(
+        CommandSpec(
+            "application-answers-save",
+            "Save answers the user gave to application questions (replaces an answer to the "
+            "same question). Only answers the user stated; never guessed ones.",
+            _answers_save,
+            AnswersIn,
+            read_only=False,
         )
     )
     registry.register(

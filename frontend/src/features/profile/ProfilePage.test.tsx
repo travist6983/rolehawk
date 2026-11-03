@@ -26,6 +26,7 @@ function filledOverview() {
       target_titles: ["Staff Engineer"],
       remote: "remote",
       salary_floor: { amount: 150000, currency: "USD", period: "year" },
+      answers: [{ question: "Will you need visa sponsorship?", answer: "No" }],
     },
     completeness: { score: 63, missing: ["work authorization"] },
     search_targets: [
@@ -82,6 +83,7 @@ describe("ProfilePage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Accessibility")).toBeInTheDocument();
     expect(screen.getByText("$150,000 per year")).toBeInTheDocument();
+    expect(screen.getByText("Will you need visa sponsorship?")).toBeInTheDocument();
     expect(screen.getAllByText("Not set").length).toBeGreaterThan(0);
     const targets = screen.getByText("Search targets").closest<HTMLElement>('[data-slot="card"]');
     expect(targets).not.toBeNull();

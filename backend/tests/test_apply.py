@@ -41,6 +41,7 @@ from rolehawk.db.types import utcnow
 from rolehawk.fit.rubric import FitBatch
 from rolehawk.llm.fake import FakeProvider
 from rolehawk.llm.types import LLMRequest, Task
+from rolehawk.profile.markdown import parse_answer, parse_preferences
 from rolehawk.profile.model import (
     Certification,
     Contact,
@@ -48,6 +49,7 @@ from rolehawk.profile.model import (
     Experience,
     Profile,
     Project,
+    SavedAnswer,
 )
 from rolehawk.rendering.text import docx_text, pdf_text
 from rolehawk.services.runtime import Runtime
@@ -291,6 +293,60 @@ async def test_apply_drafts_reviews_renders_and_creates_the_application(
         app = session.get(Application, result.application_id)
         assert app is not None
         assert app.cv_path == str(cv_pdf)
+
+
+async def test_apply_packet_has_what_the_form_needs(runtime: Runtime, fake: FakeProvider) -> None:
+    job_id = ready(runtime, fake, Scripted())
+    result = await runtime.applications.apply(ApplyParams(job_id=job_id), noop_progress)
+    assert result.application_id is not None
+    prefs = runtime.profiles.load_preferences()
+    prefs.work_authorization = "US citizen"
+    prefs.answers = [SavedAnswer(question="When can you start", answer="In two weeks")]
+    runtime.profiles.save_preferences(prefs)
+
+    packet = runtime.applications.packet(result.application_id, runtime.profiles.load_preferences())
+    assert packet.applicant.email == "ada@example.com"
+    assert packet.applicant.linkedin == "https://linkedin.com/in/ada"
+    assert packet.cv_file is not None
+    assert packet.cv_file.endswith(".pdf")
+    documents = runtime.applications.detail(result.application_id).documents
+    assert documents is not None
+    assert packet.cv_file == documents.files.cv["pdf"]
+    assert packet.cover_letter_text.startswith("Dear")
+    assert [e.company for e in packet.work_history] == ["Northwind Payments", "Contoso"]
+    assert packet.work_authorization == "US citizen"
+    assert "When can you start?" not in packet.missing_answers  # saved, punctuation aside
+    assert "Will you now or in the future require visa sponsorship?" in packet.missing_answers
+    assert any("Submit" in item for item in packet.leave_for_user)
+    with pytest.raises(KeyError):
+        runtime.applications.packet(999, prefs)
+
+
+async def test_saved_answers_round_trip_and_replace(runtime: Runtime) -> None:
+    saved = runtime.profiles.save_answers(
+        [
+            SavedAnswer(question="Will you need sponsorship?", answer="No"),
+            SavedAnswer(question="Notice period", answer="Two weeks"),
+        ]
+    )
+    assert len(saved) == 2
+    again = runtime.profiles.save_answers(
+        [SavedAnswer(question="will you need SPONSORSHIP", answer="No, never")]
+    )
+    assert [(a.question, a.answer) for a in again] == [
+        ("will you need SPONSORSHIP", "No, never"),
+        ("Notice period", "Two weeks"),
+    ]
+    text = (runtime.paths.memory / "preferences.md").read_text(encoding="utf-8")
+    assert "## Application answers" in text
+    assert "- Notice period: Two weeks" in text
+    assert parse_preferences(text).answers == again
+    assert parse_answer("How did you hear about us?: A friend") == SavedAnswer(
+        question="How did you hear about us?", answer="A friend"
+    )
+    assert parse_answer("Notice period: not sure?") == SavedAnswer(
+        question="Notice period", answer="not sure?"
+    )
 
 
 async def test_fit_gate_stops_below_threshold_unless_forced(

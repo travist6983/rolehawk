@@ -74,6 +74,9 @@ def test_run_unknown_and_invalid(capsys: pytest.CaptureFixture[str]) -> None:
     assert "unknown command" in capsys.readouterr().err
     assert cli.main(["run", "selftest", "--param", "steps=0"]) == 2
     assert "invalid parameters" in capsys.readouterr().err
+    # A missing record is a plain error a skill can read, not a traceback.
+    assert cli.main(["run", "apply-packet", "--param", "application_id=5"]) == 1
+    assert "not found: 5" in capsys.readouterr().err
 
 
 def test_llm_status_without_key(capsys: pytest.CaptureFixture[str]) -> None:

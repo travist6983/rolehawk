@@ -331,6 +331,14 @@ describe("Application page", () => {
     ).toBeVisible();
   });
 
+  it("offers the Claude Code command that fills in the whole form", async () => {
+    server.use(http.get("/api/applications/7", () => HttpResponse.json(applicationDetail())));
+    await renderApp("/applications/7");
+    expect(await screen.findByText("Fill in the whole form with Claude Code")).toBeVisible();
+    expect(screen.getByText("/rolehawk-apply fill in application 7")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled();
+  });
+
   it("shows the job and timeline tabs", async () => {
     server.use(http.get("/api/applications/7", () => HttpResponse.json(applicationDetail())));
     const { user } = await renderApp("/applications/7");
