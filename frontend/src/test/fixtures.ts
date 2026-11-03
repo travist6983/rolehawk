@@ -433,6 +433,7 @@ export const jobDetail = (overrides: Partial<JobDetail> = {}): JobDetail => ({
   description: "About the role\n\nYou'll own reporting for our finance team.",
   application_id: null,
   integrity_report: null,
+  summary_only: false,
   ...overrides,
 });
 
@@ -451,6 +452,7 @@ export const jobPage = (items: JobRow[], stats: Partial<JobStats> = {}): JobPage
   items,
   total: items.length,
   stats: jobStats({ jobs: items.length, ...stats }),
+  targets: [],
 });
 
 export const rankPlan = (overrides: Partial<RankPlan> = {}): RankPlan => ({

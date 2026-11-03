@@ -49,6 +49,7 @@ export function isFiltered(filters: JobFilters): boolean {
     filters.q ||
     filters.min_score != null ||
     filters.portal_id ||
+    filters.target ||
     filters.remote ||
     (filters.status && filters.status !== "all") ||
     (filters.show && filters.show !== "active"),

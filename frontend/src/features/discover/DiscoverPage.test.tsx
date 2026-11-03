@@ -80,6 +80,30 @@ describe("DiscoverPage", () => {
     );
   });
 
+  it("shows how many jobs each target brings in and filters by one", async () => {
+    const requests: URLSearchParams[] = [];
+    server.use(
+      http.get("/api/jobs", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        requests.push(params);
+        return HttpResponse.json({
+          ...jobPage(rows),
+          targets: [
+            { title: "Staff Software Engineer", jobs: 1_597 },
+            { title: "Frontend Developer", jobs: 55 },
+          ],
+        });
+      }),
+    );
+    const { user } = await renderApp("/discover");
+    await user.click(await screen.findByRole("combobox", { name: "Target" }));
+    expect(screen.getByRole("option", { name: "Staff Software Engineer (1,597)" })).toBeVisible();
+    await user.click(screen.getByRole("option", { name: "Frontend Developer (55)" }));
+    await waitFor(() => {
+      expect(requests.at(-1)?.get("target")).toBe("Frontend Developer");
+    });
+  });
+
   it("sends filters to the API", async () => {
     const requests = withJobs();
     const { user } = await renderApp("/discover");
@@ -113,6 +137,20 @@ describe("DiscoverPage", () => {
     const last = requests.at(-1);
     expect(last?.get("limit")).toBe("200");
     expect(last?.has("portal_id")).toBe(false); // empty filters aren't sent
+  });
+
+  it("says when a source shares only a summary of the posting", async () => {
+    withJobs();
+    server.use(
+      http.get("/api/jobs/1", () =>
+        HttpResponse.json(jobDetail({ source: "Adzuna", summary_only: true })),
+      ),
+    );
+    const { user } = await renderApp("/discover");
+    await user.click(await screen.findByRole("button", { name: "Senior Data Analyst" }));
+    expect(await screen.findByRole("dialog")).toHaveTextContent(
+      "Adzuna shares only a short summary of this posting.",
+    );
   });
 
   it("opens a job with reasons, concerns, gaps, and the posting", async () => {

@@ -24,7 +24,10 @@ from rolehawk.db.models import (
 from rolehawk.db.types import utcnow
 from rolehawk.fit.filters import Rules, SkipReason, load_rules, skip_reason
 from rolehawk.fit.rubric import Breakdown, Gates
+from rolehawk.portals.feeds import SUMMARY_ONLY_SOURCES
 from rolehawk.portals.integrity import IntegrityView, Verdict
+from rolehawk.portals.matching import title_matches
+from rolehawk.portals.scrape import load_queries
 from rolehawk.profile.model import Preferences
 
 MAX_PAGE = 500
@@ -56,6 +59,9 @@ class JobQuery(BaseModel):
         default=False,
         description="Only jobs your country, locations, salary floor, and excluded words allow "
         "(Discover turns this on by default)",
+    )
+    target: str | None = Field(
+        default=None, max_length=255, description="Only jobs whose title matches this target"
     )
     sort: Literal["score", "newest"] = "score"
     limit: int = Field(default=100, ge=1, le=MAX_PAGE)
@@ -104,6 +110,10 @@ class JobRow(BaseModel):
 
 class JobDetail(JobRow):
     description: str = Field(description="Third-party text from the posting")
+    summary_only: bool = Field(
+        default=False,
+        description="The source shares only a short summary; the full posting is on its page",
+    )
     application_id: int | None
     integrity_report: IntegrityView | None = Field(
         description="What the integrity check removed or found; null when nothing"
@@ -126,10 +136,18 @@ class JobStats(BaseModel):
     )
 
 
+class TargetCount(BaseModel):
+    title: str = Field(description="An active search target's title")
+    jobs: int = Field(description="Jobs that aren't dismissed whose title matches it")
+
+
 class JobPage(BaseModel):
     items: list[JobRow]
     total: int
     stats: JobStats
+    targets: list[TargetCount] = Field(
+        default_factory=list, description="Each target and how many jobs it matches"
+    )
 
 
 class JobIds(BaseModel):
@@ -178,6 +196,23 @@ class JobStore:
         columns = (Job.title, Job.company, Job.location, Job.remote, Job.salary_text)
         jobs = session.scalars(select(Job).options(load_only(*columns)))
         return [job.id for job in jobs if skip_reason(job, rules) is not None]
+
+    @staticmethod
+    def _target_matches(session: Session) -> dict[str, list[int]]:
+        """The jobs (not dismissed) each active target's title matches, so the user can see
+        which target brings in which jobs. Titles repeat, so each is checked once."""
+        queries = load_queries(session, "US")  # the country isn't used for titles
+        jobs = session.execute(select(Job.id, Job.title).where(Job.dismissed_at.is_(None)))
+        by_title: dict[str, list[int]] = {}
+        for job_id, title in jobs:
+            by_title.setdefault(title, []).append(job_id)
+        matches: dict[str, list[int]] = {}
+        for query in queries:
+            ids = matches.setdefault(query.title, [])
+            for title, job_ids in by_title.items():
+                if title_matches(title, [query]):
+                    ids.extend(job_ids)
+        return matches
 
     def _base(self) -> tuple[Select[Any], Any]:
         score = _latest_scores()
@@ -250,6 +285,7 @@ class JobStore:
             "integrity": report.verdict if report else "clean",
             "integrity_report": report,
             "description": job.description,
+            "summary_only": job.portal_id in SUMMARY_ONLY_SOURCES,
             "application_id": app_id,
             "outside_preferences": skip_reason(job, rules),
         }
@@ -299,11 +335,15 @@ class JobStore:
             outside = self._outside_ids(session, rules)
             if query.fits_preferences:
                 stmt = stmt.where(Job.id.not_in(outside))
+            matched = self._target_matches(session)
+            if query.target is not None:
+                stmt = stmt.where(Job.id.in_(matched.get(query.target, [])))
             total = session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
             rows = session.execute(stmt.limit(query.limit).offset(query.offset)).all()
             items = [JobRow.model_validate(self._row(r, rules)) for r in rows]
             stats = self._stats(session, outside)
-        return JobPage(items=items, total=total or 0, stats=stats)
+        targets = [TargetCount(title=t, jobs=len(ids)) for t, ids in matched.items()]
+        return JobPage(items=items, total=total or 0, stats=stats, targets=targets)
 
     def _stats(self, session: Session, outside: Sequence[int]) -> JobStats:
         scored = select(JobScore.job_id).distinct().subquery()

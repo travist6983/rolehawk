@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.9"
+    "version": "0.2.10"
   },
   "paths": {
     "/api/health": {
@@ -2146,6 +2146,25 @@
               "title": "Fits Preferences"
             },
             "description": "Only jobs your country, locations, salary floor, and excluded words allow (Discover turns this on by default)"
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only jobs whose title matches this target",
+              "title": "Target"
+            },
+            "description": "Only jobs whose title matches this target"
           },
           {
             "name": "sort",
@@ -8123,6 +8142,12 @@
             "title": "Description",
             "description": "Third-party text from the posting"
           },
+          "summary_only": {
+            "type": "boolean",
+            "title": "Summary Only",
+            "description": "The source shares only a short summary; the full posting is on its page",
+            "default": false
+          },
           "application_id": {
             "anyOf": [
               {
@@ -8175,6 +8200,7 @@
           "integrity",
           "outside_preferences",
           "description",
+          "summary_only",
           "application_id",
           "integrity_report"
         ],
@@ -8195,6 +8221,14 @@
           },
           "stats": {
             "$ref": "#/components/schemas/JobStats"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/TargetCount"
+            },
+            "type": "array",
+            "title": "Targets",
+            "description": "Each target and how many jobs it matches"
           }
         },
         "type": "object",
@@ -11508,6 +11542,26 @@
         },
         "type": "object",
         "title": "StagePatch"
+      },
+      "TargetCount": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "An active search target's title"
+          },
+          "jobs": {
+            "type": "integer",
+            "title": "Jobs",
+            "description": "Jobs that aren't dismissed whose title matches it"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "jobs"
+        ],
+        "title": "TargetCount"
       },
       "Task": {
         "type": "string",

@@ -20,6 +20,7 @@ import {
   usePortals,
   useSaveJobs,
   type JobFilters,
+  type TargetCount,
 } from "@/api/queries";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ApplyDialog } from "@/features/applications/ApplyDialog";
@@ -73,9 +74,11 @@ function useRankProgress() {
 
 function Filters({
   filters,
+  targets,
   onChange,
 }: {
   filters: JobFilters;
+  targets: TargetCount[];
   onChange: (next: JobFilters) => void;
 }) {
   const portals = usePortals();
@@ -86,6 +89,7 @@ function Filters({
     show: `${id}-show`,
     score: `${id}-score`,
     source: `${id}-source`,
+    target: `${id}-target`,
     sort: `${id}-sort`,
   };
   const latest = useRef({ filters, onChange });
@@ -198,6 +202,31 @@ function Filters({
           </SelectContent>
         </Select>
       </div>
+      {targets.length > 1 && (
+        <div className="space-y-1.5">
+          <Label htmlFor={ids.target} className="text-xs">
+            Target
+          </Label>
+          <Select
+            value={filters.target ?? "all"}
+            onValueChange={(value) => {
+              onChange({ ...filters, target: value === "all" ? null : value });
+            }}
+          >
+            <SelectTrigger id={ids.target} className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All targets</SelectItem>
+              {targets.map((t) => (
+                <SelectItem key={t.title} value={t.title}>
+                  {t.title} ({t.jobs.toLocaleString("en")})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor={ids.sort} className="text-xs">
           Sort
@@ -491,7 +520,7 @@ export default function DiscoverPage() {
     <>
       {header}
       <div className="space-y-4 px-5 pb-7 md:px-8">
-        <Filters filters={filters} onChange={changeFilters} />
+        <Filters filters={filters} targets={first?.targets ?? []} onChange={changeFilters} />
         <div aria-live="polite" className="space-y-2 empty:hidden">
           {running && (
             <div className="space-y-1.5 rounded-lg bg-card p-3 shadow-card">

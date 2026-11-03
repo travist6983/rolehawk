@@ -30,6 +30,7 @@ from rolehawk.llm.service import LLMService
 from rolehawk.llm.types import Message, SystemBlock, Task
 from rolehawk.memory.context import ContextPack
 from rolehawk.memory.proposals import MemoryService
+from rolehawk.portals.feeds import SUMMARY_ONLY_SOURCES
 from rolehawk.profile.model import Preferences
 
 log = logging.getLogger(__name__)
@@ -102,6 +103,9 @@ def job_text(job: Job) -> str:
     description = job.description[:DESCRIPTION_CHARS]
     if len(job.description) > DESCRIPTION_CHARS:
         description += "\n[posting truncated]"
+    if job.portal_id in SUMMARY_ONLY_SOURCES:
+        # Don't count requirements it leaves out as gaps: the source cut them.
+        header += " | text: the source's short summary, not the full posting"
     return header + "\n" + untrusted("job_posting", description, job_id=job.id)
 
 

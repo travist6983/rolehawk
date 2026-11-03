@@ -287,6 +287,12 @@ export function JobDetailSheet({
                   Written by the employer. Hidden text and invisible characters are removed.
                 </p>
                 <IntegrityNotice report={data.integrity_report} />
+                {data.summary_only && (
+                  <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                    {data.source} shares only a short summary of this posting. Open the posting for
+                    the full text.
+                  </p>
+                )}
                 <div className="text-sm leading-relaxed break-words whitespace-pre-line">
                   {data.description || "No description was included."}
                 </div>
