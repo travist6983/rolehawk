@@ -221,6 +221,7 @@ export const emptyPreferences = (): Preferences => ({
   deal_breakers: [],
   energizing: [],
   draining: [],
+  answers: [],
 });
 
 export const sampleProfile = (): Profile => ({

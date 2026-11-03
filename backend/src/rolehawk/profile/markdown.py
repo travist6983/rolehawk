@@ -18,6 +18,7 @@ from rolehawk.profile.model import (
     Profile,
     Project,
     RemotePreference,
+    SavedAnswer,
 )
 from rolehawk.profile.parsing import (
     dedupe,
@@ -328,6 +329,31 @@ def _parse_remote(text: str | None) -> RemotePreference | None:
     return None
 
 
+def answer_key(question: str) -> str:
+    """Questions match whatever their case, spacing, or closing punctuation."""
+    return " ".join(question.casefold().split()).rstrip(" ?:.")
+
+
+def parse_answer(line: str) -> SavedAnswer | None:
+    """ "Will you need sponsorship? No" or "Notice period: 2 weeks": the question ends at
+    whichever comes first, a question mark (kept) or a colon."""
+    marks = [i for i in (line.find("?"), line.find(":")) if i >= 0]
+    if not marks:
+        return None
+    cut = min(marks)
+    keep = 1 if line[cut] == "?" else 0
+    question, answer = line[: cut + keep], line[cut + 1 :]
+    question, answer = question.strip(), answer.strip().removeprefix(":").strip()
+    if not question or not answer:
+        return None
+    return SavedAnswer(question=question[:300], answer=answer[:2_000])
+
+
+def format_answer(answer: SavedAnswer) -> str:
+    joiner = " " if answer.question.endswith("?") else ": "
+    return f"{answer.question}{joiner}{answer.answer}"
+
+
 def parse_preferences(markdown: str, default_currency: str = "USD") -> Preferences:
     prefs = Preferences()
     for name, lines in _sections(markdown):
@@ -355,6 +381,8 @@ def parse_preferences(markdown: str, default_currency: str = "USD") -> Preferenc
             prefs.energizing = dedupe(items)
         elif key in {"work that drains me", "draining work", "what drains me"}:
             prefs.draining = dedupe(items)
+        elif key in {"application answers", "saved answers"}:
+            prefs.answers = [a for a in (parse_answer(i) for i in items) if a is not None]
         elif text := _text(lines):
             prefs.extra_sections[name.strip()] = text
     return prefs
@@ -379,6 +407,7 @@ def render_preferences(prefs: Preferences) -> str:
     out += section("Deal-breakers", prefs.deal_breakers)
     out += section("Work that energizes me", prefs.energizing)
     out += section("Work that drains me", prefs.draining)
+    out += section("Application answers", [format_answer(a) for a in prefs.answers])
     for name, text in prefs.extra_sections.items():
         out += [f"## {name}", "", text, ""]
     return _join(out)

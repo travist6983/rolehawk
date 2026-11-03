@@ -173,6 +173,7 @@ Every command is available three ways: a button in the dashboard, a slash comman
 - Flow: fit check (stop with an explanation below a user-set threshold, default 60); draft tailored CV and cover letter; a second Claude pass reviews the drafts against the job and the truth of profile.md, flagging any claim not supported by the profile; compile DOCX and PDF from the chosen template.
 - Hard rule: generated documents may rephrase and reorder, but never invent employers, titles, dates, degrees, or metrics.
 - Autofill: Playwright opens the application page in a visible browser, fills known fields, and stops before submit.
+- Claude Code fill (`/rolehawk-apply` under `claude --chrome`): Claude fills the whole form in the user's own Chrome on their Claude plan: contact details, uploads, work history, and screening questions answered only from the profile and saved answers (`## Application answers` in preferences.md, the `apply-packet` command). It leaves sign-in, CAPTCHAs, attestations, voluntary self-identification, and Submit to the user, and stops at the review page.
 - Output: files under documents/generated/\<app\_id>/, an applications row at stage Applying.
 
 **/rank** and **/apply** share one fit rubric so scores match.

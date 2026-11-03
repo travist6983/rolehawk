@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.11"
+    "version": "0.2.12"
   },
   "paths": {
     "/api/health": {
@@ -9927,6 +9927,14 @@
             },
             "type": "array",
             "title": "Draining"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SavedAnswer"
+            },
+            "type": "array",
+            "title": "Answers",
+            "description": "Saved answers to common application questions"
           }
         },
         "additionalProperties": false,
@@ -10023,6 +10031,14 @@
             },
             "type": "array",
             "title": "Draining"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SavedAnswer"
+            },
+            "type": "array",
+            "title": "Answers",
+            "description": "Saved answers to common application questions"
           }
         },
         "additionalProperties": false,
@@ -10037,7 +10053,8 @@
           "work_authorization",
           "deal_breakers",
           "energizing",
-          "draining"
+          "draining",
+          "answers"
         ],
         "title": "Preferences"
       },
@@ -11213,6 +11230,30 @@
           "job_ids"
         ],
         "title": "SaveIn"
+      },
+      "SavedAnswer": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Answer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "SavedAnswer",
+        "description": "An answer to a question application forms keep asking (\"Will you need sponsorship?\"),\nsaved once and reused when Claude fills in applications."
       },
       "ScopeView": {
         "properties": {

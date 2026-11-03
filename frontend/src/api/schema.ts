@@ -3588,6 +3588,11 @@ export interface components {
             energizing?: string[];
             /** Draining */
             draining?: string[];
+            /**
+             * Answers
+             * @description Saved answers to common application questions
+             */
+            answers?: components["schemas"]["SavedAnswer"][];
         };
         /** Preferences */
         "Preferences-Output": {
@@ -3612,6 +3617,11 @@ export interface components {
             energizing: string[];
             /** Draining */
             draining: string[];
+            /**
+             * Answers
+             * @description Saved answers to common application questions
+             */
+            answers: components["schemas"]["SavedAnswer"][];
         };
         /** Profile */
         "Profile-Input": {
@@ -4012,6 +4022,17 @@ export interface components {
              * @default true
              */
             saved: boolean;
+        };
+        /**
+         * SavedAnswer
+         * @description An answer to a question application forms keep asking ("Will you need sponsorship?"),
+         *     saved once and reused when Claude fills in applications.
+         */
+        SavedAnswer: {
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
         };
         /** ScopeView */
         ScopeView: {

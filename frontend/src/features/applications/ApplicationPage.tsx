@@ -1,8 +1,10 @@
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
+  CopyIcon,
   ExternalLinkIcon,
   FileWarningIcon,
+  TerminalIcon,
   WandSparklesIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -56,6 +58,41 @@ function AutofillResult({ report }: { report: AutofillReport }) {
       <p className="text-muted-foreground">
         Check everything, submit it in that window, then mark this application as applied.
       </p>
+    </div>
+  );
+}
+
+/** The whole form, filled by Claude Code in the user's own Chrome, on their Claude plan. */
+function ClaudeCodeFill({ applicationId }: { applicationId: number }) {
+  const command = `/rolehawk-apply fill in application ${String(applicationId)}`;
+  return (
+    <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm">
+      <p className="flex gap-2 font-medium">
+        <TerminalIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+        Fill in the whole form with Claude Code
+      </p>
+      <p className="text-muted-foreground">
+        Claude fills in your details, documents, work history, and the questions it can answer from
+        your profile in your own Chrome, then stops before Submit. Start{" "}
+        <span className="font-mono">claude --chrome</span>, then run:
+      </p>
+      <div className="flex items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded bg-background px-2 py-1 font-mono text-xs">
+          {command}
+        </code>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            navigator.clipboard.writeText(command).then(
+              () => toast.success("Copied"),
+              () => toast.error("Couldn't copy; select the text instead"),
+            );
+          }}
+        >
+          <CopyIcon /> Copy
+        </Button>
+      </div>
     </div>
   );
 }
@@ -268,6 +305,7 @@ function Aside({
         </p>
       )}
       {report && <AutofillResult report={report} />}
+      {docs !== null && <ClaudeCodeFill applicationId={detail.id} />}
     </aside>
   );
 }

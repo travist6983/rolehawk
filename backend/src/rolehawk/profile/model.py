@@ -86,6 +86,14 @@ class SalaryFloor(_Model):
     period: SalaryPeriod = SalaryPeriod.YEAR
 
 
+class SavedAnswer(_Model):
+    """An answer to a question application forms keep asking ("Will you need sponsorship?"),
+    saved once and reused when Claude fills in applications."""
+
+    question: str = Field(min_length=1, max_length=300)
+    answer: str = Field(min_length=1, max_length=2_000)
+
+
 class Preferences(_Model):
     target_titles: list[str] = Field(default_factory=list)
     seniority: str | None = None
@@ -99,4 +107,7 @@ class Preferences(_Model):
     # work that energizes them or work that drains them.
     energizing: list[str] = Field(default_factory=list)
     draining: list[str] = Field(default_factory=list)
+    answers: list[SavedAnswer] = Field(
+        default_factory=list, description="Saved answers to common application questions"
+    )
     extra_sections: SkipJsonSchema[dict[str, str]] = Field(default_factory=dict)

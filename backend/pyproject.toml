@@ -1,6 +1,6 @@
 [project]
 name = "rolehawk"
-version = "0.2.11"
+version = "0.2.12"
 description = "Free, open source AI job search copilot. Finds, ranks, and applies to jobs with Claude. Runs locally."
 license = "MIT"
 requires-python = ">=3.12,<3.13"

@@ -149,14 +149,35 @@ function PreferencesView({ prefs }: { prefs: Preferences }) {
     ["Work that drains you", prefs.draining.join(", ") || null],
   ];
   return (
-    <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
-      {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd className={value ? "" : "text-muted-foreground italic"}>{value ?? "Not set"}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="space-y-4">
+      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className={value ? "" : "text-muted-foreground italic"}>{value ?? "Not set"}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="space-y-1.5 text-sm">
+        <h3 className="font-medium">Application answers</h3>
+        <p className="text-muted-foreground">
+          Reused when Claude fills in application forms. Add them under "Application answers" when
+          you edit this file, one per line, like "Will you need visa sponsorship? No".
+        </p>
+        {prefs.answers.length > 0 ? (
+          <dl className="grid gap-x-6 gap-y-1.5 sm:grid-cols-[minmax(10rem,22rem)_1fr]">
+            {prefs.answers.map((a) => (
+              <div key={a.question} className="contents">
+                <dt className="text-muted-foreground">{a.question}</dt>
+                <dd>{a.answer}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="text-muted-foreground italic">None saved yet.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
