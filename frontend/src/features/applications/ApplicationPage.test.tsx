@@ -318,6 +318,19 @@ describe("Application page", () => {
     expect(await screen.findByText(/Applied just now/)).toBeVisible();
   });
 
+  it("says why Autofill waits while the documents are written", async () => {
+    server.use(
+      http.get("/api/applications/7", () =>
+        HttpResponse.json(applicationDetail({ documents: null })),
+      ),
+    );
+    await renderApp("/applications/7");
+    expect(await screen.findByRole("button", { name: "Autofill application" })).toBeDisabled();
+    expect(
+      screen.getByText("Autofill is ready once the CV and cover letter are written."),
+    ).toBeVisible();
+  });
+
   it("shows the job and timeline tabs", async () => {
     server.use(http.get("/api/applications/7", () => HttpResponse.json(applicationDetail())));
     const { user } = await renderApp("/applications/7");

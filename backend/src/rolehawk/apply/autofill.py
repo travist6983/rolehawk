@@ -173,6 +173,8 @@ class Autofiller:
             context = await browser.new_context()
             page = await context.new_page()
         await page.goto(form_url, wait_until="domcontentloaded")
+        # The browser starts from a background process, so it can open behind other windows.
+        await page.bring_to_front()
         if ats == "workday":
             return (
                 AutofillReport(

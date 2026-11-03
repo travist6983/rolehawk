@@ -390,7 +390,10 @@ export default function DiscoverPage() {
         stats && stats.jobs > 0 ? (
           <>
             Ranked against your profile.{" "}
-            <b className="font-semibold text-foreground">{plural(stats.jobs, "job")}</b> to review.
+            <b className="font-semibold text-foreground">
+              {plural(stats.jobs - stats.outside_preferences, "job")}
+            </b>{" "}
+            to review.
           </>
         ) : (
           "Jobs ranked by how well they fit you."
@@ -479,6 +482,11 @@ export default function DiscoverPage() {
   }
 
   const selectedIds = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
+  // Jobs outside the user's preferences are hidden by default; say how many, one click away.
+  const hidden = filters.fits_preferences ? (stats?.outside_preferences ?? 0) : 0;
+  const showOutside = () => {
+    changeFilters({ ...filters, fits_preferences: false });
+  };
   return (
     <>
       {header}
@@ -511,6 +519,18 @@ export default function DiscoverPage() {
             {plural(first?.total ?? 0, "job")}
             {stats &&
               ` · ${stats.ranked.toLocaleString("en")} ranked · ${stats.saved.toLocaleString("en")} saved`}
+            {hidden > 0 && (
+              <>
+                {` · ${hidden.toLocaleString("en")} outside your preferences hidden. `}
+                <button
+                  type="button"
+                  className="cursor-pointer text-primary-text underline-offset-4 hover:underline"
+                  onClick={showOutside}
+                >
+                  Show them
+                </button>
+              </>
+            )}
           </p>
         )}
         {rows.length === 0 ? (
@@ -519,6 +539,11 @@ export default function DiscoverPage() {
             title="No jobs match"
             description="Try a different search or fewer filters."
           >
+            {hidden > 0 && (
+              <Button className="mt-6" variant="outline" onClick={showOutside}>
+                Show {plural(hidden, "job")} outside your preferences
+              </Button>
+            )}
             {isFiltered(filters) && (
               <Button
                 className="mt-6"

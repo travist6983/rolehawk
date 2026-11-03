@@ -35,7 +35,13 @@ export const MIN_SCORES = [
 /** The design's "Strong fits only" filter. */
 export const STRONG_FIT = 85;
 
-export const DEFAULT_FILTERS: JobFilters = { status: "all", show: "active", sort: "score" };
+/** Discover opens on jobs that fit the user's preferences; the rest are a click away. */
+export const DEFAULT_FILTERS: JobFilters = {
+  status: "all",
+  show: "active",
+  sort: "score",
+  fits_preferences: true,
+};
 
 /** True when anything narrows the list beyond the default view. */
 export function isFiltered(filters: JobFilters): boolean {
@@ -44,7 +50,6 @@ export function isFiltered(filters: JobFilters): boolean {
     filters.min_score != null ||
     filters.portal_id ||
     filters.remote ||
-    filters.fits_preferences ||
     (filters.status && filters.status !== "all") ||
     (filters.show && filters.show !== "active"),
   );

@@ -393,6 +393,7 @@ async def test_job_listing_sorts_filters_and_counts(runtime: Runtime) -> None:
         "saved": 0,
         "dismissed": 0,
         "closed": 0,
+        "outside_preferences": 0,
     }
 
     assert [j.id for j in runtime.jobs.list(JobQuery(min_score=50)).items] == [high]
@@ -446,6 +447,9 @@ async def test_job_listing_labels_jobs_outside_preferences(runtime: Runtime) -> 
     assert [j.id for j in fitting.items] == [fits]
     assert fitting.total == 1
     assert fitting.stats.jobs == 5  # the header counts stay over every job
+    assert fitting.stats.outside_preferences == 4  # so Discover can say how many it hides
+    runtime.jobs.set_dismissed([india])
+    assert runtime.jobs.list(JobQuery()).stats.outside_preferences == 3
 
 
 async def test_save_and_dismiss_rules(runtime: Runtime) -> None:

@@ -443,6 +443,7 @@ export const jobStats = (overrides: Partial<JobStats> = {}): JobStats => ({
   saved: 0,
   dismissed: 0,
   closed: 0,
+  outside_preferences: 0,
   ...overrides,
 });
 
