@@ -73,7 +73,7 @@ export function skippedSummary(counts: FilterCounts): string | null {
 
 export type OutsideReason = NonNullable<JobRow["outside_preferences"]>;
 
-/** Why ranking skips a job, short enough for a table row. */
+/** Why ranking new jobs skips a job, short enough for a table row. */
 export const OUTSIDE_TEXT: Record<OutsideReason, string> = {
   country: "Other country",
   location: "Outside your locations",
@@ -88,11 +88,6 @@ export const OUTSIDE_DETAIL: Record<OutsideReason, string> = {
   salary: "Its salary tops out below your floor.",
   excluded: "Its title or company has one of your excluded words or deal breakers.",
 };
-
-/** Number of jobs a rank plan skipped because of the user's preferences. */
-export function preferenceSkips(counts: FilterCounts): number {
-  return counts.country + counts.location + counts.salary + counts.excluded;
-}
 
 export function whereText(job: Pick<JobRow, "location" | "remote">): string {
   if (job.location && job.remote && !/remote/i.test(job.location)) {

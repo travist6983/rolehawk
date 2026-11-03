@@ -68,7 +68,7 @@ function Concerns({ concerns, onRescore }: { concerns: string[] | null; onRescor
   );
 }
 
-function FitSection({ job, onRank }: { job: JobDetail; onRank: (rescore: boolean) => void }) {
+function FitSection({ job, onRank }: { job: JobDetail; onRank: () => void }) {
   if (job.score === null) {
     return (
       <section aria-label="Fit" className="rounded-lg border border-dashed p-4 text-sm">
@@ -79,18 +79,11 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: (rescore: boolean
         {job.outside_preferences && (
           <p className="mt-2 text-muted-foreground">
             <span className="font-medium text-foreground">Outside your preferences.</span>{" "}
-            {OUTSIDE_DETAIL[job.outside_preferences]} Ranking skips it unless you choose to rank it
-            anyway.
+            {OUTSIDE_DETAIL[job.outside_preferences]} Ranking new jobs skips it, but you can rank it
+            here.
           </p>
         )}
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-3"
-          onClick={() => {
-            onRank(false);
-          }}
-        >
+        <Button size="sm" variant="outline" className="mt-3" onClick={onRank}>
           <SparklesIcon /> Rank this job
         </Button>
       </section>
@@ -116,12 +109,7 @@ function FitSection({ job, onRank }: { job: JobDetail; onRank: (rescore: boolean
           <FitList items={job.reasons} marker="+" tone="text-score-high" />
         </div>
       )}
-      <Concerns
-        concerns={job.concerns}
-        onRescore={() => {
-          onRank(true);
-        }}
-      />
+      <Concerns concerns={job.concerns} onRescore={onRank} />
       <div className="space-y-2">
         <h3 className="font-serif text-lg font-medium italic">Worth addressing</h3>
         {job.must_have_gaps.length > 0 ? (
@@ -234,7 +222,7 @@ export function JobDetailSheet({
 }: {
   id: number | null;
   onClose: () => void;
-  onRank: (id: number, rescore: boolean) => void;
+  onRank: (id: number) => void;
   onApply: (id: number) => void;
 }) {
   const job = useJob(id);
@@ -286,8 +274,8 @@ export function JobDetailSheet({
             <div className="space-y-6 px-6 pb-8">
               <FitSection
                 job={data}
-                onRank={(rescore) => {
-                  onRank(data.id, rescore);
+                onRank={() => {
+                  onRank(data.id);
                 }}
               />
               <Actions job={data} onApply={onApply} />

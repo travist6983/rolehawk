@@ -222,26 +222,28 @@ async def test_plan_counts_what_the_filters_skip(runtime: Runtime) -> None:
     assert rescore.candidates == len(keep) + 2
 
 
-async def test_chosen_jobs_can_be_ranked_despite_preferences(runtime: Runtime) -> None:
+async def test_picked_jobs_are_ranked_whatever_the_filters_say(runtime: Runtime) -> None:
     set_prefs(runtime, locations=["Denver"], remote=RemotePreference.HYBRID)
     (fits,) = add_jobs(runtime, 1)
     austin = add_jobs(runtime, 2, location="Austin, TX")
     (india,) = add_jobs(runtime, 1, location="Remote - India", remote=True)
     (dismissed,) = add_jobs(runtime, 1, location="Austin, TX")
+    (applied,) = add_jobs(runtime, 1)
+    (scored,) = add_jobs(runtime, 1)
     runtime.jobs.set_dismissed([dismissed])
-    chosen = [fits, *austin, india, dismissed]
+    runtime.jobs.set_saved([applied])
+    with runtime.sessions.begin() as session:
+        session.add(JobScore(job_id=scored, score=70, reasons=[], must_have_gaps=[], model="m"))
 
+    backlog = runtime.ranker.plan(RankParams())
+    assert backlog.candidates == 1  # only `fits`: the rest are filtered
+    assert (backlog.filtered.location, backlog.filtered.country) == (2, 1)
+
+    chosen = [fits, *austin, india, dismissed, applied, scored]
     plan = runtime.ranker.plan(RankParams(job_ids=chosen))
-    assert plan.candidates == 1
-    assert (plan.filtered.location, plan.filtered.country) == (2, 1)
-
-    anyway = runtime.ranker.plan(RankParams(job_ids=chosen, ignore_preferences=True))
-    assert anyway.candidates == 4
-    assert anyway.filtered.model_dump() == {**FilterCounts().model_dump(), "dismissed": 1}
-
-    # Only for jobs the user picked: never the whole backlog.
-    with pytest.raises(ValueError, match="job_ids"):
-        RankParams(ignore_preferences=True)
+    assert plan.candidates == len(chosen)
+    assert plan.filtered == FilterCounts()
+    assert runtime.ranker.plan(RankParams(job_ids=[india])).candidates == 1
 
 
 # --- scoring ------------------------------------------------------------------------------

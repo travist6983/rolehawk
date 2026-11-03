@@ -1,4 +1,5 @@
-"""Hard filters run before any AI scoring, so Claude only sees jobs that could work.
+"""Hard filters run before /rank scores new jobs, so Claude only sees jobs that could work.
+Jobs the user picks skip them all (`picked`): clicking Rank always ranks what was clicked.
 
 Status filters (dismissed, already applied, already ranked) are SQL. Preference filters
 (country, location and remote, salary floor, excluded words) need text parsing, so they run
@@ -253,23 +254,32 @@ def _open() -> ColumnElement[bool]:
     return or_(Job.closes_at.is_(None), Job.closes_at >= utcnow().date())
 
 
+def _newest_first(stmt: Select[Job]) -> Select[Job]:
+    return stmt.order_by(Job.scraped_at.desc(), Job.id.desc())
+
+
+def picked(session: Session, job_ids: Sequence[int]) -> list[Job]:
+    """Jobs the user picked to rank, newest first. No filters: not their preferences, and not
+    whether the job is already ranked, dismissed, in the pipeline, or past its deadline."""
+    return list(session.scalars(_newest_first(select(Job).where(Job.id.in_(job_ids)))))
+
+
 def candidates(
     session: Session,
     rules: Rules,
     *,
-    job_ids: Sequence[int] | None = None,
     rescore: bool = False,
     limit: int | None = None,
 ) -> tuple[list[Job], FilterCounts]:
-    """Jobs worth scoring, newest first, and how many were filtered out for each reason."""
+    """New jobs worth scoring, newest first, and how many were filtered out for each reason."""
     base = select(Job)
-    if job_ids is not None:
-        base = base.where(Job.id.in_(job_ids))
     counts = _status_counts(session, base, rescore)
 
-    stmt = base.where(
-        Job.dismissed_at.is_(None), ~exists().where(Application.job_id == Job.id), _open()
-    ).order_by(Job.scraped_at.desc(), Job.id.desc())
+    stmt = _newest_first(
+        base.where(
+            Job.dismissed_at.is_(None), ~exists().where(Application.job_id == Job.id), _open()
+        )
+    )
     if not rescore:
         stmt = stmt.where(~exists().where(JobScore.job_id == Job.id))
 
