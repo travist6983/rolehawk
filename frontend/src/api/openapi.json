@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RoleHawk",
-    "version": "0.2.7"
+    "version": "0.2.8"
   },
   "paths": {
     "/api/health": {
@@ -10528,18 +10528,12 @@
               }
             ],
             "title": "Job Ids",
-            "description": "Only these jobs (default: all)"
+            "description": "Rank exactly these jobs, with no filters (default: new jobs that fit your preferences)"
           },
           "rescore": {
             "type": "boolean",
             "title": "Rescore",
-            "description": "Score jobs again even if already ranked",
-            "default": false
-          },
-          "ignore_preferences": {
-            "type": "boolean",
-            "title": "Ignore Preferences",
-            "description": "Rank the chosen job_ids even if your country, locations, salary floor, or excluded words would skip them",
+            "description": "Without job_ids: also score jobs that already have a score",
             "default": false
           }
         },

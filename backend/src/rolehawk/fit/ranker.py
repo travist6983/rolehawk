@@ -10,14 +10,13 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import date
-from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from rolehawk.db.models import Job, JobScore
-from rolehawk.fit.filters import FilterCounts, Rules, candidates, load_rules
+from rolehawk.fit.filters import FilterCounts, candidates, load_rules, picked
 from rolehawk.fit.rubric import FIT_RUBRIC, FitBatch, Gates, JobFit
 from rolehawk.llm.errors import (
     LLMError,
@@ -46,20 +45,15 @@ Progress = Callable[[float | None, str | None], Awaitable[None]]
 
 class RankParams(BaseModel):
     job_ids: list[int] | None = Field(
-        default=None, max_length=MAX_JOBS_PER_RUN, description="Only these jobs (default: all)"
+        default=None,
+        max_length=MAX_JOBS_PER_RUN,
+        description="Rank exactly these jobs, with no filters (default: new jobs that fit your "
+        "preferences)",
     )
-    rescore: bool = Field(default=False, description="Score jobs again even if already ranked")
-    ignore_preferences: bool = Field(
+    rescore: bool = Field(
         default=False,
-        description="Rank the chosen job_ids even if your country, locations, salary floor, "
-        "or excluded words would skip them",
+        description="Without job_ids: also score jobs that already have a score",
     )
-
-    @model_validator(mode="after")
-    def _chosen_jobs_only(self) -> Self:
-        if self.ignore_preferences and self.job_ids is None:
-            raise ValueError("ignore_preferences only works with job_ids")
-        return self
 
 
 class RankPlan(BaseModel):
@@ -135,13 +129,13 @@ class Ranker:
     # --- planning -----------------------------------------------------------------------
 
     def select(self, params: RankParams) -> tuple[list[Job], FilterCounts, int]:
-        prefs = self._preferences()
         with self._sessions() as session:
-            # No rules: the user picked these jobs and chose to rank them anyway.
-            rules = Rules() if params.ignore_preferences else load_rules(session, prefs)
-            jobs, counts = candidates(
-                session, rules, job_ids=params.job_ids, rescore=params.rescore
-            )
+            if params.job_ids is not None:
+                # The user picked these jobs and clicked Rank: rank them, whatever the filters say.
+                jobs, counts = picked(session, params.job_ids), FilterCounts()
+            else:
+                rules = load_rules(session, self._preferences())
+                jobs, counts = candidates(session, rules, rescore=params.rescore)
         return jobs[:MAX_JOBS_PER_RUN], counts, max(len(jobs) - MAX_JOBS_PER_RUN, 0)
 
     @staticmethod

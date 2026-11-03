@@ -3739,21 +3739,15 @@ export interface components {
         RankParams: {
             /**
              * Job Ids
-             * @description Only these jobs (default: all)
+             * @description Rank exactly these jobs, with no filters (default: new jobs that fit your preferences)
              */
             job_ids?: number[] | null;
             /**
              * Rescore
-             * @description Score jobs again even if already ranked
+             * @description Without job_ids: also score jobs that already have a score
              * @default false
              */
             rescore: boolean;
-            /**
-             * Ignore Preferences
-             * @description Rank the chosen job_ids even if your country, locations, salary floor, or excluded words would skip them
-             * @default false
-             */
-            ignore_preferences: boolean;
         };
         /**
          * RankPlan

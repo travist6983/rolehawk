@@ -181,7 +181,7 @@ export function JobTable({
                     {job.outside_preferences && (
                       <span
                         className="shrink-0 text-[10px] font-medium text-muted-foreground"
-                        title="Outside your preferences, so ranking skips it unless you pick it and rank it anyway"
+                        title="Outside your preferences, so ranking new jobs skips it. Select it to rank it."
                       >
                         {OUTSIDE_TEXT[job.outside_preferences]}
                       </span>

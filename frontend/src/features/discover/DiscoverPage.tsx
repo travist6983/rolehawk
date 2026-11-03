@@ -365,7 +365,7 @@ export default function DiscoverPage() {
   const jobs = useJobs(filters);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [openId, setOpenId] = useState<number | null>(null);
-  const [rank, setRank] = useState<{ jobIds?: number[]; rescore?: boolean } | null>(null);
+  const [rank, setRank] = useState<{ jobIds?: number[] } | null>(null);
   const [applyId, setApplyId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const running = useRankProgress();
@@ -560,8 +560,8 @@ export default function DiscoverPage() {
         onClose={() => {
           setOpenId(null);
         }}
-        onRank={(id, rescore) => {
-          setRank({ jobIds: [id], rescore });
+        onRank={(id) => {
+          setRank({ jobIds: [id] });
         }}
         onApply={(id) => {
           setOpenId(null);
@@ -577,7 +577,6 @@ export default function DiscoverPage() {
       <RankDialog
         open={rank !== null}
         jobIds={rank?.jobIds}
-        rescore={rank?.rescore}
         onOpenChange={(open) => {
           if (!open) setRank(null);
         }}

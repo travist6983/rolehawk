@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { plural, usd } from "@/lib/format";
 
-import { preferenceSkips, skippedSummary } from "./discoverText";
+import { skippedSummary } from "./discoverText";
 
 function PlanDetails({ plan }: { plan: RankPlan }) {
   const models = useModels(plan.configured);
@@ -84,49 +84,31 @@ function PlanDetails({ plan }: { plan: RankPlan }) {
   );
 }
 
+/** Jobs the user picked (`jobIds`) are ranked as picked, with no filters. Without them, new
+ * jobs are ranked, skipping those outside the user's preferences. */
 export function RankDialog({
   open,
   jobIds,
-  rescore: rescoreAtOpen = false,
   onOpenChange,
   onStarted,
 }: {
   open: boolean;
   jobIds?: number[];
-  /** Start with "re-rank jobs that already have a score" ticked. */
-  rescore?: boolean;
   onOpenChange: (open: boolean) => void;
   onStarted?: () => void;
 }) {
-  const [rescore, setRescore] = useState(rescoreAtOpen);
-  const [ignorePrefs, setIgnorePrefs] = useState(false);
-  // How many picked jobs the preferences skip, kept so the "rank anyway" choice stays put
-  // while a new plan loads, and after it's on (when the plan no longer skips any).
-  const [prefSkips, setPrefSkips] = useState(0);
-  // Each open starts from the caller's choice (adjusting state while rendering, not in an
-  // effect: https://react.dev/learn/you-might-not-need-an-effect).
+  const [rescore, setRescore] = useState(false);
+  // Each open starts unticked (adjusting state while rendering, not in an effect:
+  // https://react.dev/learn/you-might-not-need-an-effect).
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) {
-      setRescore(rescoreAtOpen);
-      setIgnorePrefs(false);
-      setPrefSkips(0);
-    }
+    if (open) setRescore(false);
   }
-  const params = {
-    job_ids: jobIds ?? null,
-    rescore,
-    ignore_preferences: jobIds !== undefined && ignorePrefs,
-  };
+  const params = { job_ids: jobIds ?? null, rescore: jobIds === undefined && rescore };
   const plan = useRankPlan(params, open);
   const start = useStartRank();
   const rescoreId = useId();
-  const ignoreId = useId();
-
-  const seenSkips =
-    plan.data && !params.ignore_preferences ? preferenceSkips(plan.data.filtered) : null;
-  if (seenSkips !== null && seenSkips !== prefSkips) setPrefSkips(seenSkips);
 
   const ready =
     plan.data !== undefined &&
@@ -143,8 +125,9 @@ export function RankDialog({
           </DialogTitle>
           <DialogDescription>
             Claude scores each job 0 to 100 against your profile, with reasons and the must-haves
-            you're missing. Jobs outside your locations, below your salary floor, or matching a deal
-            breaker are skipped first, at no cost.
+            you're missing.
+            {!jobIds &&
+              " Jobs outside your locations, below your salary floor, or matching a deal breaker are skipped first, at no cost."}
           </DialogDescription>
         </DialogHeader>
         {plan.isPending ? (
@@ -158,29 +141,17 @@ export function RankDialog({
         ) : (
           <PlanDetails plan={plan.data} />
         )}
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id={rescoreId}
-            checked={rescore}
-            onCheckedChange={(checked) => {
-              setRescore(checked === true);
-            }}
-          />
-          <Label htmlFor={rescoreId} className="text-sm font-normal">
-            Also re-rank jobs that already have a score
-          </Label>
-        </div>
-        {jobIds && (ignorePrefs || prefSkips > 0) && (
+        {!jobIds && (
           <div className="flex items-center gap-2">
             <Checkbox
-              id={ignoreId}
-              checked={ignorePrefs}
+              id={rescoreId}
+              checked={rescore}
               onCheckedChange={(checked) => {
-                setIgnorePrefs(checked === true);
+                setRescore(checked === true);
               }}
             />
-            <Label htmlFor={ignoreId} className="text-sm font-normal">
-              Also rank jobs your preferences skip
+            <Label htmlFor={rescoreId} className="text-sm font-normal">
+              Also re-rank jobs that already have a score
             </Label>
           </div>
         )}

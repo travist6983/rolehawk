@@ -110,12 +110,12 @@ describe("DiscoverPage", () => {
 
   it("offers a re-rank when the score predates concerns", async () => {
     withJobs();
-    let rescore: boolean | undefined;
+    let planned: unknown = null;
     server.use(
       http.get("/api/jobs/1", () => HttpResponse.json(jobDetail({ concerns: null }))),
       http.post("/api/rank/plan", async ({ request }) => {
-        rescore = ((await request.json()) as { rescore: boolean }).rescore;
-        return HttpResponse.json(rankPlan());
+        planned = await request.json();
+        return HttpResponse.json(rankPlan({ candidates: 1, batches: 1 }));
       }),
     );
     const { user } = await renderApp("/discover");
@@ -124,12 +124,10 @@ describe("DiscoverPage", () => {
     expect(sheet).toHaveTextContent("This score is from before RoleHawk listed concerns.");
 
     await user.click(within(sheet).getByRole("button", { name: "Rank it again" }));
-    expect(
-      await screen.findByRole("checkbox", { name: "Also re-rank jobs that already have a score" }),
-    ).toBeChecked();
-    await waitFor(() => {
-      expect(rescore).toBe(true);
-    });
+    const dialog = await screen.findByRole("dialog", { name: "Rank 1 selected job" });
+    expect(await within(dialog).findByRole("button", { name: "Rank 1 job" })).toBeEnabled();
+    expect(planned).toEqual({ job_ids: [1], rescore: false }); // picked jobs are always ranked
+    expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("shows the score's parts and the eligibility check with the posting's words", async () => {
@@ -285,7 +283,7 @@ describe("DiscoverPage", () => {
     );
     await user.click(within(dialog).getByRole("button", { name: "Rank 42 jobs" }));
     await waitFor(() => {
-      expect(started).toEqual({ job_ids: null, rescore: false, ignore_preferences: false });
+      expect(started).toEqual({ job_ids: null, rescore: false });
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -386,7 +384,7 @@ describe("DiscoverPage", () => {
     expect(within(dialog).getByLabelText("Posting text")).toBeEnabled();
   });
 
-  it("labels jobs outside your preferences and can rank picked ones anyway", async () => {
+  it("labels jobs outside your preferences and ranks picked ones with no questions", async () => {
     const abroad = { title: "Staff Engineer", company: "Okta", score: null, reasons: [] };
     server.use(
       http.get("/api/jobs", () =>
@@ -404,16 +402,11 @@ describe("DiscoverPage", () => {
     );
     const plans: unknown[] = [];
     let started: unknown = null;
-    const skipped = { ...rankPlan().filtered, country: 1, location: 0, salary: 0 };
+    const nothingSkipped = { ...rankPlan().filtered, country: 0, location: 0, salary: 0 };
     server.use(
       http.post("/api/rank/plan", async ({ request }) => {
-        const body = (await request.json()) as { ignore_preferences: boolean };
-        plans.push(body);
-        return HttpResponse.json(
-          body.ignore_preferences
-            ? rankPlan({ candidates: 1, batches: 1, filtered: { ...skipped, country: 0 } })
-            : rankPlan({ candidates: 0, batches: 0, filtered: skipped }),
-        );
+        plans.push(await request.json());
+        return HttpResponse.json(rankPlan({ candidates: 1, batches: 1, filtered: nothingSkipped }));
       }),
       http.post("/api/rank", async ({ request }) => {
         started = await request.json();
@@ -428,18 +421,13 @@ describe("DiscoverPage", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Selected jobs" });
     await user.click(within(toolbar).getByRole("button", { name: "Rank" }));
     const dialog = await screen.findByRole("dialog", { name: "Rank 1 selected job" });
-    expect(await within(dialog).findByText("Nothing new to rank.")).toBeVisible();
-    expect(dialog).toHaveTextContent("Skipped 1: 1 in other countries.");
-    expect(within(dialog).getByRole("button", { name: "Rank" })).toBeDisabled();
-
-    await user.click(
-      within(dialog).getByRole("checkbox", { name: "Also rank jobs your preferences skip" }),
-    );
+    expect(dialog).not.toHaveTextContent("skipped first");
+    expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
     await user.click(await within(dialog).findByRole("button", { name: "Rank 1 job" }));
     await waitFor(() => {
-      expect(started).toEqual({ job_ids: [4], rescore: false, ignore_preferences: true });
+      expect(started).toEqual({ job_ids: [4], rescore: false });
     });
-    expect(plans[0]).toEqual({ job_ids: [4], rescore: false, ignore_preferences: false });
+    expect(plans).toEqual([{ job_ids: [4], rescore: false }]);
   });
 
   it("explains how to rank without an API key", async () => {
