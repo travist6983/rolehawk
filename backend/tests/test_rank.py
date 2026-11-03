@@ -37,7 +37,7 @@ from rolehawk.fit.filters import (
 )
 from rolehawk.fit.ranker import NothingToRankError, Ranker, RankParams, job_text
 from rolehawk.fit.rubric import FIT_RUBRIC, FitBatch, Gate
-from rolehawk.jobs.store import JobQuery
+from rolehawk.jobs.store import JobQuery, JobStore
 from rolehawk.llm.errors import LLMNotConfiguredError, LLMUnavailableError, SpendCapExceededError
 from rolehawk.llm.fake import FakeProvider
 from rolehawk.llm.service import LLMService
@@ -460,6 +460,14 @@ async def test_job_listing_labels_jobs_outside_preferences(runtime: Runtime) -> 
     assert fitting.stats.outside_preferences == 4  # so Discover can say how many it hides
     runtime.jobs.set_dismissed([india])
     assert runtime.jobs.list(JobQuery()).stats.outside_preferences == 3
+
+
+async def test_job_listing_has_quick_facts_with_the_profiles_skills(runtime: Runtime) -> None:
+    (job_id,) = add_jobs(runtime, 1, location="Detroit, MI (Hybrid)")
+    store = JobStore(runtime.sessions, skills=lambda: ["SQL", "Tableau", "dashboards"])
+    (row,) = store.list(JobQuery()).items
+    assert (row.facts.work_mode, row.facts.skills) == ("hybrid", ["SQL", "dashboards"])
+    assert store.get(job_id).facts.skills == ["SQL", "dashboards"]
 
 
 async def test_save_and_dismiss_rules(runtime: Runtime) -> None:

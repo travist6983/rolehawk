@@ -2948,6 +2948,8 @@ export interface components {
              * @description Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it
              */
             outside_preferences: ("excluded" | "country" | "location" | "salary") | null;
+            /** @description Quick facts read from the posting, with no AI */
+            facts: components["schemas"]["JobFacts"];
             /**
              * Description
              * @description Third-party text from the posting
@@ -2963,6 +2965,24 @@ export interface components {
             application_id: number | null;
             /** @description What the integrity check removed or found; null when nothing */
             integrity_report: components["schemas"]["IntegrityView"] | null;
+        };
+        /** JobFacts */
+        JobFacts: {
+            /**
+             * Work Mode
+             * @description Remote, hybrid, or on-site, when the posting says
+             */
+            work_mode: ("remote" | "hybrid" | "on-site") | null;
+            /**
+             * Years
+             * @description The most years of experience the posting asks for
+             */
+            years: number | null;
+            /**
+             * Skills
+             * @description The user's skills the posting names, profile order
+             */
+            skills: string[];
         };
         /** JobPage */
         JobPage: {
@@ -3052,6 +3072,8 @@ export interface components {
              * @description Why /rank skips this job (an excluded word, another country, outside your locations, below your salary floor); null when your preferences allow it
              */
             outside_preferences: ("excluded" | "country" | "location" | "salary") | null;
+            /** @description Quick facts read from the posting, with no AI */
+            facts: components["schemas"]["JobFacts"];
         };
         /**
          * JobStats

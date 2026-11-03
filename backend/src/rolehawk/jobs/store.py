@@ -24,6 +24,7 @@ from rolehawk.db.models import (
 from rolehawk.db.types import utcnow
 from rolehawk.fit.filters import Rules, SkipReason, load_rules, skip_reason
 from rolehawk.fit.rubric import Breakdown, Gates
+from rolehawk.jobs.facts import JobFacts, SkillFinder, job_facts
 from rolehawk.portals.feeds import SUMMARY_ONLY_SOURCES
 from rolehawk.portals.integrity import IntegrityView, Verdict
 from rolehawk.portals.matching import title_matches
@@ -106,6 +107,7 @@ class JobRow(BaseModel):
         description="Why /rank skips this job (an excluded word, another country, outside "
         "your locations, below your salary floor); null when your preferences allow it"
     )
+    facts: JobFacts = Field(description="Quick facts read from the posting, with no AI")
 
 
 class JobDetail(JobRow):
@@ -182,9 +184,11 @@ class JobStore:
         self,
         sessions: sessionmaker[Session],
         preferences: Callable[[], Preferences] = Preferences,
+        skills: Callable[[], list[str]] = list,
     ) -> None:
         self._sessions = sessions
         self._preferences = preferences
+        self._skills = skills  # the profile's skills, for each job's quick facts
 
     def _rules(self, session: Session) -> Rules:
         return load_rules(session, self._preferences())
@@ -238,7 +242,7 @@ class JobStore:
         return stmt, score
 
     @staticmethod
-    def _row(values: Any, rules: Rules) -> dict[str, Any]:
+    def _row(values: Any, rules: Rules, finder: SkillFinder) -> dict[str, Any]:
         (
             job,
             score,
@@ -288,6 +292,13 @@ class JobStore:
             "summary_only": job.portal_id in SUMMARY_ONLY_SOURCES,
             "application_id": app_id,
             "outside_preferences": skip_reason(job, rules),
+            "facts": job_facts(
+                finder,
+                title=job.title,
+                location=job.location,
+                remote=job.remote,
+                description=job.description,
+            ),
         }
 
     def list(self, query: JobQuery) -> JobPage:
@@ -340,7 +351,8 @@ class JobStore:
                 stmt = stmt.where(Job.id.in_(matched.get(query.target, [])))
             total = session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
             rows = session.execute(stmt.limit(query.limit).offset(query.offset)).all()
-            items = [JobRow.model_validate(self._row(r, rules)) for r in rows]
+            finder = SkillFinder(self._skills())
+            items = [JobRow.model_validate(self._row(r, rules, finder)) for r in rows]
             stats = self._stats(session, outside)
         targets = [TargetCount(title=t, jobs=len(ids)) for t, ids in matched.items()]
         return JobPage(items=items, total=total or 0, stats=stats, targets=targets)
@@ -387,7 +399,8 @@ class JobStore:
             row = session.execute(stmt.where(Job.id == job_id)).first()
             if row is None:
                 raise KeyError(job_id)
-            return JobDetail.model_validate(self._row(row, self._rules(session)))
+            finder = SkillFinder(self._skills())
+            return JobDetail.model_validate(self._row(row, self._rules(session), finder))
 
     def set_saved(self, job_ids: Sequence[int], saved: bool = True) -> Changed:
         """Saving puts a job in the pipeline at Saved (and un-dismisses it). Unsaving only
